@@ -1,0 +1,20 @@
+Abhay Yemekar
+Python Developer / AI Engineer
+
+SUMMARY
+Software engineer with 2 years of experience in Python, FastAPI, Flask, and data analysis. Worked on RAG prototypes and STT/TTS pipelines.
+
+SKILLS
+Python, FastAPI, Flask, OpenAI API, RAG, React, TypeScript, PostgreSQL, Docker, AWS Basics
+
+EXPERIENCE
+Software Engineer, Tata Elxsi (Dec 2023 - Present)
+- Built Python tools and automated reporting.
+- Participated in Generative AI bootcamp.
+
+PROJECTS
+Online Banking Authentication System Using AI (Python, OpenCV, TensorFlow)
+CricketStat Pro (Python, Pandas, Power BI)
+
+EDUCATION
+B.Tech Computer Science, SGGSIE&T Nanded (2019-2023)

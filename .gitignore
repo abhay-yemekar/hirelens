@@ -1,0 +1,48 @@
+# ---- Dependencies ----
+node_modules/
+.pnpm-store/
+
+# ---- Build outputs ----
+dist/
+build/
+out/
+.next/
+*.tsbuildinfo
+.turbo/
+
+# ---- Test / coverage ----
+coverage/
+
+# ---- Environment & secrets (never commit) ----
+.env
+.env.*
+!.env.example
+
+# ---- User uploads (may contain real PII — never commit) ----
+uploads/
+**/uploads/**
+
+# ---- Local agent / editor state ----
+.freebuff/
+.claude/
+.vscode/
+.idea/
+
+# ---- Internal planning docs (not for the public repo) ----
+HIRELENS_MASTER_PROMPT.md
+
+# ---- Logs ----
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Misc ----
+*.zip
+*.local

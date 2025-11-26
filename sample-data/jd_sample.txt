@@ -1,0 +1,9 @@
+Generative AI Engineer
+Requirements:
+- Strong Python and backend engineering
+- Experience with RAG, embeddings, vector databases
+- Familiar with React/TypeScript for internal tools
+- Knowledge of PostgreSQL and cloud (AWS)
+Nice to have:
+- Real-time voice agents (STT/TTS)
+- Docker/Kubernetes
