@@ -1,0 +1,7 @@
+{
+  "extends": "@hirelens/config/typescript/base",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src"]
+}

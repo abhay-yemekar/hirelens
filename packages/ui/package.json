@@ -1,0 +1,14 @@
+{
+  "name": "@hirelens/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@hirelens/config": "workspace:*",
+    "typescript": "~5.9.3"
+  }
+}
