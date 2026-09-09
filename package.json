@@ -1,5 +1,21 @@
 {
-  "dependencies": {
-    "pdf-parse": "^2.4.5"
-  }
+  "name": "hirelens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open-source, glass-box hiring intelligence. Rank candidates against a job with evidence-linked scores, rubric transparency, and built-in bias auditing.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abhay-yemekar/hirelens.git"
+  },
+  "homepage": "https://github.com/abhay-yemekar/hirelens#readme",
+  "bugs": "https://github.com/abhay-yemekar/hirelens/issues",
+  "keywords": [
+    "hiring",
+    "recruiting",
+    "ats",
+    "rag",
+    "llm",
+    "responsible-ai"
+  ]
 }
