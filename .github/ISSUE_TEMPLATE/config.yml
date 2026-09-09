@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and usage help
+    url: https://github.com/abhay-yemekar/hirelens/discussions
+    about: Ask how to run or extend HireLens here.
+  - name: Security vulnerability
+    url: ./SECURITY.md
+    about: Email the maintainer privately — never open a public issue.
