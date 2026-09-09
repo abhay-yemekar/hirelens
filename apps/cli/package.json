@@ -1,0 +1,28 @@
+{
+  "name": "@hirelens/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "hirelens": "./dist/main.js"
+  },
+  "binExports": {
+    "hirelens": "./src/main.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hirelens/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@hirelens/config": "workspace:*",
+    "@types/node": "^24.13.0",
+    "tsx": "^4.16.2",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.0"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "@hirelens/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hirelens/core": "workspace:*",
+    "@hono/node-server": "^2.1.1",
+    "hono": "^4.13.7",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@hirelens/config": "workspace:*",
+    "@types/node": "^24.13.0",
+    "tsx": "^4.16.2",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.0"
+  }
+}
