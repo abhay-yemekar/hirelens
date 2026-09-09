@@ -1,0 +1,44 @@
+name: 🐛 Bug report
+description: Report something that is broken or behaves incorrectly
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect to happen instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Upload ...
+        2. Click ...
+        3. See error
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Which LLM provider were you using?
+      options:
+        - Ollama (local)
+        - OpenAI
+        - Other / N/A
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS + Node version
+      placeholder: "Windows 11, Node 20.11.0"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Redact any API keys or personal data. Never paste candidate data.
+      render: shell
