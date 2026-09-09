@@ -1,0 +1,14 @@
+{
+  "name": "@hirelens/config",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@biomejs/biome": "2.5.12",
+    "typescript": "~5.9.3"
+  },
+  "exports": {
+    "./biome": "./biome.json",
+    "./typescript/base": "./tsconfig.base.json",
+    "./typescript/node": "./tsconfig.node.json"
+  }
+}
