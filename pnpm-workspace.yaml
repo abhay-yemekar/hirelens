@@ -2,9 +2,5 @@ packages:
   - "apps/*"
   - "packages/*"
 
-allowBuilds:
-  esbuild: set this to true or false
-
-# Allow native build scripts for these dependencies (pnpm 10+ security default).
 onlyBuiltDependencies:
   - esbuild
