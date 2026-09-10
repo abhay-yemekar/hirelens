@@ -12,6 +12,11 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.50",
+    "@ai-sdk/google": "^4.0.65",
+    "@ai-sdk/groq": "^4.0.38",
+    "@ai-sdk/openai-compatible": "^3.0.45",
+    "ai": "^7.0.95",
     "fflate": "^0.8.3",
     "mammoth": "^1.12.2",
     "unpdf": "^1.8.1",
