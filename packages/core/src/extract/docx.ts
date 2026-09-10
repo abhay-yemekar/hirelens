@@ -60,19 +60,29 @@ function decodeEntities(html: string): string {
 }
 
 function htmlToText(html: string): string {
-  return (
-    decodeEntities(html)
-      // One pass over real tags: structural ones become whitespace,
-      // everything else is dropped entirely.
-      .replace(/<[^>]*>/g, (tag) => {
-        if (/^<\/(p|div|h[1-6]|li|tr)>$/.test(tag)) return "\n";
-        if (/^<\/t[dh]>$/.test(tag)) return "\t";
-        if (/^<li>$/.test(tag)) return "- ";
-        return "";
-      })
-      // Complete sweep: no "<" or ">" can survive extraction.
-      .replace(/[<>]/g, "")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim()
-  );
+  // Linear character-level parse (no regex-based sanitization): every
+  // "<" is consumed together with its matching ">", so no angle bracket
+  // can survive into the extracted text by construction.
+  const decoded = decodeEntities(html);
+  const out: string[] = [];
+  let i = 0;
+  while (i < decoded.length) {
+    const c = decoded[i] ?? "";
+    if (c === "<") {
+      const close = decoded.indexOf(">", i);
+      if (close === -1) break; // unterminated tag: drop the remainder
+      const tag = decoded.slice(i + 1, close).toLowerCase();
+      if (/^\/(p|div|h[1-6]|li|tr)$/.test(tag)) out.push("\n");
+      else if (/^\/t[dh]$/.test(tag)) out.push("\t");
+      else if (tag === "li") out.push("- ");
+      i = close + 1;
+    } else {
+      if (c !== ">") out.push(c);
+      i++;
+    }
+  }
+  return out
+    .join("")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
