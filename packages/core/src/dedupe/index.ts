@@ -49,10 +49,12 @@ export function normalizeEmail(email: string | null | undefined): string | null 
   if (at < 1) return null;
   const local = email.slice(0, at).toLowerCase();
   const domain = email.slice(at + 1).toLowerCase();
-  // Gmail-style dots and plus tags are aliases
-  const stripped = domain.endsWith("gmail.com")
-    ? local.replace(/\./g, "").replace(/\+.*$/, "")
-    : local.replace(/\+.*$/, "");
+  // Gmail-style dots and plus tags are aliases. Exact domain match (not
+  // suffix): "evil-gmail.com" is a different provider, not gmail.
+  const stripped =
+    domain === "gmail.com" || domain.endsWith(".gmail.com")
+      ? local.replaceAll(".", "").replace(/\+.*$/, "")
+      : local.replace(/\+.*$/, "");
   return `${stripped}@${domain}`;
 }
 

@@ -1,6 +1,11 @@
 import { ParseError } from "./schema.js";
 
-export const EMAIL_RE = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
+/**
+ * Email pattern with a single, unambiguous structure (no nested
+ * quantifier ambiguity, so no polynomial ReDoS on hostile input).
+ */
+export const EMAIL_RE =
+  /[a-z0-9._%+-]*[a-z0-9][a-z0-9._%+-]*@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}/i;
 
 /** Loose phone pattern; callers must verify digit count. */
 export const PHONE_RE =
@@ -37,7 +42,11 @@ export function findWebsite(lines: string[], email: string | null): string | nul
   for (const line of lines) {
     const m = URL_RE.exec(line);
     if (!m) continue;
-    const url = m[0].replace(/[.,;]+$/, "");
+    let url = m[0];
+    // Strip trailing punctuation (", ", ";") without regex backtracking.
+    while (url.length > 0 && ". ,;".includes(url[url.length - 1] ?? "")) {
+      url = url.slice(0, -1);
+    }
     const host = (url.replace(/^https?:\/\//, "").split("/")[0] ?? "").toLowerCase();
     if (skip && host.endsWith(skip)) continue;
     if (/(github\.com|linkedin\.com)/i.test(host)) continue;

@@ -43,17 +43,28 @@ export async function extractDocx(data: Uint8Array): Promise<ExtractedDocument> 
   };
 }
 
+const HTML_ENTITIES: Record<string, string> = {
+  "&amp;": "&",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&apos;": "'",
+  "&#39;": "'",
+  "&nbsp;": " ",
+};
+
+function decodeEntities(html: string): string {
+  return html.replace(/&(?:amp|lt|gt|quot|apos|#39|nbsp);/g, (e) => HTML_ENTITIES[e] ?? e);
+}
+
 function htmlToText(html: string): string {
-  return html
-    .replace(/<\/(p|div|h[1-6]|li|tr)>/g, "\n")
-    .replace(/<\/t[dh]>/g, "\t")
-    .replace(/<li>/g, "- ")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
+  return decodeEntities(
+    html
+      .replace(/<\/(p|div|h[1-6]|li|tr)>/g, "\n")
+      .replace(/<\/t[dh]>/g, "\t")
+      .replace(/<li>/g, "- ")
+      .replace(/<[^>]+>/g, ""),
+  )
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
