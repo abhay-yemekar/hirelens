@@ -1,0 +1,114 @@
+/*
+ * HireLens design tokens — OKLCH, semantic naming, dark and light as
+ * first-class themes (master plan §8.1). Score colors are a perceptually
+ * uniform ramp; consumers must pair them with a label or shape (never
+ * hue alone) for colorblind-safe display.
+ */
+@theme {
+  /* Surfaces */
+  --color-surface: oklch(0.99 0.004 106);
+  --color-surface-raised: oklch(1 0 0);
+  --color-surface-sunken: oklch(0.968 0.006 106);
+  --color-border-subtle: oklch(0.922 0.008 106);
+  --color-border-strong: oklch(0.85 0.012 106);
+
+  /* Foreground */
+  --color-fg: oklch(0.24 0.014 265);
+  --color-fg-muted: oklch(0.52 0.016 265);
+  --color-fg-subtle: oklch(0.66 0.014 265);
+
+  /* Accent (brand) */
+  --color-accent: oklch(0.56 0.19 262);
+  --color-accent-fg: oklch(0.99 0.004 106);
+  --color-accent-muted: oklch(0.94 0.03 262);
+
+  /* Score ramp — 0..5. Hue rotates cyan → indigo (never red/green),
+     chroma and lightness rise with score so intensity is uniform. */
+  --color-score-0: oklch(0.62 0.05 240);
+  --color-score-1: oklch(0.66 0.08 235);
+  --color-score-2: oklch(0.7 0.11 245);
+  --color-score-3: oklch(0.66 0.14 262);
+  --color-score-4: oklch(0.6 0.17 272);
+  --color-score-5: oklch(0.55 0.2 282);
+
+  /* Feedback */
+  --color-danger: oklch(0.55 0.2 25);
+  --color-warning: oklch(0.75 0.15 80);
+  --color-success: oklch(0.62 0.14 155);
+
+  /* Typography */
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
+
+  /* Radii */
+  --radius-card: 0.75rem;
+  --radius-control: 0.5rem;
+  --radius-pill: 999px;
+
+  /* Motion — 150-250ms per plan §8.1 */
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 250ms;
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Dark theme: same structure, adjusted lightness/chroma. */
+[data-theme="dark"] {
+  --color-surface: oklch(0.19 0.014 265);
+  --color-surface-raised: oklch(0.23 0.016 265);
+  --color-surface-sunken: oklch(0.16 0.012 265);
+  --color-border-subtle: oklch(0.3 0.018 265);
+  --color-border-strong: oklch(0.38 0.02 265);
+
+  --color-fg: oklch(0.95 0.006 106);
+  --color-fg-muted: oklch(0.72 0.014 265);
+  --color-fg-subtle: oklch(0.58 0.014 265);
+
+  --color-accent: oklch(0.68 0.16 262);
+  --color-accent-fg: oklch(0.16 0.02 265);
+  --color-accent-muted: oklch(0.3 0.05 262);
+
+  --color-score-0: oklch(0.55 0.04 240);
+  --color-score-1: oklch(0.6 0.07 235);
+  --color-score-2: oklch(0.66 0.1 245);
+  --color-score-3: oklch(0.7 0.13 262);
+  --color-score-4: oklch(0.74 0.16 272);
+  --color-score-5: oklch(0.78 0.19 282);
+
+  --color-danger: oklch(0.65 0.19 25);
+  --color-warning: oklch(0.8 0.14 80);
+  --color-success: oklch(0.72 0.14 155);
+}
+
+/* Base element styles (imported once by the app). */
+@layer base {
+  html {
+    background-color: var(--color-surface);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+  }
+
+  *,
+  *::before,
+  *::after {
+    border-color: var(--color-border-subtle);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* Plan §8.1: honor prefers-reduced-motion — no exceptions. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
