@@ -3,11 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/migrate.ts",
+    "db:extensions": "tsx src/enable-extensions.ts",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/seed.ts",
     "test": "vitest run"

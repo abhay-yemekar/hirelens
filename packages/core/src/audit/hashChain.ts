@@ -25,6 +25,46 @@ function hashRecord(
 }
 
 /**
+ * Hash for a persisted audit row. Unlike `AuditChain.append` (which folds
+ * its in-memory seq into the hash), persisted rows get their seq from a
+ * DB sequence, so the linkage hash must be seq-independent: it covers
+ * action, payload, prevHash, and createdAt only. Verifiers recompute
+ * this over each row and compare with the stored `hash`.
+ */
+/**
+ * Canonical form that survives a Postgres jsonb round-trip. Objects are
+ * rendered as key-sorted [key, value] pair arrays because jsonb does not
+ * preserve object key order (it reorders by key length, then bytewise),
+ * while arrays keep their order — so any verifier reading the row back
+ * from the DB can recompute the exact same canonical string.
+ */
+function canonical(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value !== null && typeof value === "object") {
+    const rec = value as Record<string, unknown>;
+    return Object.keys(rec)
+      .sort()
+      .map((k) => [k, canonical(rec[k])]);
+  }
+  return value;
+}
+
+export function hashLink(input: {
+  action: string;
+  payload: unknown;
+  prevHash: string;
+  createdAt: Date;
+}): string {
+  const canonicalStr = JSON.stringify([
+    input.action,
+    canonical(input.payload),
+    input.prevHash,
+    input.createdAt.toISOString(),
+  ]);
+  return createHash("sha256").update(canonicalStr).digest("hex");
+}
+
+/**
  * Append-only, hash-chained audit log. Each record's hash covers its payload
  * plus the previous record's hash, so any tampering breaks verification.
  */
