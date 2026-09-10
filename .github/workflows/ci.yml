@@ -27,8 +27,6 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
-        volumes:
-          - ${{ github.workspace }}/packages/db/docker-init:/docker-entrypoint-initdb.d:ro
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5433/hirelens
     steps:
@@ -46,8 +44,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Migrate database
-        run: pnpm --filter @hirelens/db db:migrate
+      - name: Prepare database
+        run: |
+          pnpm --filter @hirelens/db db:extensions
+          pnpm --filter @hirelens/db db:migrate
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5433/hirelens
 
