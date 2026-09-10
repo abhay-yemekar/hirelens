@@ -58,13 +58,16 @@ function decodeEntities(html: string): string {
 }
 
 function htmlToText(html: string): string {
-  return decodeEntities(
-    html
-      .replace(/<\/(p|div|h[1-6]|li|tr)>/g, "\n")
-      .replace(/<\/t[dh]>/g, "\t")
-      .replace(/<li>/g, "- ")
-      .replace(/<[^>]+>/g, ""),
-  )
+  // Decode entities BEFORE handling tags (single pass, no double
+  // decoding), then convert structural tags to whitespace, then remove
+  // every remaining angle bracket so the result provably contains none
+  // (e.g. "&lt;script&gt;" decoded to "<script>" is stripped as text).
+  return decodeEntities(html)
+    .replace(/<\/(p|div|h[1-6]|li|tr)>/g, "\n")
+    .replace(/<\/t[dh]>/g, "\t")
+    .replace(/<li>/g, "- ")
+    .replace(/<[^>]*>/g, "")
+    .replace(/[<>]/g, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }

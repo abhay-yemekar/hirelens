@@ -1,4 +1,4 @@
-import { EMAIL_RE, URL_RE } from "./contact.js";
+import { hasEmailToken, URL_RE } from "./contact.js";
 import { DATE_RANGE_RE, extractDateRange } from "./dates.js";
 import type { CandidateEducation, CandidateWork } from "./schema.js";
 import type { Section } from "./sections.js";
@@ -99,7 +99,7 @@ export function extractEducation(lines: string[], section: Section): CandidateEd
 export function matchRoleLine(line: string): CandidateWork | null {
   const trimmed = line.trim();
   if (trimmed.length < 5 || trimmed.length > 120) return null;
-  if (EMAIL_RE.test(trimmed) || URL_RE.test(trimmed)) return null;
+  if (hasEmailToken(trimmed) || URL_RE.test(trimmed)) return null;
   if (/^(skills|technologies|tools)\b/i.test(trimmed)) return null;
 
   const dates = extractDateRange(trimmed);
@@ -128,7 +128,7 @@ const DEGREE_RE =
 function matchDegreeLine(line: string): CandidateEducation | null {
   const trimmed = line.trim();
   if (trimmed.length < 4 || trimmed.length > 140) return null;
-  if (EMAIL_RE.test(trimmed) || URL_RE.test(trimmed)) return null;
+  if (hasEmailToken(trimmed) || URL_RE.test(trimmed)) return null;
   const m = DEGREE_RE.exec(trimmed);
   if (!m) return null;
 

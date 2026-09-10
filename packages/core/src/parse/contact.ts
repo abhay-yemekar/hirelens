@@ -1,11 +1,45 @@
 import { ParseError } from "./schema.js";
 
+const EMAIL_ATOM_CHARS = new Set(
+  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._%+-",
+);
+
 /**
- * Email pattern with a single, unambiguous structure (no nested
- * quantifier ambiguity, so no polynomial ReDoS on hostile input).
+ * Scan for the first email-like token in the string without regex
+ * backtracking (linear time, immune to polynomial ReDoS on hostile input).
  */
-export const EMAIL_RE =
-  /[a-z0-9._%+-]*[a-z0-9][a-z0-9._%+-]*@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}/i;
+export function findEmailToken(line: string): string | null {
+  let at = line.indexOf("@");
+  while (at !== -1) {
+    if (at > 0) {
+      let start = at;
+      while (start > 0 && EMAIL_ATOM_CHARS.has(line[start - 1] ?? "")) start--;
+      let end = at + 1;
+      while (end < line.length && EMAIL_ATOM_CHARS.has(line[end] ?? "")) end++;
+      // Trailing sentence punctuation is not part of the domain.
+      while (end > at + 1 && ". ,;:".includes(line[end - 1] ?? "")) end--;
+      const local = line.slice(start, at);
+      const domain = line.slice(at + 1, end);
+      const domainValid =
+        domain.length >= 4 &&
+        /^[a-z0-9]/i.test(domain) &&
+        domain.includes(".") &&
+        !domain.startsWith(".") &&
+        !domain.endsWith(".") &&
+        !domain.includes("..");
+      if (local.length >= 1 && /^[a-z0-9]/i.test(local) && domainValid) {
+        return `${local}@${domain}`.toLowerCase();
+      }
+    }
+    at = line.indexOf("@", at + 1);
+  }
+  return null;
+}
+
+/** True if the string contains an email-like token (fast, ReDoS-free). */
+export function hasEmailToken(s: string): boolean {
+  return findEmailToken(s) !== null;
+}
 
 /** Loose phone pattern; callers must verify digit count. */
 export const PHONE_RE =
@@ -19,8 +53,8 @@ export function countDigits(s: string): number {
 
 export function findEmail(lines: string[]): string | null {
   for (const line of lines) {
-    const m = EMAIL_RE.exec(line);
-    if (m) return m[0].toLowerCase();
+    const email = findEmailToken(line);
+    if (email) return email;
   }
   return null;
 }
@@ -94,7 +128,7 @@ export function findName(lines: string[]): string | null {
   for (const line of lines.slice(0, 6)) {
     const t = line.trim();
     if (t.length < 2 || t.length > 48) continue;
-    if (EMAIL_RE.test(t) || URL_RE.test(t) || PHONE_RE.test(t)) continue;
+    if (hasEmailToken(t) || URL_RE.test(t) || PHONE_RE.test(t)) continue;
     if (/\d/.test(t)) continue;
     if (t.includes("@") || t.includes("|")) continue;
     const words = t.split(/\s+/);
@@ -117,7 +151,7 @@ export function findLocation(lines: string[]): string | null {
     const m = /\b([A-Z][A-Za-z.'-]+(?:\s[A-Z][A-Za-z.'-]+)*),\s*([A-Z]{2}|[A-Z][a-z]+)\b/.exec(
       line,
     );
-    if (m?.[1] && m?.[2] && !EMAIL_RE.test(line) && countDigits(line) <= 4) {
+    if (m?.[1] && m?.[2] && !hasEmailToken(line) && countDigits(line) <= 4) {
       return `${m[1]}, ${m[2]}`;
     }
   }
