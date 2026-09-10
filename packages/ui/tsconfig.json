@@ -1,7 +1,12 @@
 {
   "extends": "@hirelens/config/typescript/base",
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"]
   },
-  "include": ["src"]
+  "include": ["src", ".storybook"]
 }
