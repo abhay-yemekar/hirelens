@@ -46,6 +46,17 @@ export {
   type CandidateWork,
   candidateSchema,
 } from "./parse/schema.js";
+export {
+  deriveRubric,
+  MAX_JD_CHARS,
+  slugifyKey,
+} from "./rubric/derive.js";
+export {
+  diffRubrics,
+  forkRubric,
+  parseRubric,
+  serializeRubric,
+} from "./rubric/versioning.js";
 export { type CriterionScore, weightedOverall } from "./score/weighting.js";
 export {
   expandZip,

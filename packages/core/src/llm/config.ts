@@ -23,6 +23,16 @@ export type LanguageModelFactory = (config: ProviderConfig) => LanguageModel;
 /** The AI SDK's language model interface; tests may substitute via cast. */
 export type LanguageModel = AiLanguageModel;
 
+/**
+ * Best-effort model id for audit records. Handles both the object form
+ * (LanguageModelV2) and plain-string model aliases the SDK accepts.
+ */
+export function modelIdOf(model: LanguageModel): string {
+  if (typeof model === "string") return model;
+  const m = model as { modelId?: unknown };
+  return typeof m.modelId === "string" ? m.modelId : "unknown";
+}
+
 export interface ResolvedRegistry {
   /** Default provider used for rubric derivation and scoring. */
   default: LlmProviderId;
