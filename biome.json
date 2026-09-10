@@ -18,7 +18,12 @@
     "lineWidth": 100
   },
   "linter": {
-    "enabled": true
+    "enabled": true,
+    "rules": {
+      "complexity": {
+        "useLiteralKeys": "off"
+      }
+    }
   },
   "javascript": {
     "formatter": {
