@@ -1,7 +1,9 @@
 {
-  "extends": "@hirelens/config/typescript/base",
+  "extends": "@hirelens/config/typescript/node",
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    "types": ["node"],
+    "isolatedDeclarations": false
   },
-  "include": ["src"]
+  "include": ["src", "drizzle.config.ts", "auth.config.ts", "auth-schema.ts", "tests"]
 }

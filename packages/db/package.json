@@ -5,10 +5,30 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/migrate.ts",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx src/seed.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@better-auth/drizzle-adapter": "^1.7.3",
+    "better-auth": "^1.7.3",
+    "drizzle-orm": "^0.45.2",
+    "pg": "^8.23.0"
   },
   "devDependencies": {
+    "@better-auth/cli": "^1.4.21",
+    "@better-auth/drizzle-adapter": "^1.7.3",
     "@hirelens/config": "workspace:*",
-    "typescript": "~5.9.3"
+    "@types/node": "^24.13.0",
+    "@types/pg": "^8.23.0",
+    "better-auth": "1.7.3",
+    "dotenv": "^17.2.0",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.16.2",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.0"
   }
 }

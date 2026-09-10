@@ -2,8 +2,9 @@ packages:
   - "apps/*"
   - "packages/*"
 
+# Build-script approval policy (pnpm 11 `allowBuilds` map).
+# true = run postinstall, false = skip (and never warn/prompt).
 allowBuilds:
   esbuild: true
-
-onlyBuiltDependencies:
-  - esbuild
+  "@prisma/client": false
+  better-sqlite3: false
