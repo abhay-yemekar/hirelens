@@ -57,6 +57,8 @@ export {
   parseRubric,
   serializeRubric,
 } from "./rubric/versioning.js";
+export { MAX_RESUME_CHARS, type ScoredCriterion, scoreResume } from "./score/engine.js";
+export { percentileRank, poolMean } from "./score/pool.js";
 export { type CriterionScore, weightedOverall } from "./score/weighting.js";
 export {
   expandZip,
