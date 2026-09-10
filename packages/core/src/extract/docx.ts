@@ -45,8 +45,6 @@ export async function extractDocx(data: Uint8Array): Promise<ExtractedDocument> 
 
 const HTML_ENTITIES: Record<string, string> = {
   "&amp;": "&",
-  "&lt;": "<",
-  "&gt;": ">",
   "&quot;": '"',
   "&apos;": "'",
   "&#39;": "'",
@@ -54,20 +52,27 @@ const HTML_ENTITIES: Record<string, string> = {
 };
 
 function decodeEntities(html: string): string {
-  return html.replace(/&(?:amp|lt|gt|quot|apos|#39|nbsp);/g, (e) => HTML_ENTITIES[e] ?? e);
+  // Deliberately does NOT decode &lt;/&gt;: angle brackets must never be
+  // reintroduced into extracted text, so "&lt;script&gt;" stays literal
+  // and is stripped below along with real tags. "&amp;lt;" therefore
+  // correctly becomes the literal text "&lt;" (no double decoding).
+  return html.replace(/&(?:amp|quot|apos|#39|nbsp);/g, (e) => HTML_ENTITIES[e] ?? e);
 }
 
 function htmlToText(html: string): string {
-  // Decode entities BEFORE handling tags (single pass, no double
-  // decoding), then convert structural tags to whitespace, then remove
-  // every remaining angle bracket so the result provably contains none
-  // (e.g. "&lt;script&gt;" decoded to "<script>" is stripped as text).
-  return decodeEntities(html)
-    .replace(/<\/(p|div|h[1-6]|li|tr)>/g, "\n")
-    .replace(/<\/t[dh]>/g, "\t")
-    .replace(/<li>/g, "- ")
-    .replace(/<[^>]*>/g, "")
-    .replace(/[<>]/g, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  return (
+    decodeEntities(html)
+      // One pass over real tags: structural ones become whitespace,
+      // everything else is dropped entirely.
+      .replace(/<[^>]*>/g, (tag) => {
+        if (/^<\/(p|div|h[1-6]|li|tr)>$/.test(tag)) return "\n";
+        if (/^<\/t[dh]>$/.test(tag)) return "\t";
+        if (/^<li>$/.test(tag)) return "- ";
+        return "";
+      })
+      // Complete sweep: no "<" or ">" can survive extraction.
+      .replace(/[<>]/g, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  );
 }
