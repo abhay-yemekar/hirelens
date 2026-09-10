@@ -22,7 +22,7 @@
     "@better-auth/cli": "^1.4.21",
     "@better-auth/drizzle-adapter": "^1.7.3",
     "@hirelens/config": "workspace:*",
-    "@types/node": "^24.13.0",
+    "@types/node": "^26.4.1",
     "@types/pg": "^8.23.0",
     "better-auth": "1.7.3",
     "dotenv": "^17.2.0",
