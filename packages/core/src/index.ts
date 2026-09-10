@@ -27,6 +27,18 @@ export {
   SUPPORTED_EXTENSIONS,
   sniffKind,
 } from "./extract/index.js";
+export {
+  createMockModel,
+  DEFAULT_REGISTRY,
+  type GenerationRequest,
+  generateStructured,
+  type LanguageModel,
+  type ProviderConfig,
+  promptHash,
+  resolveLanguageModel,
+  SchemaViolationError,
+  type StructuredResult,
+} from "./llm/index.js";
 export { ParseError, parseCandidate } from "./parse/candidate.js";
 export {
   type Candidate,
