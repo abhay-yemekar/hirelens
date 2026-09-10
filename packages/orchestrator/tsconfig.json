@@ -1,0 +1,9 @@
+{
+  "extends": "@hirelens/config/typescript/node",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "isolatedDeclarations": false
+  },
+  "include": ["src", "tests"]
+}

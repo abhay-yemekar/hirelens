@@ -13,6 +13,24 @@ jobs:
   quality:
     name: Lint / Typecheck / Test / Build
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hirelens
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+        volumes:
+          - ${{ github.workspace }}/packages/db/docker-init:/docker-entrypoint-initdb.d:ro
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5433/hirelens
     steps:
       - uses: actions/checkout@v7
 
@@ -27,6 +45,11 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Migrate database
+        run: pnpm --filter @hirelens/db db:migrate
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5433/hirelens
 
       - name: Lint
         run: pnpm lint
