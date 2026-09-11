@@ -62,6 +62,13 @@ export {
   serializeRubric,
 } from "./rubric/versioning.js";
 export {
+  type BiasAudit,
+  biasAudit,
+  type GroupAuditRow,
+  type GroupOutcome,
+  selectionRate,
+} from "./score/bias.js";
+export {
   MAX_RESUME_CHARS,
   type ScoredCriterion,
   type ScoreRunOptions,
