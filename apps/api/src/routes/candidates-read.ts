@@ -1,6 +1,7 @@
 import { candidates, decisions, documents } from "@hirelens/db";
 import { desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { blindView } from "../blind.js";
 import type { AppEnv } from "../types.js";
 import { loadOrgJob } from "./jobs.js";
 
@@ -59,13 +60,18 @@ export function candidateReadRoutes(): Hono<AppEnv> {
       .from(documents)
       .where(eq(documents.candidateId, candidate.id));
 
+    // Blind review: `?blind=1` masks identity cues server-side. Masking
+    // preserves character length so evidence spans stay aligned.
+    const blind = c.req.query("blind") === "1";
+    const masked = blind ? docs.map((d) => ({ ...d, rawText: blindView(d.rawText) })) : docs;
+
     const decisionRows = await db
       .select()
       .from(decisions)
       .where(eq(decisions.candidateId, candidate.id))
       .orderBy(desc(decisions.decidedAt));
 
-    return c.json({ ok: true, candidate, documents: docs, decisions: decisionRows });
+    return c.json({ ok: true, candidate, documents: masked, decisions: decisionRows });
   });
 
   return routes;
