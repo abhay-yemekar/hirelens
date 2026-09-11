@@ -133,6 +133,9 @@ The API is the full product surface: Better Auth at `/api/auth/*` (email/passwor
 | `GET /api/jobs/:id/runs/:runId` | Run detail: per-candidate overall, criterion scores, evidence spans |
 | `GET /api/jobs/:id/candidates` | Candidate list (metadata only — no resume text) |
 | `GET /api/jobs/:id/candidates/:cid` | Candidate detail: parsed profile, document text, decisions |
+| `GET /api/jobs/:id/review` | Ranked review table: latest overall per candidate + stage + overrides |
+| `POST /api/jobs/:id/decisions` | Record a decision (stage + required reason; audit-chained) |
+| `PATCH /api/jobs/:id/scores/:scoreId` | Manual score override (author + reason recorded, audited) |
 
 LLM features need `HIRELENS_LLM_PROVIDER` + `HIRELENS_LLM_MODEL` (+ key) in `apps/api/.env`; without them the server runs fine and derive/score return `503 llm_not_configured`. A partial LLM config fails at boot rather than half-working. Try the API with the bundled REST collection: import `docs/api.http` into VS Code (REST Client) or curl — see the file for ready-made requests.
 
