@@ -1,11 +1,11 @@
 // Design system (Phase 9): shadcn-based components, OKLCH tokens,
 // motion primitives, theme helpers.
-export { cn } from "./cn.js";
+export { cn } from "./cn";
 export {
   Button,
   type ButtonProps,
   buttonVariants,
-} from "./components/button.js";
+} from "./components/button";
 export {
   Card,
   CardContent,
@@ -13,14 +13,14 @@ export {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "./components/card.js";
+} from "./components/card";
 export {
   OverallScore,
   ScoreBadge,
   type ScoreBadgeProps,
   type ScoreLevel,
-} from "./components/score-badge.js";
-export { FadeIn, Stagger } from "./motion/primitives.js";
+} from "./components/score-badge";
+export { FadeIn, Stagger } from "./motion/primitives";
 export {
   applyTheme,
   initTheme,
@@ -29,7 +29,7 @@ export {
   storedTheme,
   systemTheme,
   type Theme,
-} from "./theme/theme.js";
+} from "./theme/theme";
 
 /** Version marker retained from the placeholder module. */
 export const UI_PACKAGE_VERSION = "0.1.0";

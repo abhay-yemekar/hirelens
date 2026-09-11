@@ -5,6 +5,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { ROLE_MIN, requireAuth } from "../auth.js";
+import { readJson } from "../http.js";
 import type { AppEnv } from "../types.js";
 import { loadOrgJob } from "./jobs.js";
 
@@ -70,7 +71,7 @@ export function rubricsRoutes(): Hono<AppEnv> {
     const auth = c.get("auth");
     const job = await loadOrgJob(db, c.req.param("jobId"), auth.orgId);
     if (!job) return c.json({ ok: false, error: "not_found" }, 404);
-    const parsed = CreateRubricSchema.safeParse(await c.req.json());
+    const parsed = CreateRubricSchema.safeParse(await readJson(c));
     if (!parsed.success) return c.json({ ok: false, error: "invalid_body" }, 400);
 
     let criteria: unknown[];

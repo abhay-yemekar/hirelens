@@ -9,6 +9,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@hirelens/ui": "workspace:*",
+    "@tailwindcss/postcss": "^4.3.3",
+    "tailwindcss": "^4.3.3",
+    "better-auth": "1.7.3",
     "next": "^16.3.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"

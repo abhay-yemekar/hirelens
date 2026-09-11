@@ -1,8 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterAll, describe, expect, it } from "vitest";
-import { Button } from "./button.js";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card.js";
-import { OverallScore, ScoreBadge } from "./score-badge.js";
+import { Button } from "./button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card";
+import { OverallScore, ScoreBadge } from "./score-badge";
 
 afterAll(cleanup);
 

@@ -1,0 +1,13 @@
+@import "@hirelens/ui/styles.css";
+
+/* Web-app specific base: full-height shell. */
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-fg);
+  font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+}

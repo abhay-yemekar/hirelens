@@ -6,7 +6,6 @@ import { Hono } from "hono";
 import { ROLE_MIN, requireAuth } from "../auth.js";
 import { type IngestResult, ingestBytes } from "../ingest.js";
 import type { AppEnv } from "../types.js";
-import { candidateReadRoutes } from "./candidates-read.js";
 import { loadOrgJob } from "./jobs.js";
 
 /** Serialized rubric payload → criteria array for weighting. */
@@ -111,6 +110,20 @@ export function scoringRoutes(): Hono<AppEnv> {
     if (!job) return c.json({ ok: false, error: "not_found" }, 404);
     const model = c.get("model");
     if (!model) return c.json({ ok: false, error: "llm_not_configured" }, 503);
+
+    // Fail with a typed error before runBatch throws an internal one.
+    const [latest] = await db
+      .select({ id: rubrics.id })
+      .from(rubrics)
+      .where(eq(rubrics.jobId, job.id))
+      .orderBy(desc(rubrics.version))
+      .limit(1);
+    if (!latest) {
+      return c.json(
+        { ok: false, error: "no_rubric", message: "Import or derive a rubric before scoring." },
+        409,
+      );
+    }
 
     const summary = await runBatch(db, model, {
       jobId: job.id,

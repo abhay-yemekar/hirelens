@@ -4,9 +4,15 @@ import { z } from "zod";
  * API environment. DATABASE_URL falls back to the local compose default so
  * `pnpm dev` works out of the box; production must set it explicitly.
  */
+/** Empty-string env vars behave as unset (coercion would produce 0/""). */
+const emptyAsUndefined = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((v) => (v === "" ? undefined : v), schema) as z.ZodType<z.output<T>>;
+
 const EnvSchema = z.object({
-  PORT: z.coerce.number().int().min(1).default(4000),
-  DATABASE_URL: z.string().min(1).default("postgres://postgres:postgres@localhost:5433/hirelens"),
+  PORT: emptyAsUndefined(z.coerce.number().int().min(1).default(4000)),
+  DATABASE_URL: emptyAsUndefined(
+    z.string().min(1).default("postgres://postgres:postgres@localhost:5433/hirelens"),
+  ),
 });
 
 export type ApiEnv = z.infer<typeof EnvSchema>;
