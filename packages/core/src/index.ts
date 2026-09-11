@@ -18,6 +18,7 @@ export { locateEvidenceSpan, type TextSpan } from "./evidence/textSpan.js";
 export {
   type ExtractedDocument,
   type ExtractedKind,
+  ExtractionError,
   extractDocument,
   extractDocx,
   extractPdf,

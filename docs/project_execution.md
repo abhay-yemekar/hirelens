@@ -113,11 +113,25 @@ pnpm lint             # Biome check (format + lint)
 ### API server (`apps/api`)
 
 ```bash
+cp apps/api/.env.example apps/api/.env   # then edit if needed
 pnpm --filter @hirelens/api dev
 # → http://localhost:4000/api/health  →  {"ok":true,"service":"hirelens-api","version":"0.1.0"}
 ```
 
-Today the API serves its health endpoint plus 404/error handling. The product endpoints (upload → extract → parse → score → persist) are the next build phase; the engines they will call are already in `packages/core` and `packages/orchestrator`.
+The API is the full product surface: Better Auth at `/api/auth/*` (email/password sign-up, sign-in, organizations), then authenticated, org-scoped routes:
+
+| Route | What it does |
+|---|---|
+| `GET /api/health` | Public health check |
+| `POST /api/auth/sign-up/email`, `/sign-in/email` | Register / log in (Better Auth) |
+| `GET/POST/PATCH /api/jobs` | Jobs CRUD (org-scoped) |
+| `GET/POST /api/jobs/:id/rubrics`, `POST …/derive` | Rubric versions; `derive` = LLM JD → criteria |
+| `POST /api/jobs/:id/candidates` | Upload a resume (PDF/DOCX/TXT/MD) — extract → parse → persist, deduped per job |
+| `POST /api/jobs/:id/candidates/zip` | Batch-upload a ZIP of resumes |
+| `POST /api/jobs/:id/score` | Score all candidates against the latest rubric (concurrency-bounded, audited) |
+| `GET /api/jobs/:id/runs` | Scoring run history |
+
+LLM features need `HIRELENS_LLM_PROVIDER` + `HIRELENS_LLM_MODEL` (+ key) in `apps/api/.env`; without them the server runs fine and derive/score return `503 llm_not_configured`. A partial LLM config fails at boot rather than half-working. Try the API with the bundled REST collection: import `docs/api.http` into VS Code (REST Client) or curl — see the file for ready-made requests.
 
 ### Product UI (`apps/web`)
 
