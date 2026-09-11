@@ -15,12 +15,13 @@ This guide takes you from a clean machine to a fully verified local setup. It is
 | Docker Desktop | recent | `docker --version` | Runs Postgres 16 + pgvector for the database |
 | Git | recent | `git --version` | Clone and contribute |
 
-Install pnpm if you have Node but not pnpm:
+Install pnpm if you have Node but not pnpm (corepack ships with Node and will activate the exact pnpm version pinned in `packageManager`):
 
 ```bash
 corepack enable
-corepack prepare pnpm@11 --activate
 ```
+
+> **Dependency isolation:** nothing in this project installs globally. Every dependency lives in the per-project `node_modules` (gitignored), resolved from the committed `pnpm-lock.yaml` — Node's equivalent of a Python virtualenv. `.npmrc` sets `engine-strict=true`, so installing or running with an unsupported Node version fails loudly instead of half-working.
 
 Optional (not needed to run tests):
 
