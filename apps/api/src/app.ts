@@ -3,10 +3,12 @@ import { ExtractionError } from "@hirelens/core";
 import type { Database } from "@hirelens/db";
 import { auth } from "@hirelens/db";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { requireAuth } from "./auth.js";
 import { ApiInputError } from "./errors.js";
+import { candidateReadRoutes } from "./routes/candidates-read.js";
 import { jobsRoutes } from "./routes/jobs.js";
 import { rubricsRoutes } from "./routes/rubrics.js";
 import { scoringRoutes } from "./routes/scoring.js";
@@ -26,6 +28,21 @@ export function createApp(deps: AppDeps) {
 
   app.use(trimTrailingSlash());
   app.use(secureHeaders());
+  // The web app runs on a different origin in dev (5173/3001) — allow
+  // credentialed cross-origin calls from configured origins only.
+  app.use(
+    "*",
+    cors({
+      origin: (origin) =>
+        (process.env["CORS_ORIGINS"] ?? "http://localhost:3000,http://localhost:5173")
+          .split(",")
+          .map((s) => s.trim())
+          .includes(origin)
+          ? origin
+          : null,
+      credentials: true,
+    }),
+  );
 
   // Attach per-request db + model.
   app.use("*", async (c, next) => {
@@ -53,6 +70,7 @@ export function createApp(deps: AppDeps) {
   const protectedApi = new Hono<AppEnv>();
   protectedApi.use("*", requireAuth());
   protectedApi.route("/jobs/:jobId/rubrics", rubricsRoutes());
+  protectedApi.route("/jobs/:jobId/candidates", candidateReadRoutes());
   protectedApi.route("/jobs/:jobId", scoringRoutes());
   protectedApi.route("/jobs", jobsRoutes());
   app.route("/api", protectedApi);
