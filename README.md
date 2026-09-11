@@ -5,74 +5,75 @@
 The open-source, glass-box hiring intelligence platform. Rank candidates against a job with evidence-linked scores, rubric transparency, and built-in bias auditing.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/node-%E2%89%A518-brightgreen)](package.json)
+[![Node](https://img.shields.io/badge/node-%E2%89%A520-brightgreen)](package.json)
+[![pnpm](https://img.shields.io/badge/pnpm-11-FC6D26)](https://pnpm.io)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-> **Status: early prototype, pre-v1.0.** This README describes exactly what the code does today — nothing more. The roadmap to v1.0.0 (30 September 2026) is at the bottom.
+> **Status: engine-first build, pre-v1.0.** The core engines (extraction, parsing, rubric, scoring, orchestration) are built and tested; the product UI is being built on top of them. This README describes what exists **today** — for a step-by-step local run guide with troubleshooting, see [`docs/project_execution.md`](docs/project_execution.md).
 
 ---
 
-## What HireLens does today
+## What works today
 
-Upload a resume and a job description (PDF or TXT). HireLens:
+A pnpm + Turborepo monorepo with the full scoring pipeline as tested packages:
 
-1. Extracts the text with a PDF/text parser.
-2. Chunks the resume and embeds the chunks (OpenAI or a local Ollama model).
-3. Computes a **match score (0–100)** with **strengths, gaps, and improvement suggestions** from an LLM.
-4. Lets you **chat with the resume** — questions are answered only from retrieved resume context (RAG), with source chunks shown.
+1. **Extract** — PDF (unpdf), DOCX (mammoth), TXT/MD; magic-byte sniffing; scanned-PDF detection that refuses sparse PDFs instead of returning garbage.
+2. **Parse** — deterministic heuristic parser → typed, Zod-validated `Candidate` record (JSON-Resume-compatible): sections, contact, profiles, date ranges.
+3. **Rubric** — paste a job description, get 5–8 weighted criteria with an anchored 0–5 scale; recruiter reviews/edits before any scoring runs. Versioned, forkable, exportable JSON.
+4. **Score** — rubric + resume → per-criterion 0–5 with **evidence spans (exact character offsets in the document)**, confidence, rationale; never a naked number.
+5. **Batch orchestration** — fan-out scoring across a job's candidates with bounded concurrency, retries, hash-chained audit records, and live progress.
 
-Every answer is grounded in retrieved resume text. The vector store is in-memory and per-process — nothing is persisted, which is honest for a prototype and safe to run.
+Everything is model-agnostic: bring your own key (Google, Anthropic, Groq, OpenRouter) or run fully local via **Ollama** — resumes never have to leave your machine.
 
-## Quickstart (60 seconds)
+## Repository layout
 
-Prereqs: Node 18+ and either an OpenAI API key or a local [Ollama](https://ollama.com) install.
+```
+apps/
+  web/            Next.js product UI (being built on the design system)
+  api/            Hono server — health check today; product API next
+  cli/            hirelens CLI (npx hirelens)
+packages/
+  core/           THE PRODUCT. Framework-free engines:
+                    extract/ parse/ rubric/ score/ evidence/ llm/ audit/ zip/ dedupe/
+  db/             Drizzle schema + migrations (Postgres + pgvector)
+  orchestrator/   Batch scoring fan-out → DB, hash-chained audit log
+  ui/             Design system — OKLCH tokens, components, Storybook
+  evals/          Benchmark dataset + accuracy/consistency/bias harness
+  config/         Shared tsconfig / biome preset
+```
+
+## Quickstart
+
+Prereqs: **Node 20+**, **pnpm 11**, **Docker** (for Postgres + pgvector).
 
 ```bash
 git clone https://github.com/abhay-yemekar/hirelens.git
-cd hirelens/backend
-cp .env.example .env          # fill in OPENAI_API_KEY (or set USE_OLLAMA=true + OLLAMA_BASE_URL)
-npm install
-npm run dev
-# → http://localhost:4000
+cd hirelens
+pnpm install
+docker compose up -d                      # Postgres 16 + pgvector on :5433
+cp packages/db/.env.example packages/db/.env
+pnpm --filter @hirelens/db db:migrate     # create tables
+pnpm test                                 # 89 tests incl. DB-backed integration
 ```
 
-```bash
-# in a second terminal
-cd frontend
-npm install
-npm run dev
-# → http://localhost:5173 — upload resume + JD, get score, strengths, gaps, chat
-```
+UI: `pnpm --filter @hirelens/ui storybook` → http://localhost:6006 (design-system playground).
 
-## How it works
-
-```
-resume.pdf + jd.pdf ─▶ extract text ─▶ chunk ─▶ embed ─▶ in-memory vector store
-                                                          │
-              JD match: chunks + JD ─▶ LLM ─▶ {score, strengths, gaps, suggestions}
-              Q&A:      question ─▶ embed ─▶ top-K chunks ─▶ LLM ─▶ grounded answer
-```
-
-See [ARCHITECTURE.md](ARCHITECTURE.md).
+The detailed walkthrough — every command, what it does, expected output, and a troubleshooting table built from real failures — is in **[docs/project_execution.md](docs/project_execution.md)**.
 
 ## Configuration
 
-All configuration lives in `backend/.env` ([`.env.example`](backend/.env.example) documents every variable):
+One `.env` per package that needs secrets, with `.env.example` documenting every variable. Today that's `packages/db/.env.example` (DATABASE_URL, Better Auth, OAuth). LLM access is passed as config at call sites (API key + model + provider id), not from `.env` — the API layer will add `HIRELENS_LLM_*` variables when it lands.
 
 | Variable | Purpose |
 |---|---|
-| `OPENAI_API_KEY` / `OPENAI_BASE_URL` | Cloud LLM + embeddings |
-| `USE_OLLAMA` / `OLLAMA_BASE_URL` | Fully local mode — resumes never leave your machine |
-| `EMBEDDING_MODEL` / `CHAT_MODEL` | Model selection |
-| `PORT` | Backend port (default 4000) |
-
-## Sample data
-
-`sample-data/` ships a resume and a job description you can upload immediately without using your own files.
+| `DATABASE_URL` | Postgres connection (local: `postgres://postgres:postgres@localhost:5433/hirelens`) |
+| `BETTER_AUTH_SECRET` | Better Auth secret — generate: `openssl rand -base64 32` |
+| `BETTER_AUTH_URL` | App URL for auth callbacks (default `http://localhost:3000`) |
+| `GITHUB_CLIENT_ID` / `_SECRET`, `GOOGLE_CLIENT_ID` / `_SECRET` | Optional social login |
 
 ## Why glass-box
 
-Most hiring AI is a black box: a number with no justification. That is a liability — for candidates, for recruiters, and under emerging regulation. HireLens is built around a different contract: **every score must link to the exact evidence that produced it.** This prototype takes the first step (retrieval-grounded answers with visible sources); the full rubric-with-evidence-spans engine is the core of the v1.0.0 roadmap below.
+Most hiring AI is a black box: a number with no justification. That is a liability — for candidates, for recruiters, and under emerging regulation. HireLens is built around a different contract: **every score must link to the exact evidence that produced it.** The scoring engine already stores the evidence spans; the UI that surfaces them is next.
 
 ## Comparison
 
@@ -80,27 +81,26 @@ Most hiring AI is a black box: a number with no justification. That is a liabili
 |---|---|---|---|
 | Open source | ✅ MIT | ❌ | ✅ |
 | Self-host / local LLM mode | ✅ | ❌ | ✅ |
-| Score justification | retrieval-grounded answers, visible sources | black box | none (no AI) |
+| Score justification | evidence spans with character offsets | black box | none (no AI) |
 | Bias auditing | on the roadmap (v1.0.0) | opaque | n/a |
-| Modern UX | ✅ | ✅ | ❌ |
+| Modern UX | being built on the design system | ✅ | ❌ |
 
 ## Roadmap to v1.0.0 — 30 September 2026
 
-The prototype above becomes a monorepo (`apps/web`, `apps/api`, `apps/cli`, `packages/core`) shipping:
+Remaining per the master plan (§11):
 
-- **Rubric engine** — paste a JD, get 5–8 weighted criteria with an anchored 0–5 scale; recruiter reviews/edits before any scoring runs
-- **Evidence spans** — every criterion score links to the exact character offsets in the resume that justify it
-- **Deterministic scoring** — temperature 0, pinned model version, stored prompt hash; every decision in an append-only, hash-chained audit log
-- **Bias audit** — adverse-impact metrics (four-fifths rule, selection-rate ratios) exportable as a report
-- **Blind review** — one toggle masks name, photo, address, school, graduation year
-- **Local-first, model-agnostic** — bring your own key (Gemini, Groq, OpenRouter, Anthropic, OpenAI) or run fully on Ollama
-- **Self-host** — `docker compose up`, plus a public REST API and `npx hirelens` CLI
+- **API layer** — authenticated REST endpoints wiring the engines to `apps/api` (upload → extract → parse → score → persist).
+- **Product UI** — jobs, rubric editor, candidate table, and the **evidence viewer**: click a criterion → the resume scrolls and flashes the exact quoted span.
+- **RAG Q&A** — chunking, pgvector embeddings, hybrid retrieval for resume chat.
+- **Bias audit** — adverse-impact metrics (four-fifths rule, selection-rate ratios) exportable as a report.
+- **Blind review** — one toggle masks name, photo, address, school, graduation year.
+- **Self-host** — `docker compose up` for the full stack, plus `npx hirelens` beyond version/help.
 
-Follow along in [Issues](https://github.com/abhay-yemekar/hirelens/issues) and the pinned Roadmap discussion.
+Follow along in [Issues](https://github.com/abhay-yemekar/hirelens/issues).
 
 ## Contributing
 
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Good first issues are labeled `good first issue`. Please read the [Code of Conduct](CODE_OF_CONDUCT.md).
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Please read the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Security
 
