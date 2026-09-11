@@ -162,14 +162,14 @@ export const getRun = (
 export const getCandidate = (
   jobId: string,
   candidateId: string,
-  init?: RequestInit & { serverCookie?: string | null },
+  opts: { blind?: boolean } & (RequestInit & { serverCookie?: string | null }) = {},
 ) =>
   apiFetch<{
     ok: true;
     candidate: { id: string };
     documents: Array<{ id: string; kind: string; rawText: string; pageCount: number | null }>;
-    decisions: Array<{ stage: string; reason: string; decidedAt: string }>;
-  }>(`/api/jobs/${jobId}/candidates/${candidateId}`, { ...init });
+    decisions: Array<{ stage: Stage; reason: string; decidedAt: string }>;
+  }>(`/api/jobs/${jobId}/candidates/${candidateId}${opts.blind ? "?blind=1" : ""}`, opts);
 
 export const importRubric = (
   jobId: string,
@@ -190,4 +190,45 @@ export const kickoffScore = (
   apiFetch<{ ok: true; summary: { runId: string; total: number; scored: number; failed: number } }>(
     `/api/jobs/${jobId}/score`,
     { method: "POST", ...init },
+  );
+
+export type Stage = "new" | "shortlisted" | "advanced" | "rejected";
+
+export interface ReviewRow {
+  candidateId: string;
+  overall: number;
+  overridden: number;
+  criteria: number;
+  stage: Stage;
+}
+
+export const getReview = (jobId: string, init?: RequestInit & { serverCookie?: string | null }) =>
+  apiFetch<{ ok: true; review: ReviewRow[] }>(`/api/jobs/${jobId}/review`, { ...init });
+
+export const postDecision = (
+  jobId: string,
+  body: { candidateId: string; stage: Stage; reason: string },
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{ ok: true; decision: { id: string } }>(`/api/jobs/${jobId}/decisions`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+    ...init,
+  });
+
+export const overrideScore = (
+  jobId: string,
+  scoreId: string,
+  body: { score: number; reason: string },
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{ ok: true; score: { id: string; score: number } }>(
+    `/api/jobs/${jobId}/scores/${scoreId}`,
+    {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+      ...init,
+    },
   );
