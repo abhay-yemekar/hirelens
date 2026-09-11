@@ -8,6 +8,7 @@ import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { requireAuth } from "./auth.js";
 import { ApiInputError } from "./errors.js";
+import { biasAuditRoutes, demographicsRoutes } from "./routes/bias.js";
 import { candidateReadRoutes } from "./routes/candidates-read.js";
 import { jobsRoutes } from "./routes/jobs.js";
 import { reviewRoutes } from "./routes/review.js";
@@ -72,8 +73,10 @@ export function createApp(deps: AppDeps) {
   protectedApi.use("*", requireAuth());
   protectedApi.route("/jobs/:jobId/rubrics", rubricsRoutes());
   protectedApi.route("/jobs/:jobId/candidates", candidateReadRoutes());
+  protectedApi.route("/jobs/:jobId/demographics", demographicsRoutes());
   protectedApi.route("/jobs/:jobId", scoringRoutes());
   protectedApi.route("/jobs/:jobId", reviewRoutes());
+  protectedApi.route("/jobs/:jobId/bias-audit", biasAuditRoutes());
   protectedApi.route("/jobs", jobsRoutes());
   app.route("/api", protectedApi);
 
