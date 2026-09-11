@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { FadeIn, Stagger } from "./primitives.js";
+import { FadeIn, Stagger } from "./primitives";
 
 const meta = {
   title: "Motion/Primitives",

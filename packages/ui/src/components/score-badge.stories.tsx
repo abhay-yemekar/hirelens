@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { OverallScore, ScoreBadge } from "./score-badge.js";
+import { OverallScore, ScoreBadge } from "./score-badge";
 
 const meta = {
   title: "Components/ScoreBadge",
