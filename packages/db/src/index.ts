@@ -9,6 +9,7 @@ export function createDb(databaseUrl: string): Database {
   return drizzle(pool, { schema });
 }
 
+export { auth } from "../auth.config.js";
 export { member, organization, user } from "../auth-schema.js";
 export * from "./schema/index.js";
 export { schema };
