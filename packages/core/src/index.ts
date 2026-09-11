@@ -54,6 +54,7 @@ export {
   MAX_JD_CHARS,
   slugifyKey,
 } from "./rubric/derive.js";
+export type { Criterion, Rubric } from "./rubric/schema.js";
 export {
   diffRubrics,
   forkRubric,
