@@ -16,6 +16,7 @@ import {
   type RubricVersion,
   type RunRow,
 } from "@/lib/api";
+import { ReviewTable } from "./review-table";
 
 /** The demo rubric imported by "Import demo rubric" (valid RubricSchema shape). */
 function demoRubric() {
@@ -217,6 +218,8 @@ export default function JobDetailPage() {
               {busy === "score" ? "Scoring…" : "Score all candidates"}
             </Button>
           </div>
+
+          <ReviewTable jobId={jobId} />
 
           {runs.length > 0 && (
             <ul className="flex flex-col gap-2">
