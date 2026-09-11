@@ -232,3 +232,40 @@ export const overrideScore = (
       ...init,
     },
   );
+
+export interface BiasAuditRow {
+  group: string;
+  considered: number;
+  selected: number;
+  selectionRate: number;
+  impactRatio: number | null;
+  adverseImpact: boolean | null;
+  parityDifference: number;
+}
+
+export interface BiasAuditReport {
+  dimension: string;
+  selectedStages: Stage[];
+  candidatesConsidered: number;
+  withDemographics: number;
+  audit: {
+    referenceGroup: string;
+    referenceRate: number;
+    overallRate: number;
+    rows: BiasAuditRow[];
+    allPass: boolean;
+  };
+  disclaimer: string;
+}
+
+export const runBiasAudit = (
+  jobId: string,
+  body: { dimension: string },
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{ ok: true } & BiasAuditReport>(`/api/jobs/${jobId}/bias-audit`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+    ...init,
+  });

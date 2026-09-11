@@ -16,6 +16,7 @@ import {
   type RubricVersion,
   type RunRow,
 } from "@/lib/api";
+import { BiasAuditCard } from "./bias-audit";
 import { ReviewTable } from "./review-table";
 
 /** The demo rubric imported by "Import demo rubric" (valid RubricSchema shape). */
@@ -197,6 +198,8 @@ export default function JobDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <BiasAuditCard jobId={jobId} />
 
       {/* Scoring */}
       <Card>
