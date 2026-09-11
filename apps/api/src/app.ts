@@ -10,6 +10,7 @@ import { requireAuth } from "./auth.js";
 import { ApiInputError } from "./errors.js";
 import { candidateReadRoutes } from "./routes/candidates-read.js";
 import { jobsRoutes } from "./routes/jobs.js";
+import { reviewRoutes } from "./routes/review.js";
 import { rubricsRoutes } from "./routes/rubrics.js";
 import { scoringRoutes } from "./routes/scoring.js";
 import type { AppEnv } from "./types.js";
@@ -72,6 +73,7 @@ export function createApp(deps: AppDeps) {
   protectedApi.route("/jobs/:jobId/rubrics", rubricsRoutes());
   protectedApi.route("/jobs/:jobId/candidates", candidateReadRoutes());
   protectedApi.route("/jobs/:jobId", scoringRoutes());
+  protectedApi.route("/jobs/:jobId", reviewRoutes());
   protectedApi.route("/jobs", jobsRoutes());
   app.route("/api", protectedApi);
 
