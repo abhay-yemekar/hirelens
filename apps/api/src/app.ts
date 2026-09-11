@@ -1,12 +1,15 @@
 import type { LanguageModel } from "@hirelens/core";
+import { ExtractionError } from "@hirelens/core";
 import type { Database } from "@hirelens/db";
 import { auth } from "@hirelens/db";
 import { Hono } from "hono";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { requireAuth } from "./auth.js";
+import { ApiInputError } from "./errors.js";
 import { jobsRoutes } from "./routes/jobs.js";
 import { rubricsRoutes } from "./routes/rubrics.js";
+import { scoringRoutes } from "./routes/scoring.js";
 import type { AppEnv } from "./types.js";
 
 export interface AppDeps {
@@ -49,11 +52,18 @@ export function createApp(deps: AppDeps) {
   // Authenticated, org-scoped API surface.
   const protectedApi = new Hono<AppEnv>();
   protectedApi.use("*", requireAuth());
-  protectedApi.route("/jobs", jobsRoutes());
   protectedApi.route("/jobs/:jobId/rubrics", rubricsRoutes());
+  protectedApi.route("/jobs/:jobId", scoringRoutes());
+  protectedApi.route("/jobs", jobsRoutes());
   app.route("/api", protectedApi);
 
   app.onError((err, c) => {
+    if (err instanceof ApiInputError) {
+      return c.json({ ok: false, error: err.code, message: err.message }, err.status);
+    }
+    if (err instanceof ExtractionError) {
+      return c.json({ ok: false, error: "unreadable_document", message: err.message }, 422);
+    }
     console.error(err);
     return c.json({ ok: false, error: "internal_error" }, 500);
   });

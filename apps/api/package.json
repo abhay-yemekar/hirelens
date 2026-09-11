@@ -13,7 +13,9 @@
   "dependencies": {
     "@hirelens/core": "workspace:*",
     "@hirelens/db": "workspace:*",
+    "@hirelens/orchestrator": "workspace:*",
     "@hono/node-server": "^2.1.1",
+    "dotenv": "^17.2.1",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.13.7",
     "zod": "^4.5.4"
@@ -21,6 +23,7 @@
   "devDependencies": {
     "@hirelens/config": "workspace:*",
     "@types/node": "^26.4.1",
+    "fflate": "^0.8.2",
     "tsx": "^4.16.2",
     "typescript": "~5.9.3",
     "vitest": "^5.0.0"

@@ -1,4 +1,5 @@
 import { createDb } from "@hirelens/db";
+import "dotenv/config";
 import { serve } from "@hono/node-server";
 import { createApp } from "./app.js";
 import { loadEnv, readLlmEnv } from "./env.js";
