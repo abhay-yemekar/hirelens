@@ -130,6 +130,9 @@ The API is the full product surface: Better Auth at `/api/auth/*` (email/passwor
 | `POST /api/jobs/:id/candidates/zip` | Batch-upload a ZIP of resumes |
 | `POST /api/jobs/:id/score` | Score all candidates against the latest rubric (concurrency-bounded, audited) |
 | `GET /api/jobs/:id/runs` | Scoring run history |
+| `GET /api/jobs/:id/runs/:runId` | Run detail: per-candidate overall, criterion scores, evidence spans |
+| `GET /api/jobs/:id/candidates` | Candidate list (metadata only — no resume text) |
+| `GET /api/jobs/:id/candidates/:cid` | Candidate detail: parsed profile, document text, decisions |
 
 LLM features need `HIRELENS_LLM_PROVIDER` + `HIRELENS_LLM_MODEL` (+ key) in `apps/api/.env`; without them the server runs fine and derive/score return `503 llm_not_configured`. A partial LLM config fails at boot rather than half-working. Try the API with the bundled REST collection: import `docs/api.http` into VS Code (REST Client) or curl — see the file for ready-made requests.
 
@@ -140,7 +143,9 @@ pnpm --filter @hirelens/web dev
 # → http://localhost:3000
 ```
 
-Currently a Next.js placeholder shell — the product UI (jobs, rubric editor, candidate table, evidence viewer) is under active development.
+The web app talks to the API on `:4000` (set `NEXT_PUBLIC_API_URL` in `apps/web/.env.local` to override; copy `apps/web/.env.example`). The API's `CORS_ORIGINS` must include the web origin (default covers `http://localhost:3000`).
+
+Flow: **sign in / sign up** → **create or pick an organization** (`/welcome`; auto-redirect when a session has no active org) → **jobs list + creation** → **job detail** (import rubric, upload resumes, kick off scoring, run history) → **run detail** (`/jobs/:id/runs/:runId`): the candidate leaderboard with per-criterion scores, rationales, and clickable evidence quotes that scroll to and flash the exact highlighted span in the resume pane.
 
 ### Design-system playground (`packages/ui`)
 
