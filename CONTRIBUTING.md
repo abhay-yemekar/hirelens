@@ -8,11 +8,14 @@ Thanks for helping build glass-box hiring intelligence. This project follows **G
 git clone https://github.com/abhay-yemekar/hirelens.git
 cd hirelens
 pnpm install
+docker compose up -d                      # Postgres 16 + pgvector on :5433
+cp packages/db/.env.example packages/db/.env
+pnpm --filter @hirelens/db db:migrate
 pnpm dev            # run apps locally
 pnpm lint && pnpm typecheck && pnpm test   # must pass before every PR
 ```
 
-Prereqs: Node 18+, pnpm 9+.
+Prereqs: Node 20+, pnpm 11, Docker Desktop. The full step-by-step walkthrough (including troubleshooting) is [docs/project_execution.md](docs/project_execution.md).
 
 ## The workflow
 
