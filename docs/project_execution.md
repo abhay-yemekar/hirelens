@@ -1,0 +1,193 @@
+# Running HireLens locally — step-by-step
+
+This guide takes you from a clean machine to a fully verified local setup. It is written for someone who has never seen this repository: every command, what it does, what output to expect, and a troubleshooting table built from **real errors** that occurred during development.
+
+> Last verified: September 2026, Node 22 / pnpm 11.7 / Docker Desktop 4.x, Windows 11 + macOS. If this guide is wrong, that is a bug — please open an issue.
+
+---
+
+## 0. Prerequisites
+
+| Tool | Version | Check with | Why |
+|---|---|---|---|
+| Node.js | **20 or newer** | `node --version` | Required by `engines` in `package.json`; CI runs on 22 |
+| pnpm | **11.x** | `pnpm --version` | Workspace package manager (npm/yarn will not work) |
+| Docker Desktop | recent | `docker --version` | Runs Postgres 16 + pgvector for the database |
+| Git | recent | `git --version` | Clone and contribute |
+
+Install pnpm if you have Node but not pnpm:
+
+```bash
+corepack enable
+corepack prepare pnpm@11 --activate
+```
+
+Optional (not needed to run tests):
+
+- **LLM access** — only for features that call a model (rubric derivation, scoring). Either an API key (Google Gemini, Anthropic, Groq, OpenRouter) or a local [Ollama](https://ollama.com) install. The test suite does **not** need any key — it uses a no-network mock model.
+- **GitHub CLI** (`gh`) — only for maintainers opening PRs / reading CI.
+
+## 1. Clone and install
+
+```bash
+git clone https://github.com/abhay-yemekar/hirelens.git
+cd hirelens
+pnpm install
+```
+
+**What happens:** pnpm resolves the pnpm workspace (`apps/*`, `packages/*`), installs all dependencies, and runs the workspace's build policy. Some dependencies (notably `@swc/core`, used by Storybook) ship native build steps; this repo pre-approves them in `pnpm-workspace.yaml` (`onlyBuiltDependencies`), so you should see no prompts.
+
+**Expected output:** ends with `Done` in a few minutes. First run downloads ~1 GB of packages.
+
+> **If pnpm asks to approve build scripts** (`Ignored build scripts: @swc/core …`) your pnpm version may be older than the repo's policy expects — run `pnpm approve-builds`, select the listed packages, and re-run `pnpm install`. Then run `pnpm install` once more; nothing else should remain unapproved.
+
+## 2. Start the database
+
+```bash
+docker compose up -d
+docker compose ps
+```
+
+**What happens:** starts a single container, `hirelens-postgres` — Postgres 16 with the **pgvector** extension baked in (`pgvector/pgvector:pg16`), listening on **localhost:5433** (not 5432 — deliberately offset to avoid clashing with any local Postgres). Credentials are `postgres` / `postgres`, database `hirelens`. A named volume `hirelens_pgdata` persists your data across restarts, and `docker/init/` enables the `vector` extension on first boot.
+
+**Expected output of `docker compose ps`:** `hirelens-postgres` with status `Up` (healthy after ~10 s; the healthcheck runs `pg_isready`).
+
+> **Docker Desktop must be running first** — on Windows/macOS, start the Docker Desktop app before `docker compose up`.
+
+## 3. Configure the environment
+
+```bash
+cp packages/db/.env.example packages/db/.env
+```
+
+Open `packages/db/.env`. For local development the defaults work as-is:
+
+```ini
+DATABASE_URL=postgres://postgres:postgres@localhost:5433/hirelens
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_SECRET=dev-only-secret-do-not-use-in-production-0123456789abcdef
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+```
+
+Notes:
+
+- `BETTER_AUTH_SECRET` in the example file is **dev-only**. For anything beyond local dev, generate a real one: `openssl rand -base64 32` (Windows PowerShell: `-join ((48..57)+(65..90)+(97..122) | Get-Random -Count 48 | % {[char]$_})` or use any password generator).
+- The social-login variables are optional; empty means the provider is disabled.
+- The packages that read this file load it via `dotenv` from their own directory — you do not need to export anything globally.
+
+## 4. Create the database schema (migrate)
+
+```bash
+pnpm --filter @hirelens/db db:migrate
+```
+
+**What happens:** the migrate script connects to `DATABASE_URL`, runs `CREATE EXTENSION IF NOT EXISTS vector` (idempotent — safe even though `docker/init` already did it), then applies all Drizzle migrations from `packages/db/drizzle/` (identity/organization tables, jobs, candidates, rubrics, scoring runs, scores, evidence, audit log).
+
+**Expected output:** `Migrations applied.`
+
+To inspect the result:
+
+```bash
+docker exec -it hirelens-postgres psql -U postgres -d hirelens -c "\dt"
+```
+
+## 5. Verify your setup (recommended)
+
+```bash
+pnpm typecheck        # strict TypeScript across all 8 packages
+pnpm test             # full test suite
+pnpm build            # compiles every package
+pnpm lint             # Biome check (format + lint)
+```
+
+**Expected output for `pnpm test`:** a Turborepo summary like `22 tasks` (cached/execution counts vary) and, inside the logs, roughly **89 tests passing** — ~76 unit tests in `core`, component tests in `ui`, and **3 integration tests in `orchestrator` that require the database from step 2 and the `.env` from step 3** (they create an org, a job, candidates, run a real scoring batch through the mock model, and verify the hash-chained audit log by recomputing it from stored rows).
+
+> **The integration tests need Postgres running.** If the database is down, the orchestrator test task fails while all other tests still pass — see troubleshooting below.
+
+## 6. Run the applications
+
+### API server (`apps/api`)
+
+```bash
+pnpm --filter @hirelens/api dev
+# → http://localhost:4000/api/health  →  {"ok":true,"service":"hirelens-api","version":"0.1.0"}
+```
+
+Today the API serves its health endpoint plus 404/error handling. The product endpoints (upload → extract → parse → score → persist) are the next build phase; the engines they will call are already in `packages/core` and `packages/orchestrator`.
+
+### Product UI (`apps/web`)
+
+```bash
+pnpm --filter @hirelens/web dev
+# → http://localhost:3000
+```
+
+Currently a Next.js placeholder shell — the product UI (jobs, rubric editor, candidate table, evidence viewer) is under active development.
+
+### Design-system playground (`packages/ui`)
+
+```bash
+pnpm --filter @hirelens/ui storybook
+# → http://localhost:6006 — Button, Card, ScoreBadge, motion primitives, dark/light toggle
+```
+
+### CLI (`apps/cli`)
+
+```bash
+pnpm --filter @hirelens/cli dev
+# → prints the version banner. (Command surface expands in a later phase.)
+```
+
+## 7. Daily development loop
+
+```bash
+docker compose up -d                 # if the DB isn't running
+pnpm --filter @hirelens/db db:migrate
+pnpm dev                             # runs every package's dev task in parallel
+```
+
+Other useful commands:
+
+| Command | What it does |
+|---|---|
+| `pnpm --filter @hirelens/db db:studio` | Drizzle Studio — browse tables/rows in a browser UI |
+| `pnpm --filter @hirelens/db db:extensions` | Re-run `CREATE EXTENSION vector` against `DATABASE_URL` |
+| `pnpm format` | Auto-format everything with Biome |
+| `pnpm lint` | Biome check (CI runs this; must be clean) |
+| `pnpm typecheck` / `pnpm test` / `pnpm build` | Turborepo fan-out of each task across packages |
+
+Git hooks (via husky + lint-staged + commitlint) enforce Biome formatting on staged files and [Conventional Commits](https://www.conventionalcommits.org) messages (`feat:`, `fix:`, `chore:`, `docs:`, …) automatically. Reset the database completely with `docker compose down -v` (⚠️ deletes all data in the volume).
+
+## 8. Troubleshooting — real errors, real fixes
+
+| Symptom (error text) | Cause | Fix |
+|---|---|---|
+| `error during connect: … docker engine is not running` (or `//./pipe/dockerDesktopLinuxEngine`) | Docker Desktop is not started | Start Docker Desktop, wait for it to be green, retry `docker compose up -d` |
+| `port is already allocated` / `bind: address already in use` on **5433** | Another container or service owns 5433 (e.g. a second copy of this compose project) | `docker compose down` in any other checkout; or change the left side of `"5433:5432"` in `docker-compose.yml` **and** your `DATABASE_URL` consistently |
+| `DATABASE_URL is required` from `db:migrate` | `packages/db/.env` missing or empty | Repeat step 3 (`cp packages/db/.env.example packages/db/.env`) |
+| `password authentication failed for user "postgres"` | Connecting to a **different** Postgres than ours (a local 5432 install) | Confirm the URL uses port **5433** and points at `localhost`, and the compose stack is up |
+| `relation "user" does not exist` (or any table) in tests | Migrations were never applied to this volume | Run `pnpm --filter @hirelens/db db:migrate`, re-run tests |
+| Orchestrator integration tests fail, everything else passes | Database container stopped or unreachable | `docker compose up -d`, wait for `healthy` in `docker compose ps`, retry |
+| `function gen_random_uuid() does not exist` | Postgres image without needed contrib modules | Use the pinned image `pgvector/pgvector:pg16` (it includes them) — this is why `docker-compose.yml` pins it |
+| `type "vector" does not exist` | pgvector extension missing (non-Docker Postgres) | Run `pnpm --filter @hirelens/db db:extensions` with a superuser `DATABASE_URL`, or switch to the compose stack |
+| `Ignored build scripts: @swc/core` warning at install | pnpm blocked native build scripts | `pnpm approve-builds` → approve listed packages → `pnpm install` again |
+| `Unsupported engine` warning on install | Node older than 20 | Upgrade Node (nvm-windows / nvm / fnm all work) |
+| CRLF / formatting diffs flood a PR on Windows | Git `core.autocrlf` rewrites line endings | Run `pnpm format` before committing; the repo's `.gitattributes`/Biome config expects LF |
+| `EADDRINUSE` on 3000 / 4000 / 6006 | Another dev server (or a previous one that didn't shut down) is on that port | Kill the stale process (`npx kill-port 3000` or close the old terminal); ports are fixed by convention in this repo |
+| Storybook page renders unstyled | Tailwind not wired through the Vite builder | Already configured in `packages/ui/.storybook/main.ts` (`@tailwindcss/vite`); if you added a new framework, wire the same plugin |
+| `gh` commands fail with `command not found` (Windows) | GitHub CLI not on PATH in that shell | Add `C:\Program Files\GitHub CLI` to PATH, or use the full path to `gh.exe` |
+
+Still stuck? Open an issue with your OS, Node/pnpm/Docker versions, the exact command, and the full error — see [SUPPORT.md](../SUPPORT.md).
+
+## 9. What "everything works" looks like
+
+- `docker compose ps` → `hirelens-postgres` **Up (healthy)**
+- `pnpm --filter @hirelens/db db:migrate` → `Migrations applied.`
+- `pnpm test` → all packages green, including the 3 orchestrator integration tests
+- `pnpm --filter @hirelens/api dev` → `{"ok":true,…}` at `http://localhost:4000/api/health`
+- `pnpm --filter @hirelens/ui storybook` → component playground at `http://localhost:6006`
+
+That's the full local surface today. As phases land (API routes, product UI, RAG), this document gains a section per app — maintained with every phase, not at the end.

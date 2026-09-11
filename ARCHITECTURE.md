@@ -1,48 +1,60 @@
 # Architecture
 
-HireLens is currently a two-folder prototype (Express backend + Vite React frontend) on its way to a monorepo. This document describes how the running system works **today**, then the target architecture it is evolving into.
+HireLens is a pnpm + Turborepo monorepo. The scoring engines are built and battle-tested; the product UI is being built on top of them. This document describes how the system works **today**, then the target architecture it is evolving into.
 
-## Current system (prototype)
+## Current system (monorepo)
 
 ```
-┌─────────────────────┐
-│  Frontend (Vite)    │  file upload, score display, RAG chat UI
-└──────────┬──────────┘
-           │ REST (FormData / JSON)
-┌──────────▼──────────────────────────────────────────┐
-│  Backend (Express + TypeScript, port 4000)          │
-│                                                     │
-│  POST /api/analyze                                  │
-│    1. extract text from resume.pdf + jd (pdf-parse) │
-│    2. chunk resume (~1800 chars)                    │
-│    3. embed chunks (OpenAI or Ollama)               │
-│    4. store in in-memory vector store               │
-│    5. LLM evaluates resume vs JD →                  │
-│       { score, strengths, gaps, suggestions }       │
-│                                                     │
-│  POST /api/chat                                     │
-│    1. embed question                                │
-│    2. top-K similarity search over resume chunks    │
-│    3. LLM answers strictly from retrieved context   │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  packages/core — framework-free engines (THE PRODUCT)        │
+│                                                              │
+│  extract/   PDF (unpdf) · DOCX (mammoth) · TXT/MD            │
+│             magic-byte sniffing, scanned-PDF detection       │
+│  parse/     text → Zod-validated Candidate (JSON-Resume-ish) │
+│  dedupe/    sha256 content hash + fuzzy name/email matching  │
+│  rubric/    JD → 5–8 weighted criteria, anchored 0–5 scales; │
+│             versioned, forkable, exportable JSON artifacts   │
+│  score/     rubric + resume → per-criterion scores with      │
+│             evidence spans (character offsets), confidence,  │
+│             rationale, pool stats, consistency guard         │
+│  llm/       provider-agnostic structured output over AI SDK: │
+│             Google/Anthropic/Groq/OpenRouter/Ollama,         │
+│             Zod validation + automatic repair round          │
+│  audit/     hash-chained append-only decision log            │
+│  zip/       safe batch expansion for bulk uploads            │
+└──────────┬───────────────────────────────────────┬───────────┘
+           │                                       │
+┌──────────▼────────────────┐   ┌──────────────────▼──────────┐
+│  packages/db              │   │  packages/orchestrator      │
+│  Drizzle schema + migra-  │◄──│  runBatch: fan-out scoring  │
+│  tions (Postgres+pgvector)│   │  with bounded concurrency,  │
+│  identity/org/jobs/candi- │   │  retries, progress stream;  │
+│  dates/rubrics/runs/scores│   │  persists runs, scores,     │
+│  /evidence/audit_log      │   │  evidence + audit records   │
+└───────────────────────────┘   └─────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│  Surfaces: apps/api (Hono, /api/health today) · apps/web     │
+│  (Next.js, product UI in progress) · apps/cli · packages/ui  │
+│  (OKLCH design system + Storybook)                           │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-Known limitations (tracked in Issues, fixed on the roadmap):
-
-- The LLM evaluation is parsed with `JSON.parse` in a `try/catch` that silently falls back to raw text — schema-enforced structured output with retry/repair replaces this in v1.0.0.
-- `pdf-parse` mangles multi-column PDF layouts; layout-aware extraction (`unpdf`/`mammoth`) replaces it.
-- The vector store is in-memory and per-process; Postgres + pgvector replaces it.
+Quality posture: ~89 tests (unit + component + DB-backed integration), strict TypeScript, Biome clean, CodeQL clean on every PR, DB migrations applied in CI before integration tests run.
 
 ## Provider layer
 
-The backend talks to exactly two providers today:
+`packages/core/llm` abstracts the model behind `ProviderConfig` (id, model, apiKey, baseUrl) over the Vercel AI SDK:
 
-| Provider | Used for | Selected by |
-|---|---|---|
-| OpenAI-compatible API | embeddings + chat | `OPENAI_API_KEY` + models in `.env` |
-| Ollama (local) | embeddings + chat | `USE_OLLAMA=true` + `OLLAMA_BASE_URL` |
+| Provider | Selected by |
+|---|---|
+| Google Gemini | `apiKey` + model id |
+| Anthropic | `apiKey` + model id |
+| Groq | `apiKey` + model id |
+| OpenRouter | `apiKey` + model id |
+| Ollama (local) | `baseUrl` — no key, resumes never leave your machine |
 
-Local mode means resumes never leave your machine. The v1.0.0 provider abstraction generalizes this to Gemini, Groq, OpenRouter, and Anthropic behind one interface — bring your own key, never a hardcoded provider.
+`generateStructured` forces a tool-call, validates with Zod, runs one automatic repair round on violation, and raises typed errors (`LlmConfigError`, `LlmRuntimeError`, `SchemaViolationError`) — there is no silent `JSON.parse` fallback anywhere. Every call yields a deterministic `promptHash` for the audit trail.
 
 ## Target architecture (v1.0.0)
 
@@ -55,14 +67,15 @@ apps/
   cli/          npx hirelens
 packages/
   core/         THE PRODUCT. Framework-free, pure TypeScript:
-                  extract/   PDF/DOCX/OCR → normalized text + layout metadata
-                  parse/     text → structured Candidate schema
+                  extract/   PDF/DOCX/TXT → normalized text, magic-byte sniffing
+                  parse/     text → structured, Zod-validated Candidate schema
+                  dedupe/    content hashes + fuzzy identity matching
                   rubric/    JD → criteria; rubric versioning & validation
                   score/     rubric + candidate → scores + evidence spans
                   evidence/  span location, offset mapping, quote extraction
-                  bias/      adverse impact, selection-rate ratios, parity metrics
-                  audit/     hash-chained append-only decision log
                   llm/       provider abstraction, structured output, retry/repair
+                  audit/     hash-chained append-only decision log
+                  bias/      adverse impact, selection-rate ratios (next phase)
   db/           Drizzle schema + migrations (Postgres + pgvector)
   ui/           shadcn-based design system
   evals/        benchmark dataset + accuracy/consistency/bias harness
