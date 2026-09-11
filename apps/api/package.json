@@ -4,15 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch src/main.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
     "@hirelens/core": "workspace:*",
+    "@hirelens/db": "workspace:*",
     "@hono/node-server": "^2.1.1",
+    "drizzle-orm": "^0.45.2",
     "hono": "^4.13.7",
     "zod": "^4.5.4"
   },
