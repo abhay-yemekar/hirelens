@@ -1,0 +1,167 @@
+### HireLens API — ready-made requests
+### Use with the VS Code "REST Client" extension (or copy as curl).
+### Start the server first: pnpm --filter @hirelens/api dev
+
+@host = http://localhost:4000
+# 1) Sign up (email/password), then copy the better-auth.session_token
+#    cookie from the response headers into @cookie below.
+@cookie = better-auth.session_token=PASTE_TOKEN_HERE
+
+### Health (public)
+GET {{host}}/api/health
+
+### Sign up — response sets the session cookie
+POST {{host}}/api/auth/sign-up/email
+content-type: application/json
+
+{
+  "name": "Recruiter One",
+  "email": "recruiter@example.com",
+  "password": "Str0ng-Passw0rd!123"
+}
+
+### Sign in (after the first sign-up)
+POST {{host}}/api/auth/sign-in/email
+content-type: application/json
+
+{
+  "email": "recruiter@example.com",
+  "password": "Str0ng-Passw0rd!123"
+}
+
+### Create organization (auth required)
+POST {{host}}/api/auth/organization/create
+content-type: application/json
+cookie: {{cookie}}
+
+{
+  "name": "Acme Recruiting",
+  "slug": "acme-recruiting"
+}
+
+### List jobs
+GET {{host}}/api/jobs
+cookie: {{cookie}}
+
+### Create a job
+POST {{host}}/api/jobs
+content-type: application/json
+cookie: {{cookie}}
+
+{
+  "title": "Senior Backend Engineer",
+  "description": "Own our payments platform. Deep TypeScript, Postgres, and distributed-systems experience required.",
+  "status": "open"
+}
+
+### Import a rubric (validate + store as next version)
+POST {{host}}/api/jobs/JOB_ID_HERE/rubrics
+content-type: application/json
+cookie: {{cookie}}
+
+{
+  "rubric": {
+    "version": 1,
+    "key": "backend-eng",
+    "title": "Backend Engineer",
+    "criteria": [
+      {
+        "key": "system-design",
+        "title": "System Design",
+        "weight": 2,
+        "scale": [
+          { "label": "0", "description": "none" },
+          { "label": "1", "description": "minimal" },
+          { "label": "2", "description": "basic" },
+          { "label": "3", "description": "solid" },
+          { "label": "4", "description": "strong" },
+          { "label": "5", "description": "expert" }
+        ],
+        "doNotUse": []
+      },
+      {
+        "key": "databases",
+        "title": "Databases",
+        "weight": 1,
+        "scale": [
+          { "label": "0", "description": "none" },
+          { "label": "1", "description": "minimal" },
+          { "label": "2", "description": "basic" },
+          { "label": "3", "description": "solid" },
+          { "label": "4", "description": "strong" },
+          { "label": "5", "description": "expert" }
+        ],
+        "doNotUse": []
+      },
+      {
+        "key": "testing",
+        "title": "Testing",
+        "weight": 1,
+        "scale": [
+          { "label": "0", "description": "none" },
+          { "label": "1", "description": "minimal" },
+          { "label": "2", "description": "basic" },
+          { "label": "3", "description": "solid" },
+          { "label": "4", "description": "strong" },
+          { "label": "5", "description": "expert" }
+        ],
+        "doNotUse": []
+      },
+      {
+        "key": "communication",
+        "title": "Communication",
+        "weight": 1,
+        "scale": [
+          { "label": "0", "description": "none" },
+          { "label": "1", "description": "minimal" },
+          { "label": "2", "description": "basic" },
+          { "label": "3", "description": "solid" },
+          { "label": "4", "description": "strong" },
+          { "label": "5", "description": "expert" }
+        ],
+        "doNotUse": []
+      }
+    ],
+    "exclusions": []
+  }
+}
+
+### Derive a rubric from the job description with the LLM (needs HIRELENS_LLM_*)
+POST {{host}}/api/jobs/JOB_ID_HERE/rubrics/derive
+cookie: {{cookie}}
+
+### Upload one resume (PDF/DOCX/TXT/MD)
+POST {{host}}/api/jobs/JOB_ID_HERE/candidates
+content-type: multipart/form-data; boundary=Boundary
+cookie: {{cookie}}
+
+--Boundary
+content-disposition: form-data; name="file"; filename="resume.txt"
+content-type: text/plain
+
+JORDAN AVERY
+Senior Backend Engineer - jordan@example.com
+EXPERIENCE
+Senior Backend Engineer - Acme Corp - 2021 - Present
+- Led migration to Kubernetes.
+--Boundary--
+
+### Upload a ZIP of resumes
+POST {{host}}/api/jobs/JOB_ID_HERE/candidates/zip
+content-type: multipart/form-data; boundary=Boundary
+cookie: {{cookie}}
+
+--Boundary
+content-disposition: form-data; name="file"; filename="batch.zip"
+content-type: application/zip
+
+< ./batch.zip
+--Boundary--
+
+### Score all candidates against the latest rubric (needs HIRELENS_LLM_*)
+POST {{host}}/api/jobs/JOB_ID_HERE/score
+cookie: {{cookie}}
+
+### Scoring run history
+GET {{host}}/api/jobs/JOB_ID_HERE/runs
+cookie: {{cookie}}

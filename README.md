@@ -22,6 +22,7 @@ A pnpm + Turborepo monorepo with the full scoring pipeline as tested packages:
 3. **Rubric** — paste a job description, get 5–8 weighted criteria with an anchored 0–5 scale; recruiter reviews/edits before any scoring runs. Versioned, forkable, exportable JSON.
 4. **Score** — rubric + resume → per-criterion 0–5 with **evidence spans (exact character offsets in the document)**, confidence, rationale; never a naked number.
 5. **Batch orchestration** — fan-out scoring across a job's candidates with bounded concurrency, retries, hash-chained audit records, and live progress.
+6. **API** — authenticated (Better Auth), org-scoped REST surface over all of it: jobs, versioned rubrics, candidate upload (single + ZIP), scoring, run history.
 
 Everything is model-agnostic: bring your own key (Google, Anthropic, Groq, OpenRouter) or run fully local via **Ollama** — resumes never have to leave your machine.
 
@@ -30,7 +31,7 @@ Everything is model-agnostic: bring your own key (Google, Anthropic, Groq, OpenR
 ```
 apps/
   web/            Next.js product UI (being built on the design system)
-  api/            Hono server — health check today; product API next
+  api/            Hono server — auth, jobs, rubrics, candidate upload, scoring
   cli/            hirelens CLI (npx hirelens)
 packages/
   core/           THE PRODUCT. Framework-free engines:
@@ -62,7 +63,7 @@ The detailed walkthrough — every command, what it does, expected output, and a
 
 ## Configuration
 
-One `.env` per package that needs secrets, with `.env.example` documenting every variable. Today that's `packages/db/.env.example` (DATABASE_URL, Better Auth, OAuth). LLM access is passed as config at call sites (API key + model + provider id), not from `.env` — the API layer will add `HIRELENS_LLM_*` variables when it lands.
+One `.env` per package that needs secrets, with `.env.example` documenting every variable: `packages/db/.env.example` (DATABASE_URL, Better Auth, OAuth) and `apps/api/.env.example` (DATABASE_URL, port, LLM).
 
 | Variable | Purpose |
 |---|---|
@@ -70,6 +71,8 @@ One `.env` per package that needs secrets, with `.env.example` documenting every
 | `BETTER_AUTH_SECRET` | Better Auth secret — generate: `openssl rand -base64 32` |
 | `BETTER_AUTH_URL` | App URL for auth callbacks (default `http://localhost:3000`) |
 | `GITHUB_CLIENT_ID` / `_SECRET`, `GOOGLE_CLIENT_ID` / `_SECRET` | Optional social login |
+| `HIRELENS_LLM_PROVIDER` + `HIRELENS_LLM_MODEL` (+ `_API_KEY`) | Enables LLM routes in the API (google/anthropic/groq/openrouter/ollama) |
+| `PORT` | API port (default 4000) |
 
 ## Why glass-box
 
@@ -89,7 +92,6 @@ Most hiring AI is a black box: a number with no justification. That is a liabili
 
 Remaining per the master plan (§11):
 
-- **API layer** — authenticated REST endpoints wiring the engines to `apps/api` (upload → extract → parse → score → persist).
 - **Product UI** — jobs, rubric editor, candidate table, and the **evidence viewer**: click a criterion → the resume scrolls and flashes the exact quoted span.
 - **RAG Q&A** — chunking, pgvector embeddings, hybrid retrieval for resume chat.
 - **Bias audit** — adverse-impact metrics (four-fifths rule, selection-rate ratios) exportable as a report.

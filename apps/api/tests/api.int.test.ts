@@ -11,6 +11,7 @@
 import { parseRubric } from "@hirelens/core";
 import { auth, createDb, type Database, jobs, organization } from "@hirelens/db";
 import { eq } from "drizzle-orm";
+import { zipSync } from "fflate";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 
@@ -211,5 +212,136 @@ describe.skipIf(!available)("API routes", () => {
     const list = await app.request("/api/jobs", { headers: authHeaders });
     const body = (await list.json()) as { jobs: { title: string }[] };
     expect(body.jobs.some((j) => j.title === "Secret Job")).toBe(false);
+  });
+
+  describe("candidates + scoring", () => {
+    let jobId = "";
+
+    const RESUME_A = [
+      "JORDAN AVERY",
+      "Senior Backend Engineer - jordan.avery@example.com - github.com/javery",
+      "",
+      "EXPERIENCE",
+      "Senior Backend Engineer - Acme Corp - 2021 - Present",
+      "- Led migration of the payments platform to Kubernetes, cutting deploy time 80%.",
+      "- Built event-driven TypeScript services on Node.js handling 40k req/s.",
+      "",
+      "SKILLS",
+      "TypeScript, Node.js, PostgreSQL, Kubernetes, AWS",
+    ].join("\n");
+
+    const RESUME_B = [
+      "SAM RIVERA",
+      "Backend Engineer - sam.rivera@example.com",
+      "",
+      "EXPERIENCE",
+      "Backend Engineer - Globex - 2019 - 2024",
+      "- Designed PostgreSQL schemas and APIs for the logistics platform.",
+      "",
+      "SKILLS",
+      "Python, Django, PostgreSQL, Docker",
+    ].join("\n");
+
+    beforeAll(async () => {
+      const res = await app.request("/api/jobs", {
+        method: "POST",
+        headers: { ...authHeaders, "content-type": "application/json" },
+        body: JSON.stringify({
+          title: "Ingest Job",
+          description: "Senior backend engineer with strong systems skills.",
+        }),
+      });
+      const body = (await res.json()) as { job: { id: string } };
+      jobId = body.job.id;
+    });
+
+    function txtResume(name: string, text: string): File {
+      return new File([text], name, { type: "text/plain" });
+    }
+
+    it("ingests a txt resume and reports the parsed candidate", async () => {
+      const form = new FormData();
+      form.append("file", txtResume("jordan.txt", RESUME_A));
+      const res = await app.request(`/api/jobs/${jobId}/candidates`, {
+        method: "POST",
+        headers: authHeaders,
+        body: form,
+      });
+      expect(res.status).toBe(201);
+      const body = (await res.json()) as {
+        status: string;
+        candidateId: string;
+        documentId: string;
+      };
+      expect(body.status).toBe("created");
+      expect(body.candidateId).toBeTruthy();
+      expect(body.documentId).toBeTruthy();
+    });
+
+    it("flags a re-upload of the same content as duplicate", async () => {
+      const form = new FormData();
+      form.append("file", txtResume("jordan-again.txt", RESUME_A));
+      const res = await app.request(`/api/jobs/${jobId}/candidates`, {
+        method: "POST",
+        headers: authHeaders,
+        body: form,
+      });
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { status: string; candidateId: string };
+      expect(body.status).toBe("duplicate");
+    });
+
+    it("rejects files with no extractable text", async () => {
+      const form = new FormData();
+      form.append("file", txtResume("empty.txt", ""));
+      const res = await app.request(`/api/jobs/${jobId}/candidates`, {
+        method: "POST",
+        headers: authHeaders,
+        body: form,
+      });
+      expect(res.status).toBe(422);
+      const body = (await res.json()) as { error: string };
+      expect(body.error).toBe("unreadable_document");
+    });
+
+    it("ingests a ZIP batch and dedupes within it", async () => {
+      const zip = zipSync({
+        "batch/sam.txt": new TextEncoder().encode(RESUME_B),
+        "batch/jordan-dupe.txt": new TextEncoder().encode(RESUME_A),
+        "batch/empty.txt": new TextEncoder().encode(""),
+      });
+      const form = new FormData();
+      form.append(
+        "file",
+        new File([new Uint8Array(zip)], "batch.zip", { type: "application/zip" }),
+      );
+      const res = await app.request(`/api/jobs/${jobId}/candidates/zip`, {
+        method: "POST",
+        headers: authHeaders,
+        body: form,
+      });
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as {
+        created: number;
+        duplicates: number;
+        skipped: { name: string; reason: string }[];
+      };
+      expect(body.created).toBe(1);
+      expect(body.duplicates).toBe(1);
+      expect(body.skipped.some((s) => s.name.includes("empty.txt"))).toBe(true);
+    });
+
+    it("503s scoring without an LLM and lists runs", async () => {
+      const score = await app.request(`/api/jobs/${jobId}/score`, {
+        method: "POST",
+        headers: authHeaders,
+      });
+      expect(score.status).toBe(503);
+
+      const runs = await app.request(`/api/jobs/${jobId}/runs`, { headers: authHeaders });
+      expect(runs.status).toBe(200);
+      const body = (await runs.json()) as { runs: unknown[] };
+      expect(body.runs).toEqual([]);
+    });
   });
 });
