@@ -1,9 +1,7 @@
 {
   "extends": "@hirelens/config/typescript/node",
   "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist",
     "noEmit": true
   },
-  "include": ["src"]
+  "include": ["src", "tests"]
 }
