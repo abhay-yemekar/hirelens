@@ -10,11 +10,13 @@ import {
   FadeIn,
 } from "@hirelens/ui";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { createJob, type Job, listJobs } from "@/lib/api";
 import { signOut, useSession } from "@/lib/auth-client";
 
 export default function JobsPage() {
+  const router = useRouter();
   const { data: session } = useSession();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +32,11 @@ export default function JobsPage() {
       const res = await listJobs();
       setJobs(res.jobs);
     } catch (err) {
+      if (err instanceof Error && err.message.includes("unauthorized")) {
+        // No active organization in this session — go pick or create one.
+        router.replace("/welcome");
+        return;
+      }
       setError(err instanceof Error ? err.message : "Failed to load jobs");
     } finally {
       setLoading(false);
