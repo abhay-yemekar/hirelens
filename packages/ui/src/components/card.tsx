@@ -1,5 +1,5 @@
 import * as React from "react";
-import { cn } from "../cn.js";
+import { cn } from "../cn";
 
 /** Card family on the surface/border tokens (shadcn convention). */
 export const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(

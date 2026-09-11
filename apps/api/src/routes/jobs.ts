@@ -4,6 +4,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { ROLE_MIN, requireAuth } from "../auth.js";
+import { readJson } from "../http.js";
 import type { AppEnv } from "../types.js";
 
 const JOB_STATUSES = ["draft", "open", "closed"] as const;
@@ -52,7 +53,7 @@ export function jobsRoutes(): Hono<AppEnv> {
   });
 
   routes.post("/", requireAuth(ROLE_MIN.edit), async (c) => {
-    const parsed = CreateJobSchema.safeParse(await c.req.json());
+    const parsed = CreateJobSchema.safeParse(await readJson(c));
     if (!parsed.success) {
       return c.json({ ok: false, error: "invalid_body", issues: parsed.error.issues }, 400);
     }
@@ -80,7 +81,7 @@ export function jobsRoutes(): Hono<AppEnv> {
   });
 
   routes.patch("/:id", requireAuth(ROLE_MIN.edit), async (c) => {
-    const parsed = UpdateJobSchema.safeParse(await c.req.json());
+    const parsed = UpdateJobSchema.safeParse(await readJson(c));
     if (!parsed.success) {
       return c.json({ ok: false, error: "invalid_body", issues: parsed.error.issues }, 400);
     }

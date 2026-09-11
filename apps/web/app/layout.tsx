@@ -1,15 +1,18 @@
-import type { JSX, ReactNode } from "react";
+import type { Metadata } from "next";
+import { Providers } from "./providers";
+import "./globals.css";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "HireLens",
-  description:
-    "Open-source, glass-box hiring intelligence. Rank candidates with evidence you can defend.",
+  description: "RAG + LLM powered resume screening with auditable evidence.",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }): JSX.Element {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
