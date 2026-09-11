@@ -1,0 +1,27 @@
+{
+  "seed": 42,
+  "modelId": "mock-1",
+  "rubricVersion": 1,
+  "resumes": 6,
+  "accuracy": {
+    "accuracy": 0.4666666666666667,
+    "agreed": 14,
+    "total": 30
+  },
+  "selfConsistency": {
+    "meanStdev": 0,
+    "maxRange": 0,
+    "repeats": 3
+  },
+  "positionBias": {
+    "meanTau": 1,
+    "orderings": 2
+  },
+  "nameSwapBias": {
+    "meanAbsDelta": 0,
+    "maxAbsDelta": 0,
+    "flaggedShare": 0,
+    "tolerance": 5
+  },
+  "rankAgreement": 1
+}
