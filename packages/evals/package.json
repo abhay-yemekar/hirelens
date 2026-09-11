@@ -5,10 +5,18 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "evals": "tsx src/live.ts",
+    "evals:mock": "tsx src/live-mock.ts"
+  },
+  "dependencies": {
+    "@hirelens/core": "workspace:*"
   },
   "devDependencies": {
     "@hirelens/config": "workspace:*",
-    "typescript": "~5.9.3"
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.3",
+    "vitest": "^3.2.4"
   }
 }

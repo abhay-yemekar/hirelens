@@ -23,6 +23,8 @@ A pnpm + Turborepo monorepo with the full scoring pipeline as tested packages:
 4. **Score** — rubric + resume → per-criterion 0–5 with **evidence spans (exact character offsets in the document)**, confidence, rationale; never a naked number.
 5. **Batch orchestration** — fan-out scoring across a job's candidates with bounded concurrency, retries, hash-chained audit records, and live progress.
 6. **API** — authenticated (Better Auth), org-scoped REST surface over all of it: jobs, versioned rubrics, candidate upload (single + ZIP), scoring, run history.
+7. **Web app** — sign-in/up, org onboarding, jobs, candidate upload, scoring kickoff, ranked review queue (advance/shortlist/reject with required reasons, keyboard loop, blind review, CSV/JSON export), the evidence viewer (click a criterion → the resume scrolls and flashes the exact span), and a one-click **bias audit report** (four-fifths rule, per-group selection rates, export).
+8. **Eval harness** — seeded benchmark measuring direction accuracy, self-consistency, position bias, and name-swap bias (see the numbers below).
 
 Everything is model-agnostic: bring your own key (Google, Anthropic, Groq, OpenRouter) or run fully local via **Ollama** — resumes never have to leave your machine.
 
@@ -74,6 +76,27 @@ One `.env` per package that needs secrets, with `.env.example` documenting every
 | `HIRELENS_LLM_PROVIDER` + `HIRELENS_LLM_MODEL` (+ `_API_KEY`) | Enables LLM routes in the API (google/anthropic/groq/openrouter/ollama) |
 | `PORT` | API port (default 4000) |
 
+## Evaluation harness — an unevaluated ranker is a liability
+
+`packages/evals` runs a seeded synthetic benchmark (6 resumes × 5 criteria, seed 42) through the **same scoring engine the product uses**, and reports four metrics:
+
+- **Direction accuracy** — agreement with expected strong/weak per criterion
+- **Self-consistency** — score variance across repeated runs of the same resume (lower is better)
+- **Position bias** — Kendall τ between rank orderings when input order is shuffled (1.0 = order-invariant)
+- **Name-swap bias** — score movement when only the name changes (0 = invariant); any movement above 5 points is flagged
+
+Latest numbers (offline mock-model run — validates the harness plumbing; live-model numbers are generated with `pnpm --filter @hirelens/evals run evals` and a billing-enabled key, then committed as `eval-report.json`):
+
+| Metric | Value |
+|---|---|
+| Accuracy (vs. mock expectation) | 14/30 · 0.47 |
+| Self-consistency (mean σ) | 0.0 |
+| Position bias (mean τ) | 1.0 |
+| Name-swap bias (mean Δ) | 0.0 (0 flagged) |
+| Rank agreement (τ vs. expected order) | 1.0 |
+
+Run it yourself: `pnpm --filter @hirelens/evals run evals:mock` (offline) or `evals` (live, needs `HIRELENS_LLM_*` in `apps/api/.env`). The unit suite in `packages/evals` runs in CI on every PR.
+
 ## Why glass-box
 
 Most hiring AI is a black box: a number with no justification. That is a liability — for candidates, for recruiters, and under emerging regulation. HireLens is built around a different contract: **every score must link to the exact evidence that produced it.** The scoring engine already stores the evidence spans; the UI that surfaces them is next.
@@ -85,7 +108,7 @@ Most hiring AI is a black box: a number with no justification. That is a liabili
 | Open source | ✅ MIT | ❌ | ✅ |
 | Self-host / local LLM mode | ✅ | ❌ | ✅ |
 | Score justification | evidence spans with character offsets | black box | none (no AI) |
-| Bias auditing | on the roadmap (v1.0.0) | opaque | n/a |
+| Bias auditing | ✅ four-fifths-rule report with export | opaque | n/a |
 | Modern UX | being built on the design system | ✅ | ❌ |
 
 ## Roadmap to v1.0.0 — 30 September 2026
