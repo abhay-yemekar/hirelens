@@ -8,12 +8,18 @@ export interface MockModelCall {
 }
 
 export interface MockModelOptions {
-  /** Tool arguments to return as the model's structured output. */
+  /** Structured output to return as the model's JSON text. */
   args?: unknown;
   /** Optional queue: nth call returns nth args (last one repeats). */
   argsPerCall?: unknown[];
   /** Fail every call with this error. */
   failWith?: Error;
+  /** Fail only the first call (fallback-path tests). */
+  failWithOnce?: Error;
+  /** Return invalid JSON to exercise repair / NoObjectGenerated paths. */
+  invalidJson?: string;
+  /** Provider id (key for generate.ts's learned-JSON-mode registry). */
+  provider?: string;
 }
 
 /**
@@ -28,7 +34,7 @@ export function createMockModel(options: MockModelOptions): {
   let n = 0;
   const model = {
     specificationVersion: "v2" as const,
-    provider: "mock",
+    provider: options.provider ?? "mock",
     modelId: "mock-1",
     async doGenerate(opts: {
       prompt: unknown;
@@ -42,20 +48,18 @@ export function createMockModel(options: MockModelOptions): {
         temperature: opts.temperature,
         seed: opts.seed,
       });
+      if (options.failWithOnce && n === 0) {
+        n += 1;
+        throw options.failWithOnce;
+      }
       if (options.failWith) throw options.failWith;
       const args = options.argsPerCall
         ? (options.argsPerCall[Math.min(n, options.argsPerCall.length - 1)] ?? options.args)
         : options.args;
       n += 1;
+      const text = options.invalidJson ?? JSON.stringify(args ?? {});
       return {
-        content: [
-          {
-            type: "tool-call" as const,
-            toolCallId: `call-${n}`,
-            toolName: "respond",
-            input: args ?? {},
-          },
-        ],
+        content: [{ type: "text" as const, text }],
         finishReason: "stop" as const,
         usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
         warnings: [],
