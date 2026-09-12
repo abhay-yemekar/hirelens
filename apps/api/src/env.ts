@@ -38,10 +38,13 @@ const LLM_PROVIDER_IDS = ["google", "anthropic", "groq", "openrouter", "ollama"]
  * misconfiguration must fail loudly, not silently disable features.
  */
 export function readLlmEnv(source: NodeJS.ProcessEnv = process.env): LlmEnv | null {
-  const provider = source["HIRELENS_LLM_PROVIDER"];
-  const model = source["HIRELENS_LLM_MODEL"];
+  // Empty strings count as unset — compose files commonly pass `${VAR:-}`
+  // defaults, and a self-hoster without LLM config must get the no-model
+  // mode (scoring/derive 503), not a boot crash.
+  const provider = source["HIRELENS_LLM_PROVIDER"]?.trim() || undefined;
+  const model = source["HIRELENS_LLM_MODEL"]?.trim() || undefined;
   if (provider === undefined && model === undefined) return null;
-  if (provider === undefined || model === undefined || model.trim() === "") {
+  if (provider === undefined || model === undefined) {
     throw new Error("HIRELENS_LLM_PROVIDER and HIRELENS_LLM_MODEL must be set together");
   }
   if (!(LLM_PROVIDER_IDS as readonly string[]).includes(provider)) {
