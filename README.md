@@ -61,6 +61,20 @@ pnpm test                                 # 89 tests incl. DB-backed integration
 
 UI: `pnpm --filter @hirelens/ui storybook` → http://localhost:6006 (design-system playground).
 
+### CLI
+
+Score resumes from the terminal — no UI needed (requires the API running: `docker compose up -d api`):
+
+```bash
+pnpm --filter @hirelens/cli dev login you@example.com
+cd apps/cli && node src/main.ts org create "Acme Hiring"
+cd apps/cli && node src/main.ts jobs create "Senior Backend" --jd jd.md
+cd apps/cli && node src/main.ts rubric derive <jobId>      # LLM JD → rubric
+cd apps/cli && node src/main.ts score <jobId> ./resumes/   # upload + score + ranked table
+```
+
+`score` uploads every `.txt/.md/.pdf` in the given path, runs the rubric scorer, and prints a ranked table (add `--breakdown` for per-criterion evidence, `--json` for machine output). Sessions persist to `~/.hirelens/`; override the URL with `HIRELENS_API_URL`. Requires Node ≥ 22.6 (native TS type stripping — the CLI ships as source with zero runtime dependencies).
+
 The detailed walkthrough — every command, what it does, expected output, and a troubleshooting table built from real failures — is in **[docs/project_execution.md](docs/project_execution.md)**.
 
 ## Configuration
