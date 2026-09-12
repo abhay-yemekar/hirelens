@@ -140,6 +140,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@hirelens/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@hirelens/ui':
         specifier: workspace:*
         version: link:../../packages/ui
