@@ -1,0 +1,37 @@
+# Keep build context small and node_modules out of the image.
+node_modules
+**/node_modules
+.next
+**/.next
+**/dist
+**/build
+**/coverage
+.turbo
+**/.turbo
+
+# Repos only concerns
+.git
+.github
+.husky
+.freebuff
+.claude
+.vscode
+.idea
+
+# Docs and metadata not needed inside images
+*.md
+!packages/*/README.md
+docs
+sample-data
+playwright-report
+test-results
+
+# Local env files — must never bake into images
+.env
+.env.*
+!.env.example
+
+# Docker files themselves
+docker
+Dockerfile*
+.dockerignore
