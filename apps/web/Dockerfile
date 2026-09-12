@@ -21,8 +21,8 @@ COPY . .
 RUN pnpm install --frozen-lockfile --offline
 
 # ---- 4. Build the standalone Next.js server ----------------------
-# (No package builds needed: workspace packages export TS source and
-# Next compiles them directly.)
+# (@hirelens/core now exports its compiled dist/, so the core build must
+# run before the Next build — turbo handles the dependency order.)
 FROM install AS build
 ARG NEXT_PUBLIC_API_URL=http://localhost:4000
 ARG NEXT_PUBLIC_AUTH_BASE_URL=http://localhost:4000
@@ -31,7 +31,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_AUTH_BASE_URL=$NEXT_PUBLIC_AUTH_BASE_URL \
     NEXT_PUBLIC_POSTHOG_KEY=$NEXT_PUBLIC_POSTHOG_KEY \
     NEXT_TELEMETRY_DISABLED=1
-RUN pnpm --filter @hirelens/web build
+RUN ./node_modules/.bin/turbo run build --filter=@hirelens/web --concurrency=4
 
 # ---- 5. Runtime: the standalone bundle only -----------------------
 FROM node:22-alpine AS runtime

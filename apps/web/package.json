@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@hirelens/core": "workspace:*",
     "@hirelens/ui": "workspace:*",
     "@tailwindcss/postcss": "^4.3.3",
     "better-auth": "1.7.3",

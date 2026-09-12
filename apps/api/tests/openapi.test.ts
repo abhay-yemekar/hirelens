@@ -4,7 +4,7 @@
  * CI, so the public docs can't silently rot.
  */
 
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 
 describe("GET /api/openapi.json", () => {

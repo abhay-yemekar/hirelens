@@ -24,8 +24,10 @@ RUN pnpm install --frozen-lockfile --offline
 # ---- 4. Prune to the API's production dependency graph -----------
 # pnpm deploy writes a self-contained node_modules (workspace packages
 # included) into /out — no devDependencies, no install-time scripts.
+# @hirelens/core exports its compiled dist/, so build it before deploy.
 FROM install AS deploy
-RUN pnpm --filter=@hirelens/api --prod deploy --legacy /out
+RUN ./node_modules/.bin/turbo run build --filter=@hirelens/api --concurrency=4 \
+  && pnpm --filter=@hirelens/api --prod deploy --legacy /out
 
 # ---- 5. Runtime: /out + the app's source ------------------------
 FROM node:22-alpine AS runtime
