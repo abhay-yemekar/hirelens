@@ -204,6 +204,8 @@ Git hooks (via husky + lint-staged + commitlint) enforce Biome formatting on sta
 | `EADDRINUSE` on 3000 / 4000 / 6006 | Another dev server (or a previous one that didn't shut down) is on that port | Kill the stale process (`npx kill-port 3000` or close the old terminal); ports are fixed by convention in this repo |
 | Storybook page renders unstyled | Tailwind not wired through the Vite builder | Already configured in `packages/ui/.storybook/main.ts` (`@tailwindcss/vite`); if you added a new framework, wire the same plugin |
 | `gh` commands fail with `command not found` (Windows) | GitHub CLI not on PATH in that shell | Add `C:\Program Files\GitHub CLI` to PATH, or use the full path to `gh.exe` |
+| Every `pnpm` command fails with a corepack stack trace mentioning `runDepsStatusCheck` or `[ERR_PNPM_IGNORED_BUILDS]` | A placeholder value in `pnpm-workspace.yaml` `allowBuilds` (e.g. `core-js: set this to true or false`) makes install verification exit 1 | Set every `allowBuilds` entry to `true` or `false`, then `pnpm install` |
+| Tests all report "skipped" (not failed) | `DATABASE_URL` not set in the shell that ran them | Export `DATABASE_URL=postgres://postgres:postgres@localhost:5433/hirelens` first (see step 3) |
 
 Still stuck? Open an issue with your OS, Node/pnpm/Docker versions, the exact command, and the full error — see [SUPPORT.md](../SUPPORT.md).
 
@@ -216,3 +218,21 @@ Still stuck? Open an issue with your OS, Node/pnpm/Docker versions, the exact co
 - `pnpm --filter @hirelens/ui storybook` → component playground at `http://localhost:6006`
 
 That's the full local surface today. As phases land (API routes, product UI, RAG), this document gains a section per app — maintained with every phase, not at the end.
+
+## 10. Observability (all optional)
+
+Every observability integration is a **strict no-op until its env vars are set** — nothing phones home in a default local install.
+
+| Concern | Enable with | Where to get the value |
+|---|---|---|
+| Structured logs | nothing — always on (pretty in dev, JSON in production) | change verbosity with `LOG_LEVEL` in `apps/api/.env` |
+| Error tracking | `SENTRY_DSN` in `apps/api/.env` | Sentry → Settings → Client Keys (sentry.io free tier is fine) |
+| LLM tracing | `LANGFUSE_PUBLIC_KEY` + `LANGFUSE_SECRET_KEY` in `apps/api/.env` | Langfuse → Settings → API Keys (self-host via Docker or use cloud) |
+| Product analytics | `NEXT_PUBLIC_POSTHOG_KEY` in `apps/web/.env.local` | PostHog → Settings → Project API key |
+
+How to verify each one:
+
+- **Logs**: start the API (`pnpm --filter @hirelens/api dev`) and hit any endpoint — every request prints a `http.request` line with a `requestId`, and responses carry the matching `x-request-id` header.
+- **Sentry**: set the DSN, restart the API, trigger any 500 (e.g. stop Postgres and hit a data endpoint) — the error appears in Sentry within seconds, tagged with the request id.
+- **Langfuse**: set both keys, restart the API, run a scoring batch — one trace per batch appears, with per-candidate generations showing token usage, latency, prompt hash, and per-criterion scores.
+- **PostHog**: set the key, restart `apps/web`, click around — `scoring.kickoff` and `decision.recorded` events appear in PostHog live view. Autocapture is deliberately **off**: only explicit product events are sent, never raw DOM data.
