@@ -1,3 +1,14 @@
+# HireLens — one-command self-host.
+#
+#   cp .env.example .env   # set BETTER_AUTH_SECRET (required)
+#   docker compose up --build -d
+#   → web  http://localhost:3000
+#   → api  http://localhost:4000/api/health
+#
+# Dev note: `docker compose up -d postgres` still starts just the
+# database for local `pnpm dev` workflows, as documented in
+# docs/project_execution.md.
+
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -16,6 +27,47 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: hirelens-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/hirelens
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET in .env (openssl rand -base64 32)}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      # LLM — optional; scoring/derive return 503 when unset.
+      HIRELENS_LLM_PROVIDER: ${HIRELENS_LLM_PROVIDER:-}
+      HIRELENS_LLM_MODEL: ${HIRELENS_LLM_MODEL:-}
+      HIRELENS_LLM_API_KEY: ${HIRELENS_LLM_API_KEY:-}
+      HIRELENS_LLM_BASE_URL: ${HIRELENS_LLM_BASE_URL:-}
+      # Observability — optional, all no-ops when unset.
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+        NEXT_PUBLIC_AUTH_BASE_URL: ${NEXT_PUBLIC_AUTH_BASE_URL:-http://localhost:4000}
+        NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY:-}
+    container_name: hirelens-web
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
 
 volumes:
   hirelens_pgdata:

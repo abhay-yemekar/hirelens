@@ -110,6 +110,21 @@ pnpm lint             # Biome check (format + lint)
 
 ## 6. Run the applications
 
+### One-command self-host (Docker)
+
+The whole product ships as a three-container stack — Postgres (pgvector), API, web:
+
+```bash
+cp .env.example .env   # set BETTER_AUTH_SECRET (openssl rand -base64 32)
+docker compose up --build -d
+```
+
+- web → http://localhost:3000 · API health → http://localhost:4000/api/health
+- Migrations apply automatically on API boot; `docker compose down -v` wipes everything (volume included) for a true clean-machine test.
+- The stack boots fine **without** LLM config (derive/score return `503 llm_not_configured`); add `HIRELENS_LLM_PROVIDER` / `HIRELENS_LLM_MODEL` / `HIRELENS_LLM_API_KEY` to `.env` to enable scoring.
+- Containers build via `apps/api/Dockerfile` (pnpm deploy + tsx runtime) and `apps/web/Dockerfile` (Next standalone output); images are rebuilt only when sources change.
+- Dev tip: `docker compose up -d postgres` still runs just the database for the local `pnpm dev` workflow below.
+
 ### API server (`apps/api`)
 
 ```bash
