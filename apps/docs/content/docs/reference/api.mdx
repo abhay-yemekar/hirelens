@@ -1,0 +1,55 @@
+---
+title: API reference
+description: The OpenAPI 3.1 contract, served live by the API.
+---
+
+The complete public contract is an **OpenAPI 3.1** document served by the API itself:
+
+```
+GET /api/openapi.json
+```
+
+A CI test asserts every mounted route appears in that document, so it cannot silently rot. All endpoints are organization-scoped and cookie-authenticated.
+
+## Auth flow
+
+1. `POST /api/auth/sign-up/email` — create an account `{ "email", "password", "name" }`.
+2. `POST /api/auth/sign-in/email` — sign in; the response sets the `better-auth.session_token` cookie.
+3. `POST /api/auth/organization/create` — `{ "name", "slug" }`; you become owner.
+4. `POST /api/auth/organization/set-active` — `{ "organizationId" }`; every subsequent call is scoped to it.
+
+Better-auth also supports Google/GitHub OAuth when configured.
+
+## The scoring loop
+
+```bash
+# create a job with its JD text
+curl -b jar -X POST :4000/api/jobs -d '{"title":"BE","description":"..."}'
+
+# derive a rubric (LLM)
+curl -b jar -X POST :4000/api/jobs/$JOB/rubrics/derive
+
+# upload a resume (multipart)
+curl -b jar -F file=@resume.pdf :4000/api/jobs/$JOB/candidates
+
+# kick off scoring, then poll
+curl -b jar -X POST :4000/api/jobs/$JOB/score
+curl -b jar :4000/api/jobs/$JOB/runs/$RUN      # overall + per-criterion evidence
+```
+
+## Roles
+
+| Role | Capabilities |
+|---|---|
+| `owner` | Everything, plus org management |
+| `recruiter` | Create jobs, upload, score, record decisions |
+| `hiring_manager` | Review, override scores, record decisions |
+| `viewer` | Read-only — including running bias audits |
+
+## Error envelope
+
+Every failure is `{ "error": string, "code": string }` with stable codes: `unauthorized`, `forbidden`, `not_found`, `conflict`, `llm_not_configured`, `internal_error`.
+
+## Interactive docs
+
+Point any OpenAPI viewer (Swagger UI, Redoc, Insomnia, Bruno) at the served document, or browse it raw from the [repository](https://github.com/abhay-yemekar/hirelens/blob/main/apps/api/src/openapi.ts).

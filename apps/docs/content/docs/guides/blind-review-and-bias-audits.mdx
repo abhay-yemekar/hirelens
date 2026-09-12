@@ -1,0 +1,36 @@
+---
+title: Blind review & bias audits
+description: How HireLens removes identity cues and measures adverse impact.
+---
+
+## Blind review
+
+Identity cues leak into judgments. HireLens masks them at read time: names, email addresses, phone numbers, URLs, and school names are replaced with `■`, one character per character, so **evidence spans stay character-aligned** — a highlighted quote at offset 412 in the raw document is at offset 412 in the blind view.
+
+Masking is a read-model concern: the underlying document is never mutated, auditors can always verify what was masked, and the review queue can be toggled blind per request.
+
+## Decisions require reasons
+
+Every stage change (`new → shortlisted → advanced → offer` or `rejected`) demands a stated reason. There is no "reject without explaining". Reasons are stored in the hash-chained audit log next to the score evidence that informed the decision.
+
+## Demographics are opt-in and self-reported
+
+Candidates (or recruiters on their behalf) may report gender, race & ethnicity, age band, and disability status per job. Reports are **per dimension, merged on conflict**, and used exclusively for aggregate adverse-impact math — never for filtering or ranking.
+
+## The bias audit
+
+One click computes, per dimension:
+
+- **Selection rates** per group — selected ÷ considered, where "considered" means reached by the pipeline and "selected" means moved forward by decision.
+- **Four-fifths (80%) rule** — the standard EEOC adverse-impact screen. A group's impact ratio versus the **highest-rate group** below 0.8 is flagged. The comparison uses exact integer cross-multiplication, so `24/30 = 0.8` passes rather than failing on floating-point error.
+- **Demographic parity difference** — the spread between the highest and lowest selection rates.
+
+Candidates who did not report demographics are bucketed as **`undisclosed`** — an undisclosed group can flag, because "we don't know who we rejected" is itself an audit finding.
+
+The response always carries a disclaimer: statistical flagging is a **screen for further inquiry**, not proof of discrimination. Reports export as JSON for compliance.
+
+## What HireLens deliberately does not do
+
+- It does not infer demographics from names or photos — the data comes from self-report or not at all.
+- It does not weight demographic data into scoring.
+- It does not hide flags behind admin settings — anyone with viewer access can run an audit.

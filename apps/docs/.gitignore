@@ -1,0 +1,25 @@
+# dependencies
+node_modules
+.pnpm-store
+
+# build artifacts
+.next
+dist
+.turbo
+storybook-static
+next-env.d.ts
+
+# fumadocs-mdx generated collections
+.source
+
+# secrets and local env
+.env
+.env.*
+!.env.example
+*.pem
+
+# caches
+coverage
+*.tsbuildinfo
+.eslintcache
+.turbo

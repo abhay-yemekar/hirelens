@@ -1,0 +1,26 @@
+---
+title: HireLens
+description: Glass-box AI resume screening you can audit.
+---
+
+Glass-box AI resume screening: large-language-model scoring against **versioned rubrics**, with **per-criterion evidence spans** you can verify, a **hash-chained audit trail**, and **adverse-impact reporting**.
+
+## Why glass-box
+
+Most AI screeners hand you a number and ask for trust. HireLens hands you the reasoning: every score points at the exact quoted text in the resume that produced it, every override is recorded, and every decision requires a stated reason. The audit log is **hash-chained** — tampering breaks the chain visibly.
+
+## The workflow
+
+1. **Create a job** with its full job description.
+2. **Derive a rubric** — the LLM proposes criteria from the JD; HireLens owns the shape: slugged keys, six anchored levels per criterion, normalized weights.
+3. **Upload resumes** — text, markdown, or PDF; extraction, hashing, and per-job deduplication happen automatically.
+4. **Score** — each candidate is scored per criterion with quoted evidence located at character offsets in the document text.
+5. **Review** — blind-view masking hides identity cues while keeping evidence spans aligned; decisions require reasons.
+6. **Audit** — one-click adverse-impact reporting with the four-fifths rule, plus an immutable audit log.
+
+## Where to go next
+
+- [Quickstart](/docs/getting-started/quickstart) — from clean machine to first scored candidate in five commands.
+- [CLI](/docs/getting-started/cli) — the whole pipeline from a terminal.
+- [Self-hosting](/docs/guides/self-hosting) — one Docker Compose command, on your own machine.
+- [API reference](/docs/reference/api) — the OpenAPI 3.1 contract served live by the API.
