@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start --port 3002",
     "lint": "biome check .",
-    "typecheck": "tsc --noEmit"
+    "gen:source": "node -e \"import('fumadocs-mdx/next').then((m) => m.postInstall())\"",
+    "typecheck": "pnpm run gen:source && tsc --noEmit"
   },
   "dependencies": {
     "@shikijs/rehype": "^3.15.0",
