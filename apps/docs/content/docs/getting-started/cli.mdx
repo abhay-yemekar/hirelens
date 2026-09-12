@@ -1,0 +1,51 @@
+---
+title: CLI
+description: The full pipeline from a terminal.
+---
+
+The CLI ships as zero-dependency TypeScript run directly by Node's native type stripping (**Node ≥ 22.6**). It talks to a running HireLens API over the same cookie-session auth the web UI uses.
+
+## Setup
+
+```bash
+export HIRELENS_API_URL=http://localhost:4000   # where the API runs
+export HIRELENS_PASSWORD=...                    # optional; else you are prompted
+```
+
+Sessions persist to `~/.hirelens/` (override with `HIRELENS_CONFIG_DIR`). Accounts are created in the web UI or via the auth API — the CLI signs an **existing** account in.
+
+## The pipeline
+
+```bash
+hirelens login you@example.com
+hirelens org create "Acme Hiring"               # creates + activates the org
+hirelens jobs create "Backend Engineer" --jd jd.md
+hirelens rubric derive <jobId>                  # LLM derives the rubric from the JD
+hirelens score <jobId> ./resumes/               # upload + score + ranked table
+```
+
+`jobs create` reads the job description from `--jd <file>` **or stdin**. `score` uploads every `.txt`, `.md`, and `.pdf` in the given path, runs the rubric scorer, and prints the ranking:
+
+```
+Scored 14/14 (failed: 0) — run 7c19…
+RANK  CANDIDATE        OVERALL
+────  ───────────────  ───────
+   1  jordan-avery       38
+   2  priya-sharma       31
+   ...
+```
+
+Add `--breakdown` for per-criterion scores with quoted evidence, or `--json` for machine-readable output.
+
+## Other commands
+
+| Command | Purpose |
+|---|---|
+| `whoami` | Confirm the session and active org |
+| `org list` / `org use <id>` | Switch active organization |
+| `jobs list` | Jobs in the active org |
+| `rubric list <jobId>` | Rubric versions |
+| `rubric import <jobId> --file r.json` | Import a rubric JSON |
+| `logout` | Clear the local session |
+
+For CI, set `HIRELENS_COOKIE` to a session cookie instead of storing credentials.

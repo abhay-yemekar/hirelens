@@ -6,6 +6,7 @@
       "!**/dist",
       "!**/node_modules",
       "!**/.next",
+      "!**/.source",
       "!**/coverage",
       "!**/.turbo",
       "!**/pnpm-lock.yaml"

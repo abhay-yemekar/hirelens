@@ -1,0 +1,65 @@
+---
+title: Quickstart
+description: From a clean machine to your first scored candidate.
+---
+
+## Prerequisites
+
+- **Node.js 20+** (the CLI additionally wants 22.6+ for native TypeScript)
+- **pnpm 11**
+- **Docker** (for Postgres + pgvector)
+- Optional: an LLM API key (Google Gemini, Anthropic, Groq, OpenRouter, or local Ollama) for rubric derivation and scoring
+
+## Five commands
+
+```bash
+git clone https://github.com/abhay-yemekar/hirelens.git
+cd hirelens
+pnpm install
+docker compose up -d                      # Postgres 16 + pgvector on :5433
+cp packages/db/.env.example packages/db/.env
+pnpm --filter @hirelens/db db:migrate     # create tables
+```
+
+Verify everything:
+
+```bash
+pnpm test                                 # unit + DB-backed integration tests
+```
+
+## Run the product
+
+**Web UI** — [http://localhost:3000](http://localhost:3000) after:
+
+```bash
+pnpm --filter @hirelens/web dev
+pnpm --filter @hirelens/api dev           # in a second terminal, port 4000
+```
+
+**CLI** — with the API running:
+
+```bash
+pnpm --filter @hirelens/cli dev login you@example.com
+cd apps/cli && node src/main.ts jobs create "Backend Engineer" --jd jd.md
+cd apps/cli && node src/main.ts rubric derive <jobId>
+cd apps/cli && node src/main.ts score <jobId> ./resumes
+```
+
+## Configure the LLM
+
+Copy the example env and fill in a provider key:
+
+```bash
+cp apps/api/.env.example apps/api/.env
+```
+
+| Variable | Notes |
+|---|---|
+| `HIRELENS_LLM_PROVIDER` | `google` \| `anthropic` \| `groq` \| `openrouter` \| `ollama` |
+| `HIRELENS_LLM_MODEL` | Provider model id, e.g. `gemini-3-flash` |
+| `HIRELENS_LLM_API_KEY` | Required for hosted providers |
+| `HIRELENS_LLM_BASE_URL` | Required for `ollama` |
+
+Without a key the product still works for ingestion, review, and audit — only `rubric derive` and `score` return `llm_not_configured`.
+
+The full walkthrough with per-step expected output and a troubleshooting table of real errors lives in [docs/project_execution.md](https://github.com/abhay-yemekar/hirelens/blob/main/docs/project_execution.md).

@@ -1,0 +1,20 @@
+{
+  "extends": "@hirelens/config/typescript/base",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "noEmit": true,
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@/.source/*": ["./.source/*"],
+      "fumadocs-mdx:collections/*": ["./.source/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", ".source/**/*.ts", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", ".next"]
+}
