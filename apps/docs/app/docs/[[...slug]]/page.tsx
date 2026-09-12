@@ -1,7 +1,6 @@
 import { DocsBody, DocsDescription, DocsPage, DocsTitle } from "fumadocs-ui/layouts/notebook/page";
 import { createRelativeLink } from "fumadocs-ui/mdx";
 import { notFound } from "next/navigation";
-import { docs } from "@/.source/server";
 import { source } from "@/lib/source";
 
 export const dynamic = "force-static";
