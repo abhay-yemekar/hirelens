@@ -75,6 +75,10 @@ cd apps/cli && node src/main.ts score <jobId> ./resumes/   # upload + score + ra
 
 `score` uploads every `.txt/.md/.pdf` in the given path, runs the rubric scorer, and prints a ranked table (add `--breakdown` for per-criterion evidence, `--json` for machine output). Sessions persist to `~/.hirelens/`; override the URL with `HIRELENS_API_URL`. Requires Node ≥ 22.6 (native TS type stripping — the CLI ships as source with zero runtime dependencies).
 
+### API contract
+
+The full public API is described by an **OpenAPI 3.1** document served live at [`GET /api/openapi.json`](http://localhost:4000/api/openapi.json) — every mounted route, request/response shapes, the error envelope, and auth. A CI test fails if a route ships without a spec entry.
+
 The detailed walkthrough — every command, what it does, expected output, and a troubleshooting table built from real failures — is in **[docs/project_execution.md](docs/project_execution.md)**.
 
 ## Configuration
