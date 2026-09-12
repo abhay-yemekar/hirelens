@@ -176,10 +176,22 @@ pnpm --filter @hirelens/ui storybook
 
 ### CLI (`apps/cli`)
 
+The CLI scores resumes from the terminal. It ships as zero-dependency TypeScript run directly by Node's native type stripping — needs **Node ≥ 22.6**.
+
 ```bash
-pnpm --filter @hirelens/cli dev
-# → prints the version banner. (Command surface expands in a later phase.)
+export HIRELENS_API_URL=http://localhost:4000          # the API (compose or `pnpm --filter @hirelens/api dev`)
+export HIRELENS_CONFIG_DIR=~/.hirelens                  # optional; where the session cookie is stored
+
+pnpm --filter @hirelens/cli dev login you@example.com   # prompts for password (or set HIRELENS_PASSWORD)
+cd apps/cli && node src/main.ts org create "Acme Hiring"
+cd apps/cli && node src/main.ts jobs create "Senior Backend" --jd jd.md
+cd apps/cli && node src/main.ts rubric derive <jobId>   # LLM-derives the rubric from the JD
+cd apps/cli && node src/main.ts score <jobId> ./resumes # upload + score + ranked table
+#   --breakdown  per-criterion scores + evidence
+#   --json       machine-readable output
 ```
+
+Accounts are created in the web UI (or via `POST /api/auth/sign-up/email`); `hirelens login` signs an existing account in. All commands require the API to be running and LLM commands (`rubric derive`, `score`) require `HIRELENS_LLM_*` configuration on the API side.
 
 ## 7. Daily development loop
 
@@ -221,6 +233,10 @@ Git hooks (via husky + lint-staged + commitlint) enforce Biome formatting on sta
 | `gh` commands fail with `command not found` (Windows) | GitHub CLI not on PATH in that shell | Add `C:\Program Files\GitHub CLI` to PATH, or use the full path to `gh.exe` |
 | Every `pnpm` command fails with a corepack stack trace mentioning `runDepsStatusCheck` or `[ERR_PNPM_IGNORED_BUILDS]` | A placeholder value in `pnpm-workspace.yaml` `allowBuilds` (e.g. `core-js: set this to true or false`) makes install verification exit 1 | Set every `allowBuilds` entry to `true` or `false`, then `pnpm install` |
 | Tests all report "skipped" (not failed) | `DATABASE_URL` not set in the shell that ran them | Export `DATABASE_URL=postgres://postgres:postgres@localhost:5433/hirelens` first (see step 3) |
+| `error [503 llm_not_configured]` from `rubric derive` / `score` (API in Docker) | The compose file interpolates `HIRELENS_LLM_*` from the **root** `.env`; empty-string values count as "set" but the key is empty | Put real `HIRELENS_LLM_API_KEY` / `_MODEL` / `_PROVIDER` values in the root `.env`, then `docker compose up -d api` |
+| `LlmRuntimeError: … Proto field is not repeating, cannot start list` (Google/Gemini) | Gemini rejects JSON schemas with arrays nested inside arrays — rubric and scoring schemas use that shape | Fixed in the LLM layer: `generateStructured` automatically falls back to validated JSON-text mode per provider. If you see this on an old build, update to current `main` |
+| `hirelens score` hangs after creating a job | `jobs create` without `--jd` reads the job description from **stdin**, which never closes in a scripted shell | Always pass `--jd <file>` (or pipe: `echo "..." | hirelens jobs create …`) |
+| `error [401 sign_in_failed]` right after a fresh sign-up via API | better-auth requires an `Origin` header matching a trusted origin (the web app's, e.g. `http://localhost:3000`) — plain curl/CLI calls without it are rejected on sign-up | Sign up once through the web UI or include `-H "Origin: http://localhost:3000"`; then CLI login works normally |
 
 Still stuck? Open an issue with your OS, Node/pnpm/Docker versions, the exact command, and the full error — see [SUPPORT.md](../SUPPORT.md).
 
