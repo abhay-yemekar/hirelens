@@ -10,6 +10,7 @@ import { requireAuth } from "./auth.js";
 import { ApiInputError } from "./errors.js";
 import { requestLogging } from "./middleware.js";
 import { captureException } from "./observability.js";
+import { openApiDocument } from "./openapi.js";
 import { biasAuditRoutes, demographicsRoutes } from "./routes/bias.js";
 import { candidateReadRoutes } from "./routes/candidates-read.js";
 import { jobsRoutes } from "./routes/jobs.js";
@@ -70,6 +71,9 @@ export function createApp(deps: AppDeps) {
   app.get("/api/health", (c) =>
     c.json({ ok: true as const, service: "hirelens-api", version: "0.1.0" }),
   );
+
+  // Public API contract (public document; auth still governs the endpoints it describes).
+  app.get("/api/openapi.json", (c) => c.json(openApiDocument));
 
   // Authenticated, org-scoped API surface.
   const protectedApi = new Hono<AppEnv>();
