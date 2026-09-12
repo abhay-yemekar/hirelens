@@ -10,7 +10,8 @@ import { candidates, documents, jobs, rubrics, scoringRuns } from "@hirelens/db"
 import { desc, eq } from "drizzle-orm";
 import { appendAudit } from "./audit.js";
 import type { BatchSummary } from "./orchestrator.js";
-import { type ScoreOneContext, scoreOneCandidate } from "./run.js";
+import { type ScoreOneContext, type ScoreOneInvocation, scoreOneCandidate } from "./run.js";
+import { noopTraceSink } from "./trace.js";
 
 export interface RunBatchOptions extends ScoreOneContext {
   /** Max candidates scored concurrently. Default 4. */
@@ -35,6 +36,7 @@ export async function runBatch(
 ): Promise<BatchSummary> {
   const concurrency = Math.max(1, opts?.concurrency ?? 4);
   const attempts = Math.max(1, opts?.attempts ?? 3);
+  const trace = opts?.trace ?? noopTraceSink;
 
   const [job] = await db.select().from(jobs).where(eq(jobs.id, input.jobId)).limit(1);
   if (!job) throw new Error(`job ${input.jobId} not found`);
@@ -72,12 +74,15 @@ export async function runBatch(
   if (runRowId === undefined) throw new Error("scoring run insert returned no row");
   const runId: string = runRowId;
 
-  const ctx: ScoreOneContext = {
+  const ctx: ScoreOneInvocation = {
     db,
     model,
     ...(opts?.runOptions === undefined ? {} : { runOptions: opts.runOptions }),
     actorId: opts?.actorId ?? input.actorId,
+    trace,
   };
+
+  trace.batchStarted({ jobId: input.jobId, orgId: input.orgId, runId, total: rows.length });
   const rubric: RunRubricShape = {
     id: rubricRow.id,
     version: rubricRow.version,
@@ -149,6 +154,9 @@ export async function runBatch(
       failed: results.length - scored,
     },
   });
+
+  trace.batchCompleted({ runId, scored, failed: results.length - scored, total: rows.length });
+  await trace.flush();
 
   return {
     runId,

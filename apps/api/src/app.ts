@@ -8,6 +8,8 @@ import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { requireAuth } from "./auth.js";
 import { ApiInputError } from "./errors.js";
+import { requestLogging } from "./middleware.js";
+import { captureException } from "./observability.js";
 import { biasAuditRoutes, demographicsRoutes } from "./routes/bias.js";
 import { candidateReadRoutes } from "./routes/candidates-read.js";
 import { jobsRoutes } from "./routes/jobs.js";
@@ -30,6 +32,7 @@ export function createApp(deps: AppDeps) {
 
   app.use(trimTrailingSlash());
   app.use(secureHeaders());
+  app.use(requestLogging());
   // The web app runs on a different origin in dev (5173/3001) — allow
   // credentialed cross-origin calls from configured origins only.
   app.use(
@@ -87,7 +90,11 @@ export function createApp(deps: AppDeps) {
     if (err instanceof ExtractionError) {
       return c.json({ ok: false, error: "unreadable_document", message: err.message }, 422);
     }
-    console.error(err);
+    captureException(err, {
+      requestId: c.get("requestId"),
+      method: c.req.method,
+      path: c.req.path,
+    });
     return c.json({ ok: false, error: "internal_error" }, 500);
   });
 

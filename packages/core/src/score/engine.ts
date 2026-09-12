@@ -12,6 +12,7 @@ import { locateEvidenceSpan } from "../evidence/textSpan.js";
 import { type LanguageModel, modelIdOf } from "../llm/config.js";
 import { generateStructured } from "../llm/generate.js";
 import { promptHash } from "../llm/promptHash.js";
+import type { UsageInfo } from "../llm/types.js";
 import type { Rubric } from "../rubric/schema.js";
 import type { CriterionScore } from "./weighting.js";
 import { weightedOverall } from "./weighting.js";
@@ -65,6 +66,8 @@ export interface ScoreRunResult {
   repaired: boolean;
   /** Consistency-guard flag: low-confidence spread across criteria. */
   needsAdjudication: boolean;
+  /** Token usage reported by the provider (observability/audit). */
+  usage: UsageInfo;
 }
 
 export interface ScoreRunOptions {
@@ -103,7 +106,7 @@ export async function scoreResume(
     modelId: modelIdOf(model),
   });
 
-  const { object, attempts } = await generateStructured(
+  const { object, attempts, usage } = await generateStructured(
     model,
     {
       system: SYSTEM,
@@ -150,5 +153,6 @@ export async function scoreResume(
     modelId: modelIdOf(model),
     repaired: attempts > 1,
     needsAdjudication: lowConfidence * 2 > criteria.length,
+    usage,
   };
 }

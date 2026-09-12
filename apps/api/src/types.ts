@@ -15,5 +15,6 @@ export type AppEnv = {
     model: LanguageModel | null;
     session: AuthSessionPayload | null;
     auth: AuthContext;
+    requestId: string;
   };
 };

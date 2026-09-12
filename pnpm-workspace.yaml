@@ -9,6 +9,7 @@ allowBuilds:
   "@prisma/client": false
   better-sqlite3: false
   '@swc/core': true
+  core-js: false
 
 minimumReleaseAgeExclude:
   - lucide-react@1.44.0

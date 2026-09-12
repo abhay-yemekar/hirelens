@@ -5,6 +5,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { ROLE_MIN, requireAuth } from "../auth.js";
 import { type IngestResult, ingestBytes } from "../ingest.js";
+import { langfuseTraceSink } from "../trace-sink.js";
 import type { AppEnv } from "../types.js";
 import { loadOrgJob } from "./jobs.js";
 
@@ -125,11 +126,12 @@ export function scoringRoutes(): Hono<AppEnv> {
       );
     }
 
-    const summary = await runBatch(db, model, {
-      jobId: job.id,
-      orgId: auth.orgId,
-      actorId: auth.userId,
-    });
+    const summary = await runBatch(
+      db,
+      model,
+      { jobId: job.id, orgId: auth.orgId, actorId: auth.userId },
+      { trace: langfuseTraceSink() },
+    );
     return c.json({ ok: true, summary });
   });
 

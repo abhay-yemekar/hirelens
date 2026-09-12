@@ -4,6 +4,7 @@ import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } fro
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { trackEvent } from "@/lib/analytics";
 import {
   type CandidateRow,
   getJob,
@@ -214,6 +215,7 @@ export default function JobDetailPage() {
               onClick={() =>
                 run("score", async () => {
                   await kickoffScore(jobId);
+                  trackEvent("scoring.kickoff", { jobId });
                   await load();
                 })
               }
