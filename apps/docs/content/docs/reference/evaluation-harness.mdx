@@ -1,0 +1,34 @@
+---
+title: Evaluation harness
+description: How HireLens measures its own scorer.
+---
+
+An unevaluated ranker in hiring is a liability. `packages/evals` measures the scorer along four axes and publishes the numbers.
+
+## The benchmark
+
+A seeded (seed 42), fully synthetic set of six resumes spanning strong to weak, with per-criterion ground truth and an expected rank ordering. No real PII anywhere. The same `scoreResume` engine the product uses runs the benchmark — there is no separate eval path.
+
+## The four metrics
+
+| Metric | Question | Method |
+|---|---|---|
+| **Direction accuracy** | Does the scorer rank strong evidence higher than weak? | Agreement with expected strong/weak per criterion |
+| **Self-consistency** | Is the scorer deterministic? | Score variance across repeated runs at temperature 0 |
+| **Position bias** | Does input order change verdicts? | Kendall τ between rank orderings of shuffled inputs; deterministic tie-break by expected rank |
+| **Name-swap bias** | Does only the name change scores? | Score movement when the name is swapped, flagged above a 5-point tolerance |
+
+## Running
+
+```bash
+pnpm --filter @hirelens/evals run evals:mock    # offline mock model; validates plumbing, CI-safe
+pnpm --filter @hirelens/evals run evals         # live model; needs HIRELENS_LLM_* env, writes eval-report.json
+```
+
+The live runner paces calls (default 8s) to stay inside free-tier rate limits and fails loudly on quota exhaustion rather than printing partial numbers.
+
+## Reading the report
+
+`eval-report.json` carries each metric's headline number plus per-criterion detail. Direction accuracy near 1.0 with zero self-consistency variance and τ ≈ 1 is the target band; name-swap deltas above the tolerance are release blockers.
+
+Numbers for the current release are published in the README's [Evaluation harness](https://github.com/abhay-yemekar/hirelens#evaluation-harness--an-unevaluated-ranker-is-a-liability) section. The suite is wired into CI so regressions surface at PR time.

@@ -1,0 +1,56 @@
+---
+title: Self-hosting
+description: One command, your machine, your data.
+---
+
+## One command
+
+```bash
+cp .env.example .env    # set BETTER_AUTH_SECRET at minimum
+docker compose up --build -d
+```
+
+That brings up **web (:3000)**, **api (:4000)**, and **postgres (:5433)**. On first boot the API applies database migrations automatically. Verify:
+
+```bash
+docker compose ps                       # all three services healthy
+curl http://localhost:4000/api/health   # {"ok":true,...}
+```
+
+Open [http://localhost:3000](http://localhost:3000), create an account, create an organization, and you are live.
+
+## Environment
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `BETTER_AUTH_SECRET` | yes | Session signing; generate with `openssl rand -base64 32` |
+| `DATABASE_URL` | no | Defaults to the compose Postgres |
+| `HIRELENS_LLM_PROVIDER` | no | `google` \| `anthropic` \| `groq` \| `openrouter` \| `ollama` |
+| `HIRELENS_LLM_MODEL` | no | Provider model id |
+| `HIRELENS_LLM_API_KEY` | no | Hosted providers; leave empty for no-LLM mode |
+| `SENTRY_DSN` | no | Error tracking |
+| `LANGFUSE_PUBLIC_KEY` / `_SECRET_KEY` / `_BASE_URL` | no | LLM tracing |
+| `NEXT_PUBLIC_POSTHOG_KEY` | no | Product analytics (explicit events only, autocapture off) |
+
+Empty-string LLM variables are treated as unset — a partial `.env` degrades gracefully.
+
+## Data flow
+
+Resumes never leave your machine. Documents are parsed locally, text is stored in your Postgres, and the **only** external calls are the LLM scoring requests to the provider you configured. No third-party API sits in between. Stop here and you have a fully functional air-gapped deployment minus scoring.
+
+## Backups
+
+Everything lives in the `hirelens-postgres-data` volume:
+
+```bash
+docker exec hirelens-postgres pg_dump -U postgres hirelens > backup.sql
+```
+
+## Upgrading
+
+```bash
+git pull
+docker compose up --build -d
+```
+
+Migrations apply automatically on API boot. The audit log's hash chain is preserved across upgrades — verify any time from the audit UI.
