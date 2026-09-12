@@ -3,16 +3,27 @@
  * fan-out. Split from orchestrator.ts to keep files small.
  */
 
-import type { ScoreRunOptions } from "@hirelens/core";
-import { type LanguageModel, scoreResume } from "@hirelens/core";
+import { type LanguageModel, modelIdOf, type ScoreRunOptions, scoreResume } from "@hirelens/core";
 import { type Database, evidence, scores } from "@hirelens/db";
 import { appendAudit } from "./audit.js";
+import type { TraceSink } from "./trace.js";
 
+/** Shared knobs for batch + single-candidate scoring. */
 export interface ScoreOneContext {
-  db: Database;
-  model: LanguageModel;
   runOptions?: ScoreRunOptions;
   actorId?: string | undefined;
+  /** Telemetry sink; omit (or pass noopTraceSink) to disable tracing. */
+  trace?: TraceSink | undefined;
+}
+
+/** Everything scoreOneCandidate needs, as assembled by runBatch. */
+export interface ScoreOneInvocation extends ScoreOneContext {
+  db: Database;
+  model: LanguageModel;
+  runId?: string | undefined;
+  jobId?: string | undefined;
+  orgId?: string | undefined;
+  rubricVersion?: number | undefined;
 }
 
 export interface RunRubricRow {
@@ -27,7 +38,7 @@ export interface RunRubricRow {
  * Returns the engine's overall score for pool statistics.
  */
 export async function scoreOneCandidate(
-  ctx: ScoreOneContext,
+  ctx: ScoreOneInvocation,
   params: {
     runId: string;
     orgId: string;
@@ -37,12 +48,48 @@ export async function scoreOneCandidate(
   },
 ): Promise<number> {
   const { candidate, rubric } = params;
-  const engineResult = await scoreResume(
-    ctx.model,
-    rubric.payload as Parameters<typeof scoreResume>[1],
-    candidate.rawText,
-    ctx.runOptions,
-  );
+  const startedAt = Date.now();
+  let engineResult: Awaited<ReturnType<typeof scoreResume>>;
+  try {
+    engineResult = await scoreResume(
+      ctx.model,
+      rubric.payload as Parameters<typeof scoreResume>[1],
+      candidate.rawText,
+      ctx.runOptions,
+    );
+  } catch (err) {
+    ctx.trace?.generation({
+      candidateId: candidate.id,
+      jobId: params.jobId,
+      runId: params.runId,
+      rubricVersion: rubric.version,
+      modelId: modelIdOf(ctx.model),
+      promptHash: "",
+      scores: [],
+      repaired: false,
+      usage: undefined,
+      latencyMs: Date.now() - startedAt,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    throw err;
+  }
+
+  ctx.trace?.generation({
+    candidateId: candidate.id,
+    jobId: params.jobId,
+    runId: params.runId,
+    rubricVersion: rubric.version,
+    modelId: engineResult.modelId,
+    promptHash: engineResult.promptHash,
+    scores: engineResult.criteria.map((c) => ({
+      key: c.key,
+      score: c.score,
+      confidence: c.confidence,
+    })),
+    repaired: engineResult.repaired,
+    usage: engineResult.usage,
+    latencyMs: Date.now() - startedAt,
+  });
 
   for (const c of engineResult.criteria) {
     const [scoreRow] = await ctx.db
