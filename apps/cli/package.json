@@ -4,14 +4,13 @@
   "private": true,
   "type": "module",
   "bin": {
-    "hirelens": "./dist/main.js"
-  },
-  "binExports": {
     "hirelens": "./src/main.ts"
   },
+  "engines": {
+    "node": ">=22.6"
+  },
   "scripts": {
-    "build": "tsc",
-    "dev": "tsx src/main.ts",
+    "dev": "node src/main.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -21,7 +20,6 @@
   "devDependencies": {
     "@hirelens/config": "workspace:*",
     "@types/node": "^26.4.1",
-    "tsx": "^4.16.2",
     "typescript": "~5.9.3",
     "vitest": "^5.0.0"
   }

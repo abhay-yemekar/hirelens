@@ -57,6 +57,24 @@ describe("generateStructured", () => {
     expect(calls).toHaveLength(2);
   });
 
+  it("falls back to JSON-text mode when a provider rejects the schema, and remembers it", async () => {
+    const { model, calls } = createMockModel({
+      provider: "rejecting-provider",
+      failWithOnce: new Error(
+        'Invalid JSON payload received. Unknown name "items" at ... Proto field is not repeating, cannot start list.',
+      ),
+      args: { title: "t", score: 80 },
+    });
+    const res = await generateStructured(
+      model as LanguageModel,
+      { system: "s", prompt: "p" },
+      Reply,
+    );
+    expect(res.object).toEqual({ title: "t", score: 80 });
+    expect(calls).toHaveLength(2);
+    expect(calls[1]?.system).toContain("JSON Schema");
+  });
+
   it("wraps provider failures in LlmRuntimeError", async () => {
     const { model } = createMockModel({ failWith: new Error("boom") });
     await expect(
