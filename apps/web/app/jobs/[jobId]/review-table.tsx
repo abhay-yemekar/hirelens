@@ -2,6 +2,7 @@
 
 import { Button, OverallScore } from "@hirelens/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { trackEvent } from "@/lib/analytics";
 import { getReview, postDecision, type ReviewRow, type Stage } from "@/lib/api";
 
 const STAGE_STYLE: Record<Stage, { bg: string; fg: string }> = {
@@ -69,6 +70,7 @@ export function ReviewTable({ jobId }: { jobId: string }) {
         stage: reasonFor.stage,
         reason: reason.trim(),
       });
+      trackEvent("decision.recorded", { jobId, stage: reasonFor.stage });
       setReasonFor(null);
       setReason("");
       await load();

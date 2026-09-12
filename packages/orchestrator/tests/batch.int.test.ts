@@ -167,9 +167,11 @@ describe.skipIf(!available)("batch orchestrator (integration)", () => {
     expect(scoreRows).toHaveLength(25); // 5 candidates x 5 criteria
 
     const evidenceRows = await db.select().from(evidence);
-    expect(evidenceRows.filter((e) => scoreRows.some((s) => s.id === e.scoreId))).toHaveLength(5);
-    const firstEvidence = evidenceRows[0];
-    expect(firstEvidence?.quotedText).toContain("Kubernetes");
+    const runEvidence = evidenceRows.filter((e) => scoreRows.some((s) => s.id === e.scoreId));
+    expect(runEvidence).toHaveLength(5);
+    // Exactly one criterion carries the mock's QUOTE; find it deterministically.
+    const quoted = runEvidence.find((e) => e.quotedText.includes("Kubernetes"));
+    expect(quoted?.quotedText).toContain("Kubernetes");
   });
 
   it("appends a verifiable hash chain to the audit log", async () => {
