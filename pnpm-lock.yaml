@@ -291,6 +291,9 @@ importers:
       '@hirelens/config':
         specifier: workspace:*
         version: link:../config
+      '@types/node':
+        specifier: ^26.4.1
+        version: 26.5.1
       tsx:
         specifier: ^4.20.6
         version: 4.23.13
