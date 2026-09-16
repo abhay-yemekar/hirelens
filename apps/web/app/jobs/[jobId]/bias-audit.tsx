@@ -2,6 +2,7 @@
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hirelens/ui";
 import { useState } from "react";
+import { NoticeBanner } from "@/components/notice-banner";
 import { type BiasAuditReport, runBiasAudit } from "@/lib/api";
 
 const DIMENSIONS = ["gender", "race_ethnicity", "age_band", "disability"];
@@ -11,7 +12,7 @@ export function BiasAuditCard({ jobId }: { jobId: string }) {
   const [dimension, setDimension] = useState(DIMENSIONS[0] ?? "gender");
   const [report, setReport] = useState<BiasAuditReport | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   async function run() {
     setBusy(true);
@@ -21,7 +22,7 @@ export function BiasAuditCard({ jobId }: { jobId: string }) {
       if ("audit" in res && res.audit) setReport(res as BiasAuditReport);
       else setError("No candidates on this job yet.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate report");
+      setError(err);
     } finally {
       setBusy(false);
     }
@@ -83,11 +84,7 @@ export function BiasAuditCard({ jobId }: { jobId: string }) {
           )}
         </div>
 
-        {error && (
-          <p role="alert" className="text-sm" style={{ color: "var(--color-danger)" }}>
-            {error}
-          </p>
-        )}
+        {error ? <NoticeBanner error={error} /> : null}
 
         {report && (
           <div className="flex flex-col gap-2">

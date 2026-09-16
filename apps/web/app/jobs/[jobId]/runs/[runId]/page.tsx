@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, OverallScore, ScoreBadge } fr
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { NoticeBanner } from "@/components/notice-banner";
 import { getCandidate, getRun, type RunCandidate } from "@/lib/api";
 
 interface Span {
@@ -55,7 +56,7 @@ export default function RunPage() {
   const [docText, setDocText] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [focus, setFocus] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -72,7 +73,7 @@ export default function RunPage() {
         const first = res.candidates[0]?.candidateId ?? null;
         setSelected((prev) => prev ?? first);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load run");
+        setError(err);
       }
     })();
   }, [jobId, runId]);
@@ -135,11 +136,7 @@ export default function RunPage() {
         </div>
       </header>
 
-      {error && (
-        <p role="alert" className="text-sm" style={{ color: "var(--color-danger)" }}>
-          {error}
-        </p>
-      )}
+      {error ? <NoticeBanner error={error} /> : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Left: candidates + criteria */}

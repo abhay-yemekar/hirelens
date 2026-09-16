@@ -4,6 +4,8 @@ import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } fro
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AppShell } from "@/components/app-shell";
+import { NoticeBanner } from "@/components/notice-banner";
 import { trackEvent } from "@/lib/analytics";
 import {
   type CandidateRow,
@@ -50,7 +52,7 @@ export default function JobDetailPage() {
   const [rubrics, setRubrics] = useState<RubricVersion[]>([]);
   const [candidates, setCandidates] = useState<CandidateRow[]>([]);
   const [runs, setRuns] = useState<RunRow[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -67,7 +69,7 @@ export default function JobDetailPage() {
       setCandidates(c.candidates);
       setRuns(rn.runs);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load job");
+      setError(err);
     }
   }, [jobId]);
 
@@ -81,7 +83,7 @@ export default function JobDetailPage() {
     try {
       await fn();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err);
     } finally {
       setBusy(null);
     }
@@ -111,155 +113,234 @@ export default function JobDetailPage() {
     if (fileRef.current) fileRef.current.value = "";
   };
 
+  const scoreBlocker =
+    rubrics.length === 0
+      ? "Import a rubric first"
+      : candidates.length === 0
+        ? "Upload at least one resume first"
+        : null;
+
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 p-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <Link href="/jobs" className="text-sm" style={{ color: "var(--color-fg-muted)" }}>
+    <AppShell>
+      <div className="flex flex-col gap-6">
+        <header>
+          <Link
+            href="/jobs"
+            className="text-sm transition-colors hover:text-[var(--hl-cream)]"
+            style={{ color: "var(--hl-mist)" }}
+          >
             ← Jobs
           </Link>
-          <h1 className="text-2xl font-semibold tracking-tight">{job?.title ?? "…"}</h1>
-        </div>
-      </header>
-
-      {error && (
-        <p role="alert" className="text-sm" style={{ color: "var(--color-danger)" }}>
-          {error}
-        </p>
-      )}
-
-      {/* Rubrics */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Rubric</CardTitle>
-          <CardDescription>
-            Criteria candidates are scored against. Versions are immutable.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap items-center gap-3">
-          {rubrics.length === 0 ? (
-            <p className="text-sm" style={{ color: "var(--color-fg-muted)" }}>
-              No rubric yet — import one to enable scoring.
-            </p>
-          ) : (
-            rubrics.map((r) => (
+          <div className="mt-1 flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--hl-cream)]">
+              {job?.title ?? "…"}
+            </h1>
+            {job && (
               <span
-                key={r.id}
-                className="rounded-[var(--radius-pill)] px-3 py-1 text-sm"
+                className="rounded-full px-2.5 py-1 text-xs font-medium"
                 style={{
-                  background: "var(--color-surface-raised)",
-                  color: "var(--color-fg-muted)",
+                  background: "var(--hl-card)",
+                  border: "1px solid var(--hl-border)",
+                  color: "var(--hl-mist)",
                 }}
               >
-                v{r.version}
+                {job.status}
               </span>
-            ))
-          )}
-          <Button
-            variant="outline"
-            disabled={busy !== null}
-            className="ml-auto"
-            onClick={() =>
-              run("rubric", async () => {
-                await importRubric(jobId, demoRubric());
-                await load();
-              })
-            }
-          >
-            {busy === "rubric" ? "Importing…" : "Import demo rubric"}
-          </Button>
-        </CardContent>
-      </Card>
+            )}
+          </div>
+        </header>
 
-      {/* Candidates */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Candidates ({candidates.length})</CardTitle>
-          <CardDescription>Upload resumes (txt, md, pdf). Duplicates are deduped.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          <input
-            ref={fileRef}
-            type="file"
-            multiple
-            accept=".txt,.md,.pdf"
-            className="text-sm"
-            onChange={(e) => uploadFiles(e.target.files)}
-          />
-          {candidates.length > 0 && (
-            <ul className="text-sm" style={{ color: "var(--color-fg-muted)" }}>
-              {candidates.map((c) => (
-                <li key={c.id}>
-                  {c.sourceFileKey ?? c.id.slice(0, 8)}
-                  {c.pageCount !== null ? ` · ${c.pageCount}p` : ""}
-                  {c.language ? ` · ${c.language}` : ""}
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+        {error ? <NoticeBanner error={error} /> : null}
 
-      <BiasAuditCard jobId={jobId} />
-
-      {/* Scoring */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Scoring</CardTitle>
-          <CardDescription>Score all candidates against the latest rubric version.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <div className="flex gap-3">
+        {/* Rubric */}
+        <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
+          <CardHeader>
+            <CardTitle style={{ color: "var(--hl-cream)" }}>Rubric</CardTitle>
+            <CardDescription style={{ color: "var(--hl-mist)" }}>
+              Criteria candidates are scored against. Versions are immutable.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap items-center gap-3">
+            {rubrics.length === 0 ? (
+              <p className="text-sm" style={{ color: "var(--hl-muted)" }}>
+                No rubric yet — import the demo rubric to try scoring, or derive one from the job
+                description with an LLM key configured.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {rubrics.map((r) => (
+                  <span
+                    key={r.id}
+                    className="rounded-full px-3 py-1 text-sm"
+                    style={{
+                      background: "var(--hl-accent-soft)",
+                      color: "var(--hl-accent)",
+                      border: "1px solid var(--hl-border)",
+                    }}
+                  >
+                    v{r.version}
+                  </span>
+                ))}
+              </div>
+            )}
             <Button
-              disabled={busy !== null || rubrics.length === 0 || candidates.length === 0}
+              variant="outline"
+              disabled={busy !== null}
+              className="ml-auto"
+              style={{ borderColor: "var(--hl-border)", color: "var(--hl-mist)" }}
               onClick={() =>
-                run("score", async () => {
-                  await kickoffScore(jobId);
-                  trackEvent("scoring.kickoff", { jobId });
+                run("rubric", async () => {
+                  await importRubric(jobId, demoRubric());
                   await load();
                 })
               }
             >
-              {busy === "score" ? "Scoring…" : "Score all candidates"}
+              {busy === "rubric" ? "Importing…" : "Import demo rubric"}
             </Button>
-          </div>
+          </CardContent>
+        </Card>
 
-          <ReviewTable jobId={jobId} />
-
-          {runs.length > 0 && (
-            <ul className="flex flex-col gap-2">
-              {runs.map((r) => (
-                <li key={r.id} className="flex items-center justify-between text-sm">
-                  <span>
-                    Run · v{r.rubricVersion} · {r.modelId}
-                  </span>
-                  <span className="flex items-center gap-3">
-                    <span
-                      className="rounded-[var(--radius-pill)] px-2 py-0.5"
-                      style={{
-                        background: "var(--color-surface-raised)",
-                        color:
-                          r.status === "completed"
-                            ? "var(--color-success)"
-                            : "var(--color-fg-muted)",
-                      }}
-                    >
-                      {r.status}
+        {/* Candidates */}
+        <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
+          <CardHeader>
+            <CardTitle style={{ color: "var(--hl-cream)" }}>
+              Candidates ({candidates.length})
+            </CardTitle>
+            <CardDescription style={{ color: "var(--hl-mist)" }}>
+              Upload resumes (txt, md, pdf). Duplicates are deduped.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <label
+              className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border border-dashed px-4 py-6 text-center text-sm transition-colors hover:bg-white/[0.03]"
+              style={{ borderColor: "var(--hl-border)", color: "var(--hl-mist)" }}
+            >
+              <span className="font-medium text-[var(--hl-cream)]">Choose resume files</span>
+              <span style={{ color: "var(--hl-muted)" }}>or drop them here — txt, md, pdf</span>
+              <input
+                ref={fileRef}
+                type="file"
+                multiple
+                accept=".txt,.md,.pdf"
+                className="sr-only"
+                onChange={(e) => uploadFiles(e.target.files)}
+              />
+            </label>
+            {candidates.length > 0 && (
+              <ul className="flex flex-col gap-1.5 text-sm">
+                {candidates.map((c) => (
+                  <li
+                    key={c.id}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2"
+                    style={{ background: "var(--hl-ink-3)", color: "var(--hl-mist)" }}
+                  >
+                    <span className="font-mono text-xs" style={{ color: "var(--hl-muted)" }}>
+                      {(c.sourceFileKey ?? c.id.slice(0, 8)).split("/").pop()}
                     </span>
-                    <Link
-                      href={`/jobs/${jobId}/runs/${r.id}`}
-                      className="underline"
-                      style={{ color: "var(--color-accent)" }}
-                    >
-                      Results →
-                    </Link>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
-    </main>
+                    {c.pageCount !== null && (
+                      <span
+                        className="rounded-full px-2 py-0.5 text-xs"
+                        style={{ background: "var(--hl-card)", color: "var(--hl-muted)" }}
+                      >
+                        {c.pageCount}p
+                      </span>
+                    )}
+                    {c.language && (
+                      <span
+                        className="rounded-full px-2 py-0.5 text-xs"
+                        style={{ background: "var(--hl-card)", color: "var(--hl-muted)" }}
+                      >
+                        {c.language}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
+        <BiasAuditCard jobId={jobId} />
+
+        {/* Scoring */}
+        <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
+          <CardHeader>
+            <CardTitle style={{ color: "var(--hl-cream)" }}>Scoring</CardTitle>
+            <CardDescription style={{ color: "var(--hl-mist)" }}>
+              Score all candidates against the latest rubric version.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                disabled={busy !== null || scoreBlocker !== null}
+                onClick={() =>
+                  run("score", async () => {
+                    await kickoffScore(jobId);
+                    trackEvent("scoring.kickoff", { jobId });
+                    await load();
+                  })
+                }
+              >
+                {busy === "score" ? "Scoring…" : "Score all candidates"}
+              </Button>
+              {scoreBlocker && (
+                <span className="text-sm" style={{ color: "var(--hl-muted)" }}>
+                  {scoreBlocker}.
+                </span>
+              )}
+              {!scoreBlocker && (
+                <span className="text-sm" style={{ color: "var(--hl-muted)" }}>
+                  {candidates.length} candidate{candidates.length === 1 ? "" : "s"} · rubric v
+                  {rubrics[rubrics.length - 1]?.version ?? "?"}
+                </span>
+              )}
+            </div>
+
+            <ReviewTable jobId={jobId} />
+
+            {runs.length > 0 && (
+              <ul className="flex flex-col gap-2">
+                {runs.map((r) => (
+                  <li
+                    key={r.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm"
+                    style={{ background: "var(--hl-ink-3)" }}
+                  >
+                    <span style={{ color: "var(--hl-mist)" }}>
+                      Run · rubric v{r.rubricVersion} ·{" "}
+                      <span className="font-mono text-xs">{r.modelId}</span>
+                    </span>
+                    <span className="flex items-center gap-3">
+                      <span
+                        className="rounded-full px-2 py-0.5"
+                        style={{
+                          background: "var(--hl-card)",
+                          color:
+                            r.status === "completed"
+                              ? "var(--color-success)"
+                              : r.status === "failed"
+                                ? "var(--color-danger)"
+                                : "var(--hl-muted)",
+                        }}
+                      >
+                        {r.status}
+                      </span>
+                      <Link
+                        href={`/jobs/${jobId}/runs/${r.id}`}
+                        className="underline underline-offset-2"
+                        style={{ color: "var(--hl-accent)" }}
+                      >
+                        Results →
+                      </Link>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </AppShell>
   );
 }

@@ -174,7 +174,29 @@ export function scoringRoutes(): Hono<AppEnv> {
     const file = form.get("file");
     if (!(file instanceof File)) return c.json({ ok: false, error: "file_required" }, 400);
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const result = await ingestBytes(db, { jobId: job.id, filename: file.name, bytes });
+    let result: Awaited<ReturnType<typeof ingestBytes>>;
+    try {
+      result = await ingestBytes(db, { jobId: job.id, filename: file.name, bytes });
+    } catch (err) {
+      // Parse/extract failures (empty file, unsupported format, too little
+      // text) are client-input problems — report them as 400s with the
+      // parser's message, not 500s.
+      const code = (err as { code?: string })?.code;
+      if (code === "LOW_INFORMATION" || code === "EMPTY_FILE" || code === "UNSUPPORTED_FORMAT") {
+        return c.json(
+          {
+            ok: false,
+            error: "unreadable_document",
+            message:
+              err instanceof Error && err.message
+                ? `${file.name}: ${err.message.toLowerCase()}`
+                : `${file.name}: could not read this document`,
+          },
+          400,
+        );
+      }
+      throw err;
+    }
     return c.json({ ok: true, ...result }, result.status === "created" ? 201 : 200);
   });
 
