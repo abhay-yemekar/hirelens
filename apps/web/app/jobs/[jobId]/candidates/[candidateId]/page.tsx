@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@hirelens/ui";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { NoticeBanner } from "@/components/notice-banner";
 import { getCandidate, type Stage } from "@/lib/api";
 
 interface DecisionRow {
@@ -20,7 +21,7 @@ export default function CandidatePage() {
 
   const [rawText, setRawText] = useState<string | null>(null);
   const [decisions, setDecisions] = useState<DecisionRow[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
     (async () => {
@@ -32,7 +33,7 @@ export default function CandidatePage() {
         setRawText(res.documents[0]?.rawText ?? "");
         setDecisions(res.decisions);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load candidate");
+        setError(err);
       }
     })();
   }, [params.jobId, params.candidateId, blind]);
@@ -52,11 +53,7 @@ export default function CandidatePage() {
         </h1>
       </header>
 
-      {error && (
-        <p role="alert" className="text-sm" style={{ color: "var(--color-danger)" }}>
-          {error}
-        </p>
-      )}
+      {error ? <NoticeBanner error={error} /> : null}
 
       <Card>
         <CardHeader>
