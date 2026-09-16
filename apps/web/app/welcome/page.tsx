@@ -1,27 +1,29 @@
 "use client";
 
 import { Button } from "@hirelens/ui";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogoMark } from "@/components/brand";
+import { AppShell } from "@/components/app-shell";
+import { Logo } from "@/components/brand";
 import { NoticeBanner } from "@/components/notice-banner";
 import { organization, useSession } from "@/lib/auth-client";
+import { timeAgo } from "@/lib/format";
 
 interface OrgRow {
   id: string;
   name: string;
   slug: string;
+  createdAt?: string;
 }
 
 const STEPS = [
   {
     title: "Create your organization",
-    text: "Jobs, candidates, and scoring runs are scoped to one — like a workspace for your hiring team.",
+    text: "A workspace for your hiring team — jobs, candidates, and scoring runs live inside it.",
   },
   {
     title: "Post a job",
-    text: "Describe the role in plain language; HireLens derives a scoring rubric from it.",
+    text: "Describe the role in plain language; HireLens drafts a scoring rubric from it.",
   },
   {
     title: "Upload resumes & score",
@@ -41,9 +43,9 @@ function slugify(name: string): string {
 }
 
 /**
- * Org onboarding: create an organization (becomes the active tenant)
- * or activate one you already belong to. Jobs, candidates, and scoring
- * runs are scoped to the active organization.
+ * Workspace setup: create an organization (becomes the active tenant) or
+ * activate one you already belong to. Jobs, candidates, and scoring runs
+ * are scoped to the active organization.
  */
 export default function WelcomePage() {
   const router = useRouter();
@@ -99,169 +101,136 @@ export default function WelcomePage() {
   }
 
   const inputClass =
-    "w-full rounded-[var(--radius-control)] border px-3 py-2.5 text-sm text-[var(--hl-cream)] transition-shadow focus:outline-none focus:border-[var(--hl-accent)] focus:ring-2 focus:ring-[var(--hl-accent-soft)]";
-  const inputStyle = { borderColor: "var(--hl-border)", background: "var(--hl-ink-3)" } as const;
+    "w-full rounded-[var(--radius-control)] border px-3 py-2.5 text-sm text-[var(--hl-cream)] transition-shadow focus:outline-none focus:border-[var(--hl-accent)] focus:ring-2 focus:ring-[var(--hl-accent-soft)] placeholder:text-[var(--hl-muted)]";
+  const inputStyle = { borderColor: "var(--hl-border)", background: "var(--hl-input)" } as const;
 
   return (
-    <main className="relative flex min-h-screen">
-      {/* Brand panel */}
-      <section
-        className="relative hidden flex-1 flex-col justify-between overflow-hidden p-12 lg:flex"
-        style={{ background: "var(--hl-ink-2)" }}
-      >
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(640px 420px at 20% 0%, rgba(255,107,87,0.14), transparent 65%), radial-gradient(520px 360px at 85% 100%, rgba(120,140,255,0.08), transparent 60%)",
-          }}
-        />
-        <Link className="relative text-[var(--hl-cream)]" href="/">
-          <span className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight">
-            <LogoMark size={26} />
-            Hire<span style={{ color: "var(--hl-accent)" }}>Lens</span>
-          </span>
-        </Link>
-        <div className="relative max-w-md">
-          <h1 className="text-4xl font-semibold leading-tight tracking-tight text-[var(--hl-cream)]">
-            Set up your <span style={{ color: "var(--hl-accent)" }}>workspace.</span>
+    <AppShell>
+      <div className="mx-auto flex max-w-2xl flex-col gap-8">
+        <header>
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--hl-cream)]">
+            Set up your workspace
           </h1>
-          <ol className="mt-10 flex flex-col gap-6">
-            {STEPS.map((s, i) => (
-              <li key={s.title} className="flex gap-4">
+          <p className="mt-1 text-sm text-[var(--hl-mist)]">
+            One quick step and you're in — pick a workspace below, or create a new one.
+          </p>
+        </header>
+
+        {/* The 3-step path, compact. */}
+        <ol className="flex flex-col gap-1.5 sm:flex-row sm:gap-3">
+          {STEPS.map((s, i) => (
+            <li
+              key={s.title}
+              className="hl-card flex flex-1 gap-3 p-4"
+              aria-label={`Step ${i + 1}: ${s.title}`}
+            >
+              <span
+                aria-hidden
+                className="flex h-6 w-6 flex-none items-center justify-center rounded-full text-xs font-bold"
+                style={{ background: "var(--hl-accent-soft)", color: "var(--hl-accent)" }}
+              >
+                {i + 1}
+              </span>
+              <span>
+                <span className="block text-sm font-semibold text-[var(--hl-cream)]">
+                  {s.title}
+                </span>
+                <span className="mt-0.5 block text-xs leading-5 text-[var(--hl-mist)]">
+                  {s.text}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ol>
+
+        {error && <NoticeBanner error={error} />}
+
+        {orgs.length > 0 && (
+          <section aria-label="Your organizations" className="flex flex-col gap-2">
+            <h2 className="text-sm font-semibold text-[var(--hl-cream)]">Your workspaces</h2>
+            {orgs.map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                onClick={() => void activate(o.id)}
+                className="hl-card flex items-center justify-between px-4 py-3 text-left transition-colors hover:bg-white/[0.04] active:bg-white/[0.07]"
+              >
+                <span>
+                  <span className="block text-sm font-semibold text-[var(--hl-cream)]">
+                    {o.name}
+                  </span>
+                  <span className="block text-xs text-[var(--hl-muted)]">
+                    /{o.slug}
+                    {o.createdAt ? ` · created ${timeAgo(o.createdAt)}` : ""}
+                  </span>
+                </span>
                 <span
                   aria-hidden
-                  className="flex h-8 w-8 flex-none items-center justify-center rounded-full border text-sm font-semibold"
-                  style={{
-                    borderColor: "var(--hl-border)",
-                    background: "var(--hl-card)",
-                    color: "var(--hl-accent)",
-                  }}
+                  className="text-lg transition-transform group-hover:translate-x-0.5"
+                  style={{ color: "var(--hl-accent)" }}
                 >
-                  {i + 1}
+                  →
                 </span>
-                <div>
-                  <p className="text-sm font-semibold text-[var(--hl-cream)]">{s.title}</p>
-                  <p className="mt-0.5 text-[13px] leading-5 text-[var(--hl-mist)]">{s.text}</p>
-                </div>
-              </li>
+              </button>
             ))}
-          </ol>
-        </div>
-        <p className="relative text-xs text-[var(--hl-muted)]">
-          Open source · MIT · self-hostable — resumes never have to leave your machine.
-        </p>
-      </section>
+          </section>
+        )}
 
-      {/* Form panel */}
-      <section className="relative flex flex-1 flex-col items-center justify-center gap-6 overflow-hidden p-6">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 lg:hidden"
-          style={{
-            background:
-              "radial-gradient(500px 280px at 50% -10%, rgba(255,107,87,0.10), transparent 70%)",
-          }}
-        />
-        <div className="relative w-full max-w-md">
-          <div className="mb-6 lg:hidden">
-            <span className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight text-[var(--hl-cream)]">
-              <LogoMark size={24} />
-              Hire<span style={{ color: "var(--hl-accent)" }}>Lens</span>
-            </span>
-          </div>
-
-          <h2 className="text-xl font-semibold text-[var(--hl-cream)]">
-            {orgs.length > 0 ? "Continue or create" : "Create your first organization"}
-          </h2>
-          <p className="mt-1 text-sm text-[var(--hl-mist)]">
-            {orgs.length > 0
-              ? "Pick a workspace you belong to, or start a new one."
-              : "One quick step and you're in."}
-          </p>
-
-          {error && (
-            <div className="mt-4">
-              <NoticeBanner error={error} />
-            </div>
-          )}
-
-          {orgs.length > 0 && (
-            <div className="mt-5 flex flex-col gap-2">
-              {orgs.map((o) => (
-                <button
-                  key={o.id}
-                  type="button"
-                  onClick={() => void activate(o.id)}
-                  className="flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-colors hover:bg-white/[0.04]"
-                  style={{ borderColor: "var(--hl-border)", background: "var(--hl-card)" }}
-                >
-                  <span>
-                    <span className="block text-sm font-semibold text-[var(--hl-cream)]">
-                      {o.name}
-                    </span>
-                    <span className="block text-xs text-[var(--hl-muted)]">/{o.slug}</span>
-                  </span>
-                  <span aria-hidden style={{ color: "var(--hl-accent)" }}>
-                    →
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          <form
-            onSubmit={createOrg}
-            className="mt-6 flex flex-col gap-4 rounded-2xl border p-5"
-            style={{ borderColor: "var(--hl-border)", background: "var(--hl-card)" }}
-          >
+        <form
+          onSubmit={createOrg}
+          className="hl-card flex flex-col gap-4 p-5"
+          style={{ boxShadow: "0 24px 60px -32px rgba(3, 6, 18, 0.85)" }}
+        >
+          <div className="flex items-center gap-2.5">
+            <Logo compact />
+            <span aria-hidden className="h-4 w-px" style={{ background: "var(--hl-border)" }} />
             <p className="text-sm font-semibold text-[var(--hl-cream)]">
-              {orgs.length > 0 ? "Or create a new organization" : "Organization details"}
+              {orgs.length > 0 ? "Or create a new organization" : "Create your organization"}
             </p>
-            <label className="flex flex-col gap-1.5 text-sm">
-              <span style={{ color: "var(--hl-mist)" }}>Organization name</span>
-              <input
-                required
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  if (!slugEdited) setSlug(slugify(e.target.value));
-                }}
-                placeholder="Acme Talent"
-                autoComplete="organization"
-                className={inputClass}
-                style={inputStyle}
-              />
-            </label>
-            <label className="flex flex-col gap-1.5 text-sm">
-              <span style={{ color: "var(--hl-mist)" }}>
-                Slug <span style={{ color: "var(--hl-muted)" }}>(URL-safe, auto-filled)</span>
-              </span>
-              <input
-                required
-                pattern="[a-z0-9-]{3,}"
-                title="Lowercase letters, numbers, hyphens; at least 3 characters"
-                value={slug}
-                onChange={(e) => {
-                  setSlugEdited(true);
-                  setSlug(e.target.value.toLowerCase());
-                }}
-                placeholder="acme-talent"
-                className={inputClass}
-                style={inputStyle}
-              />
-            </label>
-            <Button
-              type="submit"
-              disabled={busy}
-              className="h-11 bg-white font-semibold text-[#0d1226] hover:bg-[#eef0fa]"
-            >
-              {busy ? "Creating…" : "Create organization"}
-            </Button>
-          </form>
-        </div>
-      </section>
-    </main>
+          </div>
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span style={{ color: "var(--hl-mist)" }}>Organization name</span>
+            <input
+              required
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (!slugEdited) setSlug(slugify(e.target.value));
+              }}
+              placeholder="Acme Talent"
+              autoComplete="organization"
+              className={inputClass}
+              style={inputStyle}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span style={{ color: "var(--hl-mist)" }}>
+              Slug <span style={{ color: "var(--hl-muted)" }}>(URL-safe, auto-filled)</span>
+            </span>
+            <input
+              required
+              pattern="[a-z0-9-]{3,}"
+              title="Lowercase letters, numbers, hyphens; at least 3 characters"
+              value={slug}
+              onChange={(e) => {
+                setSlugEdited(true);
+                setSlug(e.target.value.toLowerCase());
+              }}
+              placeholder="acme-talent"
+              className={inputClass}
+              style={inputStyle}
+            />
+          </label>
+          <Button
+            type="submit"
+            disabled={busy}
+            size="lg"
+            className="self-start bg-white font-semibold text-[#0d1226] hover:bg-[#eef0fa]"
+          >
+            {busy ? "Creating…" : "Create organization"}
+          </Button>
+        </form>
+      </div>
+    </AppShell>
   );
 }

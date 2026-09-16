@@ -80,7 +80,7 @@ export function SignInPanel() {
           </ul>
         </div>
         <p className="relative text-xs text-[var(--hl-muted)]">
-          Open source · MIT · self-hostable — resumes never have to leave your machine.
+          Open source · MIT · Self-hostable — resumes never have to leave your machine.
         </p>
       </section>
 
