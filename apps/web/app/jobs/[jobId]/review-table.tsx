@@ -2,6 +2,7 @@
 
 import { Button, OverallScore } from "@hirelens/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { NoticeBanner } from "@/components/notice-banner";
 import { trackEvent } from "@/lib/analytics";
 import { getReview, postDecision, type ReviewRow, type Stage } from "@/lib/api";
 
@@ -33,7 +34,7 @@ export function ReviewTable({ jobId }: { jobId: string }) {
   const [cursor, setCursor] = useState(0);
   const [blind, setBlind] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [reasonFor, setReasonFor] = useState<{ id: string; stage: Stage } | null>(null);
   const [reason, setReason] = useState("");
   const loaded = useRef(false);
@@ -44,7 +45,7 @@ export function ReviewTable({ jobId }: { jobId: string }) {
       const res = await getReview(jobId);
       setRows([...res.review].sort((a, b) => b.overall - a.overall));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load review table");
+      setError(err);
     }
   }, [jobId]);
 
@@ -75,7 +76,7 @@ export function ReviewTable({ jobId }: { jobId: string }) {
       setReason("");
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to record decision");
+      setError(err);
     } finally {
       setBusy(false);
     }
@@ -161,11 +162,7 @@ export function ReviewTable({ jobId }: { jobId: string }) {
         <kbd>R</kbd> reject
       </p>
 
-      {error && (
-        <p role="alert" className="text-sm" style={{ color: "var(--color-danger)" }}>
-          {error}
-        </p>
-      )}
+      {error ? <NoticeBanner error={error} /> : null}
 
       {rows.length === 0 ? (
         <p className="text-sm" style={{ color: "var(--color-fg-muted)" }}>
