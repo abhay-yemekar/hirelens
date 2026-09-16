@@ -17,18 +17,18 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@better-auth/drizzle-adapter": "^1.7.3",
-    "better-auth": "^1.7.3",
+    "@better-auth/drizzle-adapter": "^1.7.4",
+    "better-auth": "^1.7.4",
     "drizzle-orm": "^0.45.2",
     "pg": "^8.23.0"
   },
   "devDependencies": {
     "@better-auth/cli": "^1.4.21",
-    "@better-auth/drizzle-adapter": "^1.7.3",
+    "@better-auth/drizzle-adapter": "^1.7.4",
     "@hirelens/config": "workspace:*",
-    "@types/node": "^26.4.1",
+    "@types/node": "^26.5.1",
     "@types/pg": "^8.23.0",
-    "better-auth": "1.7.3",
+    "better-auth": "1.7.4",
     "dotenv": "^17.2.0",
     "drizzle-kit": "^0.31.10",
     "tsx": "^4.16.2",
