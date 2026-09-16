@@ -65,7 +65,7 @@ export default function WelcomePage() {
   }
 
   if (!isPending && !session) {
-    router.replace("/");
+    router.replace("/signin");
     return null;
   }
 

@@ -72,7 +72,10 @@ export default function JobsPage() {
             {session?.user?.email ? `Signed in as ${session.user.email}` : ""}
           </p>
         </div>
-        <Button variant="ghost" onClick={() => signOut().then(() => (window.location.href = "/"))}>
+        <Button
+          variant="ghost"
+          onClick={() => signOut().then(() => (window.location.href = "/signin"))}
+        >
           Sign out
         </Button>
       </header>
