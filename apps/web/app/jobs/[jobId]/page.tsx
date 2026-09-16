@@ -9,6 +9,7 @@ import { NoticeBanner } from "@/components/notice-banner";
 import { trackEvent } from "@/lib/analytics";
 import {
   type CandidateRow,
+  deleteCandidate,
   getJob,
   importRubric,
   type Job,
@@ -113,6 +114,20 @@ export default function JobDetailPage() {
     if (fileRef.current) fileRef.current.value = "";
   };
 
+  function removeCandidate(candidate: CandidateRow) {
+    const label = (candidate.sourceFileKey ?? candidate.id.slice(0, 8)).split("/").pop();
+    if (
+      !window.confirm(
+        `Remove ${label ?? "this resume"}? Its scores and review history go with it, and the removal is recorded in the audit log.`,
+      )
+    )
+      return;
+    void run("remove", async () => {
+      await deleteCandidate(jobId, candidate.id);
+      await load();
+    });
+  }
+
   const scoreBlocker =
     rubrics.length === 0
       ? "Import a rubric first"
@@ -149,57 +164,78 @@ export default function JobDetailPage() {
             )}
           </div>
         </header>
-
-        {error ? <NoticeBanner error={error} /> : null}
-
-        {/* Rubric */}
+        {error ? <NoticeBanner error={error} /> : null} {/* Rubric */}
         <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
           <CardHeader>
             <CardTitle style={{ color: "var(--hl-cream)" }}>Rubric</CardTitle>
             <CardDescription style={{ color: "var(--hl-mist)" }}>
-              Criteria candidates are scored against. Versions are immutable.
+              The scorecard the AI grades against — a list of criteria (system design,
+              communication, …), each with a 0–5 scale. Every candidate gets one score per
+              criterion, combined into an overall 0–5 with cited evidence you can open and read.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-wrap items-center gap-3">
-            {rubrics.length === 0 ? (
-              <p className="text-sm" style={{ color: "var(--hl-muted)" }}>
-                No rubric yet — import the demo rubric to try scoring, or derive one from the job
-                description with an LLM key configured.
-              </p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {rubrics.map((r) => (
-                  <span
-                    key={r.id}
-                    className="rounded-full px-3 py-1 text-sm"
-                    style={{
-                      background: "var(--hl-accent-soft)",
-                      color: "var(--hl-accent)",
-                      border: "1px solid var(--hl-border)",
-                    }}
-                  >
-                    v{r.version}
+          <CardContent className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {rubrics.length === 0 ? (
+                <p className="text-sm" style={{ color: "var(--hl-muted)" }}>
+                  No rubric yet — start with the demo rubric below to try scoring end-to-end.
+                </p>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  {rubrics.map((r, i) => (
+                    <span
+                      key={r.id}
+                      className="rounded-full px-3 py-1 text-sm"
+                      title={
+                        i === 0
+                          ? `Version ${r.version} — the one scoring uses right now`
+                          : `Version ${r.version} — kept for the audit trail; only the newest version is used`
+                      }
+                      style={
+                        i === 0
+                          ? {
+                              background: "var(--hl-accent)",
+                              color: "var(--hl-ink)",
+                              fontWeight: 600,
+                            }
+                          : {
+                              background: "transparent",
+                              color: "var(--hl-muted)",
+                              border: "1px solid var(--hl-border)",
+                            }
+                      }
+                    >
+                      v{r.version}
+                      {i === 0 ? " · active" : ""}
+                    </span>
+                  ))}
+                  <span className="text-xs" style={{ color: "var(--hl-muted)" }}>
+                    Scoring always uses the newest version — older ones stay for the audit trail.
                   </span>
-                ))}
-              </div>
-            )}
-            <Button
-              variant="outline"
-              disabled={busy !== null}
-              className="ml-auto"
-              style={{ borderColor: "var(--hl-border)", color: "var(--hl-mist)" }}
-              onClick={() =>
-                run("rubric", async () => {
-                  await importRubric(jobId, demoRubric());
-                  await load();
-                })
-              }
-            >
-              {busy === "rubric" ? "Importing…" : "Import demo rubric"}
-            </Button>
+                </div>
+              )}
+              <Button
+                variant="outline"
+                disabled={busy !== null}
+                className="ml-auto"
+                style={{ borderColor: "var(--hl-border)", color: "var(--hl-mist)" }}
+                title="Loads a sample scorecard so you can try scoring without waiting for LLM derivation"
+                onClick={() =>
+                  run("rubric", async () => {
+                    await importRubric(jobId, demoRubric());
+                    await load();
+                  })
+                }
+              >
+                {busy === "rubric" ? "Importing…" : "Use the demo rubric"}
+              </Button>
+            </div>
+            <p className="text-xs" style={{ color: "var(--hl-muted)" }}>
+              With an LLM key configured, a rubric can also be drafted automatically from the job
+              description — that's what "derive" means in the docs and CLI.
+            </p>
           </CardContent>
         </Card>
-
         {/* Candidates */}
         <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
           <CardHeader>
@@ -209,7 +245,7 @@ export default function JobDetailPage() {
             <CardDescription style={{ color: "var(--hl-mist)" }}>
               Upload resumes (txt, md, pdf). Duplicates are deduped.
             </CardDescription>
-          </CardHeader>
+          </CardHeader>{" "}
           <CardContent className="flex flex-col gap-3">
             <label
               className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border border-dashed px-4 py-6 text-center text-sm transition-colors hover:bg-white/[0.03]"
@@ -228,46 +264,60 @@ export default function JobDetailPage() {
             </label>
             {candidates.length > 0 && (
               <ul className="flex flex-col gap-1.5 text-sm">
-                {candidates.map((c) => (
-                  <li
-                    key={c.id}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2"
-                    style={{ background: "var(--hl-ink-3)", color: "var(--hl-mist)" }}
-                  >
-                    <span className="font-mono text-xs" style={{ color: "var(--hl-muted)" }}>
-                      {(c.sourceFileKey ?? c.id.slice(0, 8)).split("/").pop()}
-                    </span>
-                    {c.pageCount !== null && (
-                      <span
-                        className="rounded-full px-2 py-0.5 text-xs"
-                        style={{ background: "var(--hl-card)", color: "var(--hl-muted)" }}
-                      >
-                        {c.pageCount}p
+                {candidates.map((c) => {
+                  const label = (c.sourceFileKey ?? c.id.slice(0, 8)).split("/").pop();
+                  return (
+                    <li
+                      key={c.id}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2"
+                      style={{ background: "var(--hl-ink-3)" }}
+                    >
+                      <span className="font-mono text-xs" style={{ color: "var(--hl-mist)" }}>
+                        {label}
                       </span>
-                    )}
-                    {c.language && (
-                      <span
-                        className="rounded-full px-2 py-0.5 text-xs"
-                        style={{ background: "var(--hl-card)", color: "var(--hl-muted)" }}
+                      {c.pageCount !== null && (
+                        <span
+                          className="rounded-full px-2 py-0.5 text-xs"
+                          style={{ background: "var(--hl-card)", color: "var(--hl-muted)" }}
+                        >
+                          {c.pageCount}p
+                        </span>
+                      )}
+                      {c.language && (
+                        <span
+                          className="rounded-full px-2 py-0.5 text-xs"
+                          style={{ background: "var(--hl-card)", color: "var(--hl-muted)" }}
+                        >
+                          {c.language}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeCandidate(c)}
+                        disabled={busy !== null}
+                        aria-label={`Remove ${label}`}
+                        title="Remove this resume and its scores (recorded in the audit log)"
+                        className="ml-auto rounded px-2 py-1 text-xs transition-colors hover:bg-white/[0.06] disabled:opacity-40"
+                        style={{ color: "var(--hl-muted)" }}
                       >
-                        {c.language}
-                      </span>
-                    )}
-                  </li>
-                ))}
+                        Remove
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </CardContent>
         </Card>
-
         <BiasAuditCard jobId={jobId} />
-
         {/* Scoring */}
         <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
           <CardHeader>
             <CardTitle style={{ color: "var(--hl-cream)" }}>Scoring</CardTitle>
             <CardDescription style={{ color: "var(--hl-mist)" }}>
-              Score all candidates against the latest rubric version.
+              The AI reads every resume and grades it against the active rubric: one 0–5 score per
+              criterion with a quoted snippet as evidence, combined into an overall score. Results
+              land in the review queue below, where you make the actual decisions.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
