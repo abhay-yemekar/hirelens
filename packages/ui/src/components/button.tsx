@@ -3,18 +3,27 @@ import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 import { cn } from "../cn";
 
+/**
+ * Press feedback: scale dip + per-variant pressed state, so every button
+ * visibly acknowledges a click. Reduced-motion users get the background
+ * change only (scale is transitioned, so the global reduced-motion rule
+ * in tokens.css neutralizes it).
+ */
+const pressed = "active:scale-[0.98] transition-transform duration-[var(--duration-fast)]";
+
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-control)] text-sm font-medium transition-colors duration-[var(--duration-fast)] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]",
+  `inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-control)] text-sm font-medium transition-colors duration-[var(--duration-fast)] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] ${pressed}`,
   {
     variants: {
       variant: {
-        primary: "bg-[var(--color-accent)] text-[var(--color-accent-fg)] hover:opacity-90",
+        primary:
+          "bg-[var(--color-accent)] text-[var(--color-accent-fg)] hover:opacity-90 active:bg-[var(--color-accent)] active:opacity-80",
         secondary:
           "bg-[var(--color-accent-muted)] text-[var(--color-accent)] hover:bg-[var(--color-border-subtle)]",
         outline:
-          "border border-[var(--color-border-strong)] bg-transparent hover:bg-[var(--color-surface-sunken)]",
-        ghost: "hover:bg-[var(--color-surface-sunken)]",
-        danger: "bg-[var(--color-danger)] text-white hover:opacity-90",
+          "border border-[var(--color-border-strong)] bg-transparent hover:bg-[var(--color-surface-sunken)] active:bg-[var(--color-border-subtle)]",
+        ghost: "hover:bg-[var(--color-surface-sunken)] active:bg-[var(--color-border-subtle)]",
+        danger: "bg-[var(--color-danger)] text-white hover:opacity-90 active:opacity-80",
       },
       size: {
         sm: "h-8 px-3 text-xs",

@@ -6,6 +6,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { ROLE_MIN, requireAuth } from "../auth.js";
 import { readJson } from "../http.js";
+import { labelFromFileKey } from "../labels.js";
 import type { AppEnv } from "../types.js";
 import { loadOrgJob } from "./jobs.js";
 
@@ -151,6 +152,21 @@ export function reviewRoutes(): Hono<AppEnv> {
       .where(and(eq(scoringRuns.jobId, job.id), eq(scoringRuns.status, "completed")))
       .orderBy(desc(scoringRuns.startedAt));
 
+    // Uploaded-filename labels ("jane_doe.pdf"), fetched once for the job.
+    // Withheld when blind review is requested — the label is an identity cue.
+    const blind = c.req.query("blind") === "1";
+    const fileKeys = new Map<string, string>();
+    if (!blind) {
+      const candidateRows = await db
+        .select({ id: candidates.id, fileKey: candidates.sourceFileKey })
+        .from(candidates)
+        .where(eq(candidates.jobId, job.id));
+      for (const row of candidateRows) {
+        const label = labelFromFileKey(row.fileKey);
+        if (label) fileKeys.set(row.id, label);
+      }
+    }
+
     const byCandidate = new Map<
       string,
       { candidateId: string; overall: number; overridden: number; criteria: number }
@@ -214,6 +230,7 @@ export function reviewRoutes(): Hono<AppEnv> {
     const review = [...byCandidate.values()].map((r) => ({
       ...r,
       stage: stageByCandidate.get(r.candidateId) ?? "new",
+      label: fileKeys.get(r.candidateId) ?? null,
     }));
 
     return c.json({ ok: true, review, decisionHistory: decisionRows });

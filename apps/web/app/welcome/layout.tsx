@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Get started — HireLens",
+  title: "Set up your workspace — HireLens",
   description: "Create or choose your HireLens organization to start screening.",
 };
 

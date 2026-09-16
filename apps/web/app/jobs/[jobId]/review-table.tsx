@@ -1,13 +1,15 @@
 "use client";
 
 import { Button, OverallScore } from "@hirelens/ui";
+import { Info } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { NoticeBanner } from "@/components/notice-banner";
 import { trackEvent } from "@/lib/analytics";
 import { getReview, postDecision, type ReviewRow, type Stage } from "@/lib/api";
+import { cap } from "@/lib/format";
 
-const STAGE_STYLE: Record<Stage, { bg: string; fg: string }> = {
-  new: { bg: "var(--color-surface-sunken)", fg: "var(--color-fg-muted)" },
+const STAGE_STYLE: Record<Stage, { bg: string; fg: string; border?: string }> = {
+  new: { bg: "transparent", fg: "var(--color-fg-muted)", border: "var(--hl-border)" },
   shortlisted: {
     bg: "color-mix(in oklab, var(--color-warning) 18%, transparent)",
     fg: "var(--color-warning)",
@@ -24,8 +26,8 @@ const STAGE_STYLE: Record<Stage, { bg: string; fg: string }> = {
 
 const STAGES: Stage[] = ["shortlisted", "advanced", "rejected"];
 
-function csvEscape(v: string | number): string {
-  const s = String(v);
+function csvEscape(v: string | number | null): string {
+  const s = String(v ?? "");
   return /[",\n]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s;
 }
 
@@ -106,9 +108,17 @@ export function ReviewTable({ jobId }: { jobId: string }) {
   }, [rows, cursor, reasonFor]);
 
   function exportCsv() {
-    const header = "rank,candidate_id,overall,stage,overridden_scores,criteria";
+    const header = "rank,label,candidate_id,overall,stage,overridden_scores,criteria";
     const lines = rows.map((r, i) =>
-      [i + 1, r.candidateId, Math.round(r.overall), r.stage, r.overridden, r.criteria]
+      [
+        i + 1,
+        blind ? `Candidate ${i + 1}` : (r.label ?? `candidate-${r.candidateId.slice(0, 8)}`),
+        r.candidateId,
+        Math.round(r.overall),
+        r.stage,
+        r.overridden,
+        r.criteria,
+      ]
         .map(csvEscape)
         .join(","),
     );
@@ -125,7 +135,12 @@ export function ReviewTable({ jobId }: { jobId: string }) {
     const payload = {
       jobId,
       exportedAt: new Date().toISOString(),
-      ranking: rows.map((r, i) => ({ rank: i + 1, ...r })),
+      blind,
+      ranking: rows.map((r, i) => ({
+        rank: i + 1,
+        ...r,
+        label: blind ? `Candidate ${i + 1}` : r.label,
+      })),
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -136,50 +151,64 @@ export function ReviewTable({ jobId }: { jobId: string }) {
     URL.revokeObjectURL(url);
   }
 
+  function displayName(r: ReviewRow, i: number): string {
+    if (blind) return `Candidate ${i + 1}`;
+    return r.label ?? `Candidate ${r.candidateId.slice(0, 8)}`;
+  }
+
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium">Review queue</h2>
+        <h2 className="text-lg font-medium text-[var(--hl-cream)]">Review queue</h2>
         <div className="flex items-center gap-2">
           <label
-            className="flex items-center gap-1 text-sm"
+            className="flex items-center gap-1.5 text-sm"
             style={{ color: "var(--color-fg-muted)" }}
+            title="Hide candidate names while you decide, so first impressions don't bias you. Turn it off to reveal them."
           >
-            <input type="checkbox" checked={blind} onChange={(e) => setBlind(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={blind}
+              onChange={(e) => setBlind(e.target.checked)}
+              className="accent-[var(--hl-accent)]"
+            />
             Blind review
           </label>
-          <Button variant="ghost" onClick={exportCsv}>
-            CSV
+          <Button variant="outline" size="sm" onClick={exportCsv} disabled={rows.length === 0}>
+            Export CSV
           </Button>
-          <Button variant="ghost" onClick={exportJson}>
-            JSON
+          <Button variant="outline" size="sm" onClick={exportJson} disabled={rows.length === 0}>
+            Export JSON
           </Button>
         </div>
       </div>
 
-      <p className="text-xs" style={{ color: "var(--color-fg-muted)" }}>
-        Shortcuts: <kbd>J</kbd>/<kbd>K</kbd> move · <kbd>A</kbd> shortlist · <kbd>X</kbd> advance ·{" "}
-        <kbd>R</kbd> reject
+      <p
+        className="flex items-center gap-1 text-xs"
+        style={{ color: "var(--color-fg-muted)" }}
+        title="Keyboard shortcuts: J / K move between candidates · A shortlists · X advances · R rejects"
+      >
+        <Info aria-hidden className="h-3.5 w-3.5" />
+        Keyboard shortcuts available
       </p>
 
       {error ? <NoticeBanner error={error} /> : null}
 
       {rows.length === 0 ? (
         <p className="text-sm" style={{ color: "var(--color-fg-muted)" }}>
-          No scored candidates yet — run scoring to populate the review queue.
+          No scored candidates yet — run scoring above to populate the review queue.
         </p>
       ) : (
         <div
           className="overflow-hidden rounded-[var(--radius-card)] border"
-          style={{ borderColor: "var(--color-border-subtle)" }}
+          style={{ borderColor: "var(--hl-border)" }}
         >
           {rows.map((r, i) => (
             <div
               key={r.candidateId}
-              className="flex items-center justify-between gap-3 px-4 py-3"
+              className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
               style={{
-                borderBottom:
-                  i < rows.length - 1 ? "1px solid var(--color-border-subtle)" : undefined,
+                borderBottom: i < rows.length - 1 ? "1px solid var(--hl-border)" : undefined,
                 background: i === cursor ? "var(--color-surface-raised)" : undefined,
               }}
             >
@@ -192,10 +221,11 @@ export function ReviewTable({ jobId }: { jobId: string }) {
                     ? `/jobs/${jobId}/candidates/${r.candidateId}?blind=1`
                     : `/jobs/${jobId}/candidates/${r.candidateId}`
                 }
-                className="font-mono text-sm underline-offset-2 hover:underline"
+                className="max-w-[220px] truncate text-sm font-medium underline-offset-2 hover:underline"
                 style={{ color: "var(--color-accent)" }}
+                title={blind ? "Blinded — open to read the masked resume" : displayName(r, i)}
               >
-                {blind ? `candidate-${i + 1}` : `candidate-${r.candidateId.slice(0, 8)}`}
+                {displayName(r, i)}
               </a>
               <OverallScore score={r.overall} label={`Candidate rank ${i + 1} overall`} />
               {r.overridden > 0 && (
@@ -204,16 +234,23 @@ export function ReviewTable({ jobId }: { jobId: string }) {
                 </span>
               )}
               <span
-                className="rounded-[var(--radius-pill)] px-2 py-0.5 text-xs"
-                style={{ background: STAGE_STYLE[r.stage].bg, color: STAGE_STYLE[r.stage].fg }}
+                className="rounded-[var(--radius-pill)] px-2 py-0.5 text-xs font-medium"
+                style={{
+                  background: STAGE_STYLE[r.stage].bg,
+                  color: STAGE_STYLE[r.stage].fg,
+                  ...(STAGE_STYLE[r.stage].border
+                    ? { border: `1px solid ${STAGE_STYLE[r.stage].border}` }
+                    : {}),
+                }}
               >
-                {r.stage}
+                {cap(r.stage)}
               </span>
-              <span className="flex gap-1">
+              <span className="flex gap-1.5">
                 {STAGES.map((s) => (
                   <Button
                     key={s}
                     variant="outline"
+                    size="sm"
                     disabled={busy || r.stage === s}
                     onClick={() => void decide(s, r.candidateId)}
                   >
@@ -231,12 +268,12 @@ export function ReviewTable({ jobId }: { jobId: string }) {
           onSubmit={submitReason}
           className="flex flex-col gap-2 rounded-[var(--radius-card)] border p-4"
           style={{
-            borderColor: "var(--color-border-strong)",
-            background: "var(--color-surface-raised)",
+            borderColor: "var(--hl-border)",
+            background: "var(--hl-ink-3)",
           }}
         >
-          <p className="text-sm font-medium">
-            Reason for {reasonFor.stage} — required for the audit record.
+          <p className="text-sm font-medium text-[var(--hl-cream)]">
+            Reason for {reasonFor.stage.toLowerCase()} — required for the audit record.
           </p>
           <textarea
             rows={2}
@@ -246,10 +283,10 @@ export function ReviewTable({ jobId }: { jobId: string }) {
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Why this decision? (recorded in the audit log)"
-            className="rounded-[var(--radius-control)] border px-3 py-2 text-sm"
+            className="rounded-[var(--radius-control)] border px-3 py-2 text-sm text-[var(--hl-cream)] placeholder:text-[var(--hl-muted)] focus:outline-none focus:border-[var(--hl-accent)] focus:ring-2 focus:ring-[var(--hl-accent-soft)]"
             style={{
-              borderColor: "var(--color-border-subtle)",
-              background: "var(--color-surface)",
+              borderColor: "var(--hl-border)",
+              background: "var(--hl-input)",
             }}
           />
           <div className="flex gap-2">

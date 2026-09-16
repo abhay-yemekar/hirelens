@@ -15,24 +15,16 @@ import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { NoticeBanner } from "@/components/notice-banner";
 import { createJob, type Job, listJobs } from "@/lib/api";
+import { cap, timeAgo } from "@/lib/format";
 
-const STATUS_STYLE: Record<Job["status"], { bg: string; fg: string }> = {
-  draft: { bg: "var(--hl-card)", fg: "var(--hl-mist)" },
+const STATUS_STYLE: Record<Job["status"], { bg: string; fg: string; border?: string }> = {
+  draft: { bg: "transparent", fg: "var(--hl-mist)", border: "var(--hl-border)" },
   open: {
     bg: "color-mix(in oklab, var(--color-success) 16%, transparent)",
     fg: "var(--color-success)",
   },
-  closed: { bg: "color-mix(in oklab, var(--color-fg) 8%, transparent)", fg: "var(--hl-muted)" },
+  closed: { bg: "color-mix(in oklab, var(--hl-muted) 14%, transparent)", fg: "var(--hl-muted)" },
 };
-
-function timeAgo(iso: string): string {
-  const s = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (s < 60) return "just now";
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  if (s < 86400 * 30) return `${Math.floor(s / 86400)}d ago`;
-  return new Date(iso).toLocaleDateString();
-}
 
 export default function JobsPage() {
   const router = useRouter();
@@ -82,8 +74,8 @@ export default function JobsPage() {
   }
 
   const inputClass =
-    "w-full rounded-[var(--radius-control)] border px-3 py-2.5 text-sm transition-shadow focus:outline-none focus:border-[var(--hl-accent)] focus:ring-2 focus:ring-[var(--hl-accent-soft)]";
-  const inputStyle = { borderColor: "var(--hl-border)", background: "var(--hl-ink-3)" } as const;
+    "w-full rounded-[var(--radius-control)] border px-3 py-2.5 text-sm text-[var(--hl-cream)] transition-shadow placeholder:text-[var(--hl-muted)] focus:outline-none focus:border-[var(--hl-accent)] focus:ring-2 focus:ring-[var(--hl-accent-soft)]";
+  const inputStyle = { borderColor: "var(--hl-border)", background: "var(--hl-input)" } as const;
 
   return (
     <AppShell>
@@ -97,11 +89,18 @@ export default function JobsPage() {
 
         {error ? <NoticeBanner error={error} /> : null}
 
-        <Card>
+        <Card
+          style={{
+            background: "var(--hl-card)",
+            borderColor: "var(--hl-border)",
+            boxShadow: "0 24px 60px -32px rgba(3, 6, 18, 0.85)",
+          }}
+        >
           <CardHeader>
             <CardTitle style={{ color: "var(--hl-cream)" }}>New job</CardTitle>
             <CardDescription style={{ color: "var(--hl-mist)" }}>
-              Describe the role; a rubric is derived from it.
+              Describe the role — HireLens drafts the scoring rubric from your description when an
+              LLM key is configured, or you can import one on the job page.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -163,7 +162,7 @@ export default function JobsPage() {
               jobs.map((job) => (
                 <Link key={job.id} href={`/jobs/${job.id}`} className="group block">
                   <div
-                    className="flex items-center justify-between rounded-2xl border px-5 py-4 transition-colors group-hover:bg-white/[0.03]"
+                    className="flex items-center justify-between rounded-2xl border px-5 py-4 transition-all group-hover:bg-white/[0.03] group-active:scale-[0.995] group-active:bg-white/[0.05]"
                     style={{ borderColor: "var(--hl-border)", background: "var(--hl-card)" }}
                   >
                     <div>
@@ -178,9 +177,12 @@ export default function JobsPage() {
                         style={{
                           background: STATUS_STYLE[job.status].bg,
                           color: STATUS_STYLE[job.status].fg,
+                          ...(STATUS_STYLE[job.status].border
+                            ? { border: `1px solid ${STATUS_STYLE[job.status].border}` }
+                            : {}),
                         }}
                       >
-                        {job.status}
+                        {cap(job.status)}
                       </span>
                       <span
                         aria-hidden

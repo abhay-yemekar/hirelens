@@ -61,9 +61,11 @@ export function candidateReadRoutes(): Hono<AppEnv> {
       .where(eq(documents.candidateId, candidate.id));
 
     // Blind review: `?blind=1` masks identity cues server-side. Masking
-    // preserves character length so evidence spans stay aligned.
+    // preserves character length so evidence spans stay aligned. The
+    // uploaded-filename label is withheld with the rest.
     const blind = c.req.query("blind") === "1";
     const masked = blind ? docs.map((d) => ({ ...d, rawText: blindView(d.rawText) })) : docs;
+    const candidateOut = blind ? { ...candidate, sourceFileKey: null } : candidate;
 
     const decisionRows = await db
       .select()
@@ -71,7 +73,12 @@ export function candidateReadRoutes(): Hono<AppEnv> {
       .where(eq(decisions.candidateId, candidate.id))
       .orderBy(desc(decisions.decidedAt));
 
-    return c.json({ ok: true, candidate, documents: masked, decisions: decisionRows });
+    return c.json({
+      ok: true,
+      candidate: candidateOut,
+      documents: masked,
+      decisions: decisionRows,
+    });
   });
 
   return routes;

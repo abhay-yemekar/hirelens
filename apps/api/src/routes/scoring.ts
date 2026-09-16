@@ -1,10 +1,17 @@
 import { type Criterion, expandZip, weightedOverall } from "@hirelens/core";
-import { candidates, evidence, rubrics, scores, scoringRuns } from "@hirelens/db";
+import {
+  candidates as candidatesTable,
+  evidence,
+  rubrics,
+  scores,
+  scoringRuns,
+} from "@hirelens/db";
 import { appendAudit, runBatch } from "@hirelens/orchestrator";
 import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { ROLE_MIN, requireAuth } from "../auth.js";
 import { type IngestResult, ingestBytes } from "../ingest.js";
+import { labelFromFileKey } from "../labels.js";
 import { langfuseTraceSink } from "../trace-sink.js";
 import type { AppEnv } from "../types.js";
 import { loadOrgJob } from "./jobs.js";
@@ -73,6 +80,18 @@ async function runDetail(db: AppEnv["Variables"]["db"], runId: string) {
     if (owner) byCandidate.get(owner)?.evidence.push(e);
   }
 
+  // Uploaded-filename labels for the results UI. Callers pass blind=true to
+  // withhold them (they are identity cues).
+  const candidateFileRows = await db
+    .select({ id: candidatesTable.id, fileKey: candidatesTable.sourceFileKey })
+    .from(candidatesTable)
+    .where(eq(candidatesTable.jobId, run.jobId));
+  const labelByCandidate = new Map<string, string>();
+  for (const row of candidateFileRows) {
+    const label = labelFromFileKey(row.fileKey);
+    if (label) labelByCandidate.set(row.id, label);
+  }
+
   const candidates = [...byCandidate.entries()].map(([candidateId, entry]) => {
     const overall = weightedOverall(
       criteria,
@@ -92,6 +111,7 @@ async function runDetail(db: AppEnv["Variables"]["db"], runId: string) {
     return {
       candidateId,
       overall,
+      label: labelByCandidate.get(candidateId) ?? null,
       criteria: entry.scores.map((s) => ({ ...s, evidence: evidenceByScore.get(s.id) ?? [] })),
     };
   });
@@ -146,7 +166,12 @@ export function scoringRoutes(): Hono<AppEnv> {
     if (!detail || detail.run.jobId !== job.id) {
       return c.json({ ok: false, error: "not_found" }, 404);
     }
-    return c.json({ ok: true, ...detail });
+    // Blind review: labels are identity cues — withhold them server-side.
+    const blind = c.req.query("blind") === "1";
+    const candidates = blind
+      ? detail.candidates.map((c) => ({ ...c, label: null }))
+      : detail.candidates;
+    return c.json({ ok: true, run: detail.run, candidates });
   });
 
   /** Run history for the job, newest first. */
@@ -214,13 +239,13 @@ export function scoringRoutes(): Hono<AppEnv> {
 
     const candidateId = c.req.param("candidateId");
     const [row] = await db
-      .select({ id: candidates.id, fileKey: candidates.sourceFileKey })
-      .from(candidates)
-      .where(and(eq(candidates.id, candidateId), eq(candidates.jobId, job.id)))
+      .select({ id: candidatesTable.id, fileKey: candidatesTable.sourceFileKey })
+      .from(candidatesTable)
+      .where(and(eq(candidatesTable.id, candidateId), eq(candidatesTable.jobId, job.id)))
       .limit(1);
     if (!row) return c.json({ ok: false, error: "not_found" }, 404);
 
-    await db.delete(candidates).where(eq(candidates.id, candidateId));
+    await db.delete(candidatesTable).where(eq(candidatesTable.id, candidateId));
     await appendAudit(db, {
       orgId: auth.orgId,
       actorId: auth.userId,

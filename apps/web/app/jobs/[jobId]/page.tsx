@@ -20,10 +20,19 @@ import {
   type RubricVersion,
   type RunRow,
 } from "@/lib/api";
+import {
+  candidateLabel,
+  cap,
+  fileLabel,
+  languageName,
+  modelLabel,
+  pagesLabel,
+  timeAgo,
+} from "@/lib/format";
 import { BiasAuditCard } from "./bias-audit";
 import { ReviewTable } from "./review-table";
 
-/** The demo rubric imported by "Import demo rubric" (valid RubricSchema shape). */
+/** The demo rubric imported by "Use the demo rubric" (valid RubricSchema shape). */
 function demoRubric() {
   const levels = [0, 1, 2, 3, 4, 5].map((n) => ({
     label: String(n),
@@ -44,6 +53,12 @@ function demoRubric() {
   };
 }
 
+interface ZipSummary {
+  created: number;
+  duplicates: number;
+  skipped: Array<{ name: string; reason: string }>;
+}
+
 export default function JobDetailPage() {
   const params = useParams<{ jobId: string }>();
   const jobId = params.jobId;
@@ -54,6 +69,7 @@ export default function JobDetailPage() {
   const [candidates, setCandidates] = useState<CandidateRow[]>([]);
   const [runs, setRuns] = useState<RunRow[]>([]);
   const [error, setError] = useState<unknown>(null);
+  const [zipSummary, setZipSummary] = useState<ZipSummary | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -93,32 +109,43 @@ export default function JobDetailPage() {
   const uploadFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     void run("upload", async () => {
-      for (const file of files) {
+      let summary: ZipSummary | null = null;
+      for (const file of Array.from(files)) {
+        const isZip = file.name.toLowerCase().endsWith(".zip");
+        const endpoint = isZip
+          ? `${process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:4000"}/api/jobs/${jobId}/candidates/zip`
+          : `${process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:4000"}/api/jobs/${jobId}/candidates`;
         const form = new FormData();
         form.append("file", file);
-        const res = await fetch(
-          `${process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:4000"}/api/jobs/${jobId}/candidates`,
-          {
-            method: "POST",
-            body: form,
-            credentials: "include",
-          },
-        );
-        if (!res.ok && res.status !== 200) {
-          const body = (await res.json().catch(() => ({}))) as { message?: string };
+        const res = await fetch(endpoint, { method: "POST", body: form, credentials: "include" });
+        const body = (await res.json().catch(() => ({}))) as {
+          message?: string;
+          created?: number;
+          duplicates?: number;
+          skipped?: Array<{ name: string; reason: string }>;
+        };
+        if (!res.ok) {
           throw new Error(body.message ?? `Upload failed (${res.status})`);
         }
+        if (isZip && typeof body.created === "number") {
+          summary = {
+            created: body.created,
+            duplicates: body.duplicates ?? 0,
+            skipped: body.skipped ?? [],
+          };
+        }
       }
+      setZipSummary(summary);
       await load();
     });
     if (fileRef.current) fileRef.current.value = "";
   };
 
   function removeCandidate(candidate: CandidateRow) {
-    const label = (candidate.sourceFileKey ?? candidate.id.slice(0, 8)).split("/").pop();
+    const label = candidateLabel(candidate.id, candidate.sourceFileKey);
     if (
       !window.confirm(
-        `Remove ${label ?? "this resume"}? Its scores and review history go with it, and the removal is recorded in the audit log.`,
+        `Remove ${label}? Their scores and review history go with them, and the removal is recorded in the audit log.`,
       )
     )
       return;
@@ -128,9 +155,10 @@ export default function JobDetailPage() {
     });
   }
 
+  const latestRubricVersion = rubrics[rubrics.length - 1]?.version;
   const scoreBlocker =
     rubrics.length === 0
-      ? "Import a rubric first"
+      ? "Add a rubric first — use the demo rubric above to get started"
       : candidates.length === 0
         ? "Upload at least one resume first"
         : null;
@@ -154,31 +182,33 @@ export default function JobDetailPage() {
               <span
                 className="rounded-full px-2.5 py-1 text-xs font-medium"
                 style={{
-                  background: "var(--hl-card)",
+                  background: "transparent",
                   border: "1px solid var(--hl-border)",
                   color: "var(--hl-mist)",
                 }}
               >
-                {job.status}
+                {cap(job.status)}
               </span>
             )}
           </div>
         </header>
-        {error ? <NoticeBanner error={error} /> : null} {/* Rubric */}
+        {error ? <NoticeBanner error={error} /> : null}
+
+        {/* Rubric */}
         <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
           <CardHeader>
             <CardTitle style={{ color: "var(--hl-cream)" }}>Rubric</CardTitle>
             <CardDescription style={{ color: "var(--hl-mist)" }}>
-              The scorecard the AI grades against — a list of criteria (system design,
-              communication, …), each with a 0–5 scale. Every candidate gets one score per
-              criterion, combined into an overall 0–5 with cited evidence you can open and read.
+              The scorecard the AI grades against: a list of criteria (like System design or
+              Communication), each scored on a 0–5 scale. Every candidate gets one score per
+              criterion, combined into an overall score with cited evidence you can open and read.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-3">
               {rubrics.length === 0 ? (
                 <p className="text-sm" style={{ color: "var(--hl-muted)" }}>
-                  No rubric yet — start with the demo rubric below to try scoring end-to-end.
+                  No rubric yet — use the demo rubric below to try scoring end-to-end.
                 </p>
               ) : (
                 <div className="flex flex-wrap items-center gap-2">
@@ -187,12 +217,12 @@ export default function JobDetailPage() {
                       key={r.id}
                       className="rounded-full px-3 py-1 text-sm"
                       title={
-                        i === 0
+                        i === rubrics.length - 1
                           ? `Version ${r.version} — the one scoring uses right now`
                           : `Version ${r.version} — kept for the audit trail; only the newest version is used`
                       }
                       style={
-                        i === 0
+                        i === rubrics.length - 1
                           ? {
                               background: "var(--hl-accent)",
                               color: "var(--hl-ink)",
@@ -206,7 +236,7 @@ export default function JobDetailPage() {
                       }
                     >
                       v{r.version}
-                      {i === 0 ? " · active" : ""}
+                      {i === rubrics.length - 1 ? " · active" : ""}
                     </span>
                   ))}
                   <span className="text-xs" style={{ color: "var(--hl-muted)" }}>
@@ -218,8 +248,8 @@ export default function JobDetailPage() {
                 variant="outline"
                 disabled={busy !== null}
                 className="ml-auto"
-                style={{ borderColor: "var(--hl-border)", color: "var(--hl-mist)" }}
-                title="Loads a sample scorecard so you can try scoring without waiting for LLM derivation"
+                style={{ borderColor: "var(--hl-border)", color: "var(--hl-cream)" }}
+                title="Loads a sample scorecard so you can try scoring without waiting for AI rubric drafting"
                 onClick={() =>
                   run("rubric", async () => {
                     await importRubric(jobId, demoRubric());
@@ -231,11 +261,12 @@ export default function JobDetailPage() {
               </Button>
             </div>
             <p className="text-xs" style={{ color: "var(--hl-muted)" }}>
-              With an LLM key configured, a rubric can also be drafted automatically from the job
-              description — that's what "derive" means in the docs and CLI.
+              With an LLM key configured, HireLens can also draft a rubric automatically from the
+              job description — the docs and CLI call this "deriving".
             </p>
           </CardContent>
         </Card>
+
         {/* Candidates */}
         <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
           <CardHeader>
@@ -243,62 +274,101 @@ export default function JobDetailPage() {
               Candidates ({candidates.length})
             </CardTitle>
             <CardDescription style={{ color: "var(--hl-mist)" }}>
-              Upload resumes (txt, md, pdf). Duplicates are deduped.
+              Upload resumes one by one, or zip them all together. Duplicates are skipped
+              automatically.
             </CardDescription>
-          </CardHeader>{" "}
+          </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <label
-              className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border border-dashed px-4 py-6 text-center text-sm transition-colors hover:bg-white/[0.03]"
+              className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border border-dashed px-4 py-7 text-center text-sm transition-colors hover:bg-white/[0.03] active:bg-white/[0.06]"
               style={{ borderColor: "var(--hl-border)", color: "var(--hl-mist)" }}
             >
               <span className="font-medium text-[var(--hl-cream)]">Choose resume files</span>
-              <span style={{ color: "var(--hl-muted)" }}>or drop them here — txt, md, pdf</span>
+              <span style={{ color: "var(--hl-muted)" }}>
+                or drop them here — PDF, TXT, MD, or a ZIP with many resumes
+              </span>
               <input
                 ref={fileRef}
                 type="file"
                 multiple
-                accept=".txt,.md,.pdf"
+                accept=".txt,.md,.pdf,.zip"
                 className="sr-only"
                 onChange={(e) => uploadFiles(e.target.files)}
               />
             </label>
+
+            {zipSummary && (
+              <div
+                className="rounded-xl px-4 py-3 text-sm"
+                style={{
+                  background: "color-mix(in oklab, var(--color-success) 12%, transparent)",
+                  color: "var(--hl-cream)",
+                }}
+                role="status"
+              >
+                ZIP processed: {zipSummary.created} added
+                {zipSummary.duplicates > 0
+                  ? `, ${zipSummary.duplicates} duplicate${zipSummary.duplicates === 1 ? "" : "s"} skipped`
+                  : ""}
+                {zipSummary.skipped.length > 0
+                  ? `, ${zipSummary.skipped.length} unreadable (${zipSummary.skipped
+                      .slice(0, 3)
+                      .map((s) => `${s.name} — ${s.reason}`)
+                      .join("; ")}${zipSummary.skipped.length > 3 ? "…" : ""})`
+                  : ""}
+                .
+              </div>
+            )}
+
             {candidates.length > 0 && (
               <ul className="flex flex-col gap-1.5 text-sm">
                 {candidates.map((c) => {
-                  const label = (c.sourceFileKey ?? c.id.slice(0, 8)).split("/").pop();
+                  const pages = pagesLabel(c.pageCount);
+                  const uploaded = timeAgo(c.createdAt);
                   return (
                     <li
                       key={c.id}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2"
+                      className="flex items-center gap-2.5 rounded-lg px-3 py-2.5"
                       style={{ background: "var(--hl-ink-3)" }}
                     >
-                      <span className="font-mono text-xs" style={{ color: "var(--hl-mist)" }}>
-                        {label}
+                      <span
+                        className="truncate text-[13px] font-medium"
+                        style={{ color: "var(--hl-cream)" }}
+                        title={fileLabel(c.sourceFileKey) ?? candidateLabel(c.id, c.sourceFileKey)}
+                      >
+                        {candidateLabel(c.id, c.sourceFileKey)}
                       </span>
-                      {c.pageCount !== null && (
+                      {pages && (
                         <span
-                          className="rounded-full px-2 py-0.5 text-xs"
+                          className="flex-none rounded-full px-2 py-0.5 text-xs"
                           style={{ background: "var(--hl-card)", color: "var(--hl-muted)" }}
                         >
-                          {c.pageCount}p
+                          {pages}
                         </span>
                       )}
                       {c.language && (
                         <span
-                          className="rounded-full px-2 py-0.5 text-xs"
+                          className="flex-none rounded-full px-2 py-0.5 text-xs"
                           style={{ background: "var(--hl-card)", color: "var(--hl-muted)" }}
                         >
-                          {c.language}
+                          {languageName(c.language)}
                         </span>
                       )}
+                      <span
+                        className="hidden flex-none text-xs sm:inline"
+                        style={{ color: "var(--hl-muted)" }}
+                        title={`Uploaded ${new Date(c.createdAt).toLocaleString()}`}
+                      >
+                        {uploaded}
+                      </span>
                       <button
                         type="button"
                         onClick={() => removeCandidate(c)}
                         disabled={busy !== null}
-                        aria-label={`Remove ${label}`}
+                        aria-label={`Remove ${candidateLabel(c.id, c.sourceFileKey)}`}
                         title="Remove this resume and its scores (recorded in the audit log)"
-                        className="ml-auto rounded px-2 py-1 text-xs transition-colors hover:bg-white/[0.06] disabled:opacity-40"
-                        style={{ color: "var(--hl-muted)" }}
+                        className="ml-auto flex-none rounded px-2 py-1 text-xs transition-colors hover:bg-white/[0.06] active:bg-white/[0.1] disabled:opacity-40"
+                        style={{ color: "var(--hl-bad)" }}
                       >
                         Remove
                       </button>
@@ -309,7 +379,9 @@ export default function JobDetailPage() {
             )}
           </CardContent>
         </Card>
+
         <BiasAuditCard jobId={jobId} />
+
         {/* Scoring */}
         <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
           <CardHeader>
@@ -323,6 +395,7 @@ export default function JobDetailPage() {
           <CardContent className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center gap-3">
               <Button
+                size="lg"
                 disabled={busy !== null || scoreBlocker !== null}
                 onClick={() =>
                   run("score", async () => {
@@ -342,10 +415,22 @@ export default function JobDetailPage() {
               {!scoreBlocker && (
                 <span className="text-sm" style={{ color: "var(--hl-muted)" }}>
                   {candidates.length} candidate{candidates.length === 1 ? "" : "s"} · rubric v
-                  {rubrics[rubrics.length - 1]?.version ?? "?"}
+                  {latestRubricVersion}
                 </span>
               )}
             </div>
+
+            <p className="text-xs" style={{ color: "var(--hl-muted)" }}>
+              Scoring runs on the server's configured LLM (self-hosted: your own API key — see{" "}
+              <Link
+                href="/docs/self-hosting"
+                className="underline underline-offset-2 transition-opacity hover:opacity-85"
+                style={{ color: "var(--hl-accent)" }}
+              >
+                model &amp; API key setup
+              </Link>
+              ).
+            </p>
 
             <ReviewTable jobId={jobId} />
 
@@ -354,36 +439,32 @@ export default function JobDetailPage() {
                 {runs.map((r) => (
                   <li
                     key={r.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm"
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm"
                     style={{ background: "var(--hl-ink-3)" }}
                   >
                     <span style={{ color: "var(--hl-mist)" }}>
-                      Run · rubric v{r.rubricVersion} ·{" "}
-                      <span className="font-mono text-xs">{r.modelId}</span>
-                    </span>
-                    <span className="flex items-center gap-3">
+                      Scored with {modelLabel(r.modelId)} · rubric v{r.rubricVersion} ·{" "}
                       <span
-                        className="rounded-full px-2 py-0.5"
                         style={{
-                          background: "var(--hl-card)",
                           color:
                             r.status === "completed"
                               ? "var(--color-success)"
                               : r.status === "failed"
-                                ? "var(--color-danger)"
+                                ? "var(--hl-bad)"
                                 : "var(--hl-muted)",
                         }}
                       >
-                        {r.status}
+                        {cap(r.status)}
                       </span>
-                      <Link
-                        href={`/jobs/${jobId}/runs/${r.id}`}
-                        className="underline underline-offset-2"
-                        style={{ color: "var(--hl-accent)" }}
-                      >
-                        Results →
-                      </Link>
+                      {r.finishedAt ? ` · ${timeAgo(r.finishedAt)}` : ""}
                     </span>
+                    <Link
+                      href={`/jobs/${jobId}/runs/${r.id}`}
+                      className="underline underline-offset-2"
+                      style={{ color: "var(--hl-accent)" }}
+                    >
+                      View results →
+                    </Link>
                   </li>
                 ))}
               </ul>
