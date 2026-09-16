@@ -1,5 +1,155 @@
 @import "@hirelens/ui/styles.css";
 
+/*
+ * Marketing brand tokens — dark premium with warmth (deep ink navy,
+ * warm cream, coral accent). Scoped to .hl-site so the product app
+ * keeps its own design system untouched.
+ */
+.hl-site {
+  --hl-ink: #0d1226;
+  --hl-ink-2: #090d1c;
+  --hl-ink-3: #141b38;
+  --hl-cream: #f7f3ea;
+  --hl-mist: #b6bdd4;
+  --hl-muted: #7d86a8;
+  --hl-accent: #ff6b57;
+  --hl-accent-soft: rgba(255, 107, 87, 0.14);
+  --hl-border: rgba(183, 191, 218, 0.16);
+  --hl-card: #121935;
+  --hl-good: #4ade80;
+  --hl-warn: #fbbf24;
+  --hl-bad: #f87171;
+}
+
+.hl-site {
+  background: var(--hl-ink);
+  color: var(--hl-cream);
+  font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+}
+
+.hl-site ::selection {
+  background: var(--hl-accent);
+  color: var(--hl-ink);
+}
+
+/* Product-UI mockup frame used inside marketing sections. */
+.hl-shot {
+  border-radius: 14px;
+  border: 1px solid var(--hl-border);
+  background: linear-gradient(180deg, #fbfaf7 0%, #f1ede4 100%);
+  color: #1c2340;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 24px 60px -24px rgba(3, 6, 18, 0.85);
+}
+
+/* Prose styling for legal / docs / community pages. */
+.hl-prose {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+}
+.hl-prose h2 {
+  margin-top: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--hl-cream);
+}
+.hl-prose h3 {
+  margin-top: 1rem;
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--hl-cream);
+}
+.hl-prose p {
+  color: var(--hl-mist);
+}
+.hl-prose ul,
+.hl-prose ol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-left: 1.25rem;
+  color: var(--hl-mist);
+}
+.hl-prose ul {
+  list-style: disc;
+}
+.hl-prose ol {
+  list-style: decimal;
+}
+.hl-prose li::marker {
+  color: var(--hl-muted);
+}
+.hl-prose strong {
+  color: var(--hl-cream);
+  font-weight: 600;
+}
+.hl-prose a {
+  color: var(--hl-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.hl-prose a:hover {
+  opacity: 0.85;
+}
+.hl-prose code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.85em;
+  border-radius: 6px;
+  padding: 0.15em 0.4em;
+  background: var(--hl-accent-soft);
+  color: var(--hl-cream);
+}
+.hl-prose pre {
+  overflow-x: auto;
+  border: 1px solid var(--hl-border);
+  border-radius: 12px;
+  background: var(--hl-ink-2);
+  padding: 1rem 1.25rem;
+  font-size: 0.84rem;
+  line-height: 1.7;
+}
+.hl-prose pre code {
+  background: none;
+  padding: 0;
+  color: var(--hl-cream);
+}
+.hl-prose blockquote {
+  border-left: 3px solid var(--hl-accent);
+  border-radius: 0 10px 10px 0;
+  background: rgba(255, 107, 87, 0.06);
+  padding: 0.75rem 1rem;
+  color: var(--hl-mist);
+}
+.hl-prose hr {
+  border: none;
+  border-top: 1px solid var(--hl-border);
+  margin: 1.25rem 0;
+}
+.hl-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.hl-prose th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--hl-cream);
+}
+.hl-prose th,
+.hl-prose td {
+  border-bottom: 1px solid var(--hl-border);
+  padding: 0.5rem 0.75rem 0.5rem 0;
+  vertical-align: top;
+}
+.hl-prose td {
+  color: var(--hl-mist);
+}
+
 /* Web-app specific base: full-height shell. */
 html,
 body {

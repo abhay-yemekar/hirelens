@@ -7,6 +7,15 @@ import { authClient } from "@/lib/auth-client";
 
 type Mode = "signin" | "signup";
 
+/**
+ * Which social providers the *client* should render. The server decides
+ * reality (packages/db/auth.config.ts enables a provider only when both
+ * its env vars are set); these NEXT_PUBLIC flags keep the UI honest for
+ * the current deployment. Empty => button hidden.
+ */
+const GOOGLE_ENABLED = process.env["NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED"] === "true";
+const GITHUB_ENABLED = process.env["NEXT_PUBLIC_GITHUB_OAUTH_ENABLED"] === "true";
+
 export function AuthForm() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("signin");
@@ -15,6 +24,21 @@ export function AuthForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [socialBusy, setSocialBusy] = useState<"google" | "github" | null>(null);
+
+  async function social(provider: "google" | "github") {
+    setError(null);
+    setSocialBusy(provider);
+    try {
+      await authClient.signIn.social({ provider, callbackURL: "/jobs" });
+      // OAuth redirects away; nothing to do on success.
+    } catch {
+      setSocialBusy(null);
+      setError(
+        `Could not start ${provider === "google" ? "Google" : "GitHub"} sign-in — is the provider configured on this server?`,
+      );
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,6 +66,8 @@ export function AuthForm() {
     }
   }
 
+  const showSocial = GOOGLE_ENABLED || GITHUB_ENABLED;
+
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
@@ -53,6 +79,40 @@ export function AuthForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {showSocial && (
+          <>
+            <div className="flex flex-col gap-2">
+              {GOOGLE_ENABLED && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={socialBusy !== null}
+                  onClick={() => social("google")}
+                >
+                  {socialBusy === "google" ? "Redirecting…" : "Continue with Google"}
+                </Button>
+              )}
+              {GITHUB_ENABLED && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={socialBusy !== null}
+                  onClick={() => social("github")}
+                >
+                  {socialBusy === "github" ? "Redirecting…" : "Continue with GitHub"}
+                </Button>
+              )}
+            </div>
+            <div
+              className="my-4 flex items-center gap-3 text-xs"
+              style={{ color: "var(--color-fg-muted)" }}
+            >
+              <span className="h-px flex-1" style={{ background: "var(--color-border-subtle)" }} />
+              or continue with email
+              <span className="h-px flex-1" style={{ background: "var(--color-border-subtle)" }} />
+            </div>
+          </>
+        )}
         <form onSubmit={submit} className="flex flex-col gap-3">
           {mode === "signup" && (
             <label className="flex flex-col gap-1 text-sm">
