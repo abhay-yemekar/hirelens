@@ -2,10 +2,13 @@
 
 /*
  * Marketing brand tokens — dark premium with warmth (deep ink navy,
- * warm cream, coral accent). Scoped to .hl-site so the product app
- * keeps its own design system untouched.
+ * warm cream, coral accent). Defined on :root (not scoped to .hl-site)
+ * so any surface that references them renders correctly — e.g. the
+ * /signin panel, which lives outside the (site) route wrapper. The
+ * product app uses the separate --color-* namespace, so there is no
+ * collision.
  */
-.hl-site {
+:root {
   --hl-ink: #0d1226;
   --hl-ink-2: #090d1c;
   --hl-ink-3: #141b38;

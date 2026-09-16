@@ -65,7 +65,7 @@ Open `packages/db/.env`. For local development the defaults work as-is:
 
 ```ini
 DATABASE_URL=postgres://postgres:postgres@localhost:5433/hirelens
-BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_URL=http://localhost:4000
 BETTER_AUTH_SECRET=dev-only-secret-do-not-use-in-production-0123456789abcdef
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
