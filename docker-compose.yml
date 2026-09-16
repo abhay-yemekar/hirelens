@@ -39,8 +39,13 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/hirelens
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET in .env (openssl rand -base64 32)}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:4000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:5173}
+      # OAuth (Better Auth social providers) — optional; buttons hide when unset.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
       # LLM — optional; scoring/derive return 503 when unset.
       HIRELENS_LLM_PROVIDER: ${HIRELENS_LLM_PROVIDER:-}
       HIRELENS_LLM_MODEL: ${HIRELENS_LLM_MODEL:-}
@@ -62,6 +67,11 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
         NEXT_PUBLIC_AUTH_BASE_URL: ${NEXT_PUBLIC_AUTH_BASE_URL:-http://localhost:4000}
         NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY:-}
+        NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED: ${NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED:-}
+        NEXT_PUBLIC_GITHUB_OAUTH_ENABLED: ${NEXT_PUBLIC_GITHUB_OAUTH_ENABLED:-}
+    environment:
+      NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED: ${NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED:-}
+      NEXT_PUBLIC_GITHUB_OAUTH_ENABLED: ${NEXT_PUBLIC_GITHUB_OAUTH_ENABLED:-}
     container_name: hirelens-web
     depends_on:
       - api
