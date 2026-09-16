@@ -40,7 +40,10 @@ export function createApp(deps: AppDeps) {
     "*",
     cors({
       origin: (origin) =>
-        (process.env["CORS_ORIGINS"] ?? "http://localhost:3000,http://localhost:5173")
+        (
+          process.env["CORS_ORIGINS"] ??
+          "http://localhost:3000,http://localhost:3001,http://localhost:5173"
+        )
           .split(",")
           .map((s) => s.trim())
           .includes(origin)

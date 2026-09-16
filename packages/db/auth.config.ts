@@ -23,6 +23,17 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  // Origins allowed to initiate auth flows and receive post-login
+  // redirects (the web app may run on :3000, :3001 or :5173 in dev).
+  // Mirrors the API's CORS_ORIGINS list.
+  trustedOrigins: (
+    process.env["TRUSTED_ORIGINS"] ??
+    process.env["CORS_ORIGINS"] ??
+    "http://localhost:3000,http://localhost:3001,http://localhost:5173"
+  )
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
   socialProviders: {
     github: {
       clientId: process.env["GITHUB_CLIENT_ID"] ?? "",
