@@ -1,6 +1,6 @@
 import { type Criterion, expandZip, weightedOverall } from "@hirelens/core";
-import { evidence, rubrics, scores, scoringRuns } from "@hirelens/db";
-import { runBatch } from "@hirelens/orchestrator";
+import { candidates, evidence, rubrics, scores, scoringRuns } from "@hirelens/db";
+import { appendAudit, runBatch } from "@hirelens/orchestrator";
 import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { ROLE_MIN, requireAuth } from "../auth.js";
@@ -198,6 +198,36 @@ export function scoringRoutes(): Hono<AppEnv> {
       throw err;
     }
     return c.json({ ok: true, ...result }, result.status === "created" ? 201 : 200);
+  });
+
+  /**
+   * Remove a candidate. Scores, evidence, documents, decisions and
+   * demographics cascade via FK, but the audit trail is append-only:
+   * a `candidate.removed` entry records who removed what, when — so
+   * the history stays tamper-evident even after deletion.
+   */
+  routes.delete("/candidates/:candidateId", requireAuth(ROLE_MIN.edit), async (c) => {
+    const db = c.get("db");
+    const auth = c.get("auth");
+    const job = await loadOrgJob(db, c.req.param("jobId"), auth.orgId);
+    if (!job) return c.json({ ok: false, error: "not_found" }, 404);
+
+    const candidateId = c.req.param("candidateId");
+    const [row] = await db
+      .select({ id: candidates.id, fileKey: candidates.sourceFileKey })
+      .from(candidates)
+      .where(and(eq(candidates.id, candidateId), eq(candidates.jobId, job.id)))
+      .limit(1);
+    if (!row) return c.json({ ok: false, error: "not_found" }, 404);
+
+    await db.delete(candidates).where(eq(candidates.id, candidateId));
+    await appendAudit(db, {
+      orgId: auth.orgId,
+      actorId: auth.userId,
+      action: "candidate.removed",
+      payload: { jobId: job.id, candidateId, fileKey: row.fileKey },
+    });
+    return c.json({ ok: true, removed: candidateId });
   });
 
   /** ZIP batch upload: safe expansion, then ingest each entry. */

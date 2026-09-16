@@ -17,7 +17,7 @@ export function describeError(err: unknown): ErrorDescriptor {
       case "llm_not_configured":
         return {
           tone: "warning",
-          text: "Scoring and rubric derivation need an LLM key. The rest of HireLens works without one — add HIRELENS_LLM_PROVIDER, HIRELENS_LLM_MODEL and HIRELENS_LLM_API_KEY to your .env, then restart the API.",
+          text: "Scoring and rubric derivation need an LLM key. Add HIRELENS_LLM_PROVIDER, HIRELENS_LLM_MODEL and HIRELENS_LLM_API_KEY to the root .env that Docker Compose reads, then run: docker compose up -d api. Everything else works without a key.",
           cta: { label: "Self-hosting guide", href: "/docs/self-hosting" },
         };
       case "unauthorized":

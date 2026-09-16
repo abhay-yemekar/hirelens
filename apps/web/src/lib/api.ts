@@ -146,6 +146,16 @@ export const listCandidates = (
 ) =>
   apiFetch<{ ok: true; candidates: CandidateRow[] }>(`/api/jobs/${jobId}/candidates`, { ...init });
 
+export const deleteCandidate = (
+  jobId: string,
+  candidateId: string,
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{ ok: true; removed: string }>(`/api/jobs/${jobId}/candidates/${candidateId}`, {
+    method: "DELETE",
+    ...init,
+  });
+
 export const listRuns = (jobId: string, init?: RequestInit & { serverCookie?: string | null }) =>
   apiFetch<{ ok: true; runs: RunRow[] }>(`/api/jobs/${jobId}/runs`, { ...init });
 
