@@ -23,7 +23,7 @@ const CHANNELS = [
   {
     title: "Questions & self-hosting help",
     body: "The troubleshooting page covers every real error hit during development, with fixes. The documentation hub covers quickstart, CLI, and self-hosting.",
-    cta: "Troubleshooting →",
+    cta: "Browse troubleshooting",
     href: "/troubleshooting",
     internal: true,
   },
