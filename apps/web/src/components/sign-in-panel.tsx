@@ -82,7 +82,7 @@ export function SignInPanel() {
       </section>
 
       {/* Form panel */}
-      <section className="relative flex flex-1 flex-col items-center justify-center gap-6 p-6">
+      <section className="relative flex flex-1 flex-col items-center justify-center gap-6 overflow-hidden p-6">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 lg:hidden"

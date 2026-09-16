@@ -30,7 +30,12 @@ export function AuthForm() {
     setError(null);
     setSocialBusy(provider);
     try {
-      await authClient.signIn.social({ provider, callbackURL: "/jobs" });
+      // Absolute callback so the post-login redirect lands on this web
+      // origin (a relative path would resolve against the API origin).
+      await authClient.signIn.social({
+        provider,
+        callbackURL: `${window.location.origin}/jobs`,
+      });
       // OAuth redirects away; nothing to do on success.
     } catch {
       setSocialBusy(null);
