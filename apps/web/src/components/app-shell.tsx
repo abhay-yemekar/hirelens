@@ -70,7 +70,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const active = orgs.find((o) => o.id === activeId) ?? null;
 
   return (
-    <div className="flex min-h-screen flex-col" data-theme="dark">
+    <div className="hl-app flex min-h-screen flex-col" data-theme="dark">
       <header
         className="sticky top-0 z-40 border-b backdrop-blur-xl"
         style={{
@@ -157,10 +157,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
             <span
               className="hidden max-w-[220px] truncate text-sm sm:inline-block"
-              style={{ color: "var(--hl-muted)" }}
+              style={{ color: "var(--hl-mist)" }}
               title={session?.user?.email ?? ""}
             >
-              {isPending ? "" : (session?.user?.email ?? "")}
+              {isPending ? "" : (session?.user?.name ?? session?.user?.email?.split("@")[0] ?? "")}
             </span>
             <Button
               variant="outline"

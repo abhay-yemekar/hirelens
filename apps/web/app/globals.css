@@ -1,6 +1,14 @@
 @import "@hirelens/ui/styles.css";
 
 /*
+ * Scan the shared UI package. Tailwind v4's automatic content detection
+ * starts at the app root, so variant classes defined inside @hirelens/ui
+ * (button backgrounds, score colors, press states) would never generate —
+ * the classic "buttons don't look like buttons" bug.
+ */
+@source "../../../packages/ui/src";
+
+/*
  * Marketing brand tokens — dark premium with warmth (deep ink navy,
  * warm cream, coral accent). Defined on :root (not scoped to .hl-site)
  * so any surface that references them renders correctly — e.g. the
@@ -22,6 +30,43 @@
   --hl-good: #4ade80;
   --hl-warn: #fbbf24;
   --hl-bad: #f87171;
+  /* Form fields sit one step brighter than cards so they read as fields. */
+  --hl-input: #1a2142;
+}
+
+/*
+ * Product-app scope: bridges the shared UI kit's --color-* tokens onto the
+ * marketing brand palette, so every Button, link, and focus ring in the
+ * product app renders in HireLens coral/ink — one scope, not 30 call-site
+ * patches. Score-ramp and feedback colors keep their dark-theme tuning
+ * (data-theme=dark is set alongside this class by AppShell).
+ */
+.hl-app {
+  --color-accent: var(--hl-accent);
+  --color-accent-fg: var(--hl-ink);
+  --color-accent-muted: var(--hl-accent-soft);
+  --color-surface: var(--hl-ink);
+  --color-surface-raised: var(--hl-card);
+  --color-surface-sunken: var(--hl-ink-3);
+  --color-border-subtle: var(--hl-border);
+  --color-border-strong: rgba(183, 191, 218, 0.3);
+  --color-fg: var(--hl-cream);
+  --color-fg-muted: var(--hl-mist);
+  --color-fg-subtle: var(--hl-muted);
+  background: var(--hl-ink);
+  color: var(--hl-cream);
+}
+
+.hl-app ::selection {
+  background: var(--hl-accent);
+  color: var(--hl-ink);
+}
+
+/* Shared card surface for the product app. */
+.hl-card {
+  border-radius: var(--radius-card);
+  border: 1px solid var(--hl-border);
+  background: var(--hl-card);
 }
 
 .hl-site {

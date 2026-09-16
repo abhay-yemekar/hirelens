@@ -105,6 +105,8 @@ export interface EvidenceSpan {
 export interface RunCandidate {
   candidateId: string;
   overall: number;
+  /** Uploaded filename ("jane_doe.pdf") — null under blind review. */
+  label: string | null;
   criteria: Array<{
     id: string;
     criterionKey: string;
@@ -176,7 +178,7 @@ export const getCandidate = (
 ) =>
   apiFetch<{
     ok: true;
-    candidate: { id: string };
+    candidate: { id: string; sourceFileKey: string | null };
     documents: Array<{ id: string; kind: string; rawText: string; pageCount: number | null }>;
     decisions: Array<{ stage: Stage; reason: string; decidedAt: string }>;
   }>(`/api/jobs/${jobId}/candidates/${candidateId}${opts.blind ? "?blind=1" : ""}`, opts);
@@ -210,6 +212,8 @@ export interface ReviewRow {
   overridden: number;
   criteria: number;
   stage: Stage;
+  /** Uploaded filename ("jane_doe.pdf") — null under blind review. */
+  label: string | null;
 }
 
 export const getReview = (jobId: string, init?: RequestInit & { serverCookie?: string | null }) =>

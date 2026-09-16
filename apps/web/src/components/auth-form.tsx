@@ -57,7 +57,7 @@ const inputClass =
   "w-full rounded-[var(--radius-control)] border px-3 py-2.5 text-sm text-[var(--hl-cream)] transition-shadow duration-[var(--duration-fast)] placeholder:text-[var(--hl-muted)] focus:outline-none focus:border-[var(--hl-accent)] focus:ring-2 focus:ring-[var(--hl-accent-soft)]";
 const inputStyle = {
   borderColor: "var(--hl-border)",
-  background: "var(--hl-ink-3)",
+  background: "var(--hl-input)",
 } as const;
 
 export function AuthForm() {
@@ -120,7 +120,11 @@ export function AuthForm() {
   return (
     <Card
       className="w-full max-w-md"
-      style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}
+      style={{
+        background: "var(--hl-card)",
+        borderColor: "rgba(183, 191, 218, 0.22)",
+        boxShadow: "0 1px 0 rgba(255,255,255,0.05) inset, 0 32px 80px -32px rgba(3, 6, 18, 0.9)",
+      }}
     >
       <CardHeader>
         <CardTitle className="text-xl" style={{ color: "var(--hl-cream)" }}>

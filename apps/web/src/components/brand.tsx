@@ -22,8 +22,11 @@ export function Logo({ compact = false }: { compact?: boolean }) {
     <span className="inline-flex items-center gap-2">
       <LogoMark size={compact ? 24 : 28} />
       {!compact && (
+        /* One text node: a flex gap between two spans is how "Hire Lens"
+           once rendered with a stray space between the words. */
         <span className="text-lg font-semibold tracking-tight">
-          Hire<span style={{ color: "var(--hl-accent)" }}>Lens</span>
+          {"Hire"}
+          <span style={{ color: "var(--hl-accent)" }}>{"Lens"}</span>
         </span>
       )}
     </span>
