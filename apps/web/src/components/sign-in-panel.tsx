@@ -1,11 +1,11 @@
 "use client";
 
-import { FileSearch, Lock, Scale, Sparkles } from "lucide-react";
+import { FileSearch, Lock, Scale } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { AuthForm } from "@/components/auth-form";
-import { LogoMark } from "@/components/brand";
+import { Logo, LogoMark } from "@/components/brand";
 import { useSession } from "@/lib/auth-client";
 
 const PROOF = [
@@ -55,10 +55,7 @@ export function SignInPanel() {
           }}
         />
         <Link href="/" className="relative text-[var(--hl-cream)]">
-          <span className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight">
-            <LogoMark size={26} />
-            Hire<span style={{ color: "var(--hl-accent)" }}>Lens</span>
-          </span>
+          <Logo />
         </Link>
         <div className="relative max-w-md">
           <h1 className="text-4xl font-semibold leading-tight tracking-tight text-[var(--hl-cream)]">
@@ -97,19 +94,21 @@ export function SignInPanel() {
               "radial-gradient(500px 280px at 50% -10%, rgba(255,107,87,0.10), transparent 70%)",
           }}
         />
-        <Sparkles
+        {/* Brand watermark — our own mark, not a generic sparkle. */}
+        <div
           aria-hidden
-          className="pointer-events-none absolute right-[10%] top-[62%] hidden h-6 w-6 lg:block"
-          style={{ color: "var(--hl-accent)", opacity: 0.85 }}
-        />
+          className="pointer-events-none absolute -bottom-14 -right-10 hidden opacity-[0.06] lg:block"
+          style={{ color: "var(--hl-cream)" }}
+        >
+          <LogoMark size={260} />
+        </div>
         <div className="relative w-full max-w-md">
           <div className="mb-6 lg:hidden">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight text-[var(--hl-cream)]"
+              className="inline-flex items-center text-lg font-semibold tracking-tight text-[var(--hl-cream)]"
             >
-              <LogoMark size={24} />
-              Hire<span style={{ color: "var(--hl-accent)" }}>Lens</span>
+              <Logo />
             </Link>
           </div>
           <AuthForm />

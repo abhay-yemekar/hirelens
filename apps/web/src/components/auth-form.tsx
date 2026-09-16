@@ -49,12 +49,15 @@ function GitHubIcon() {
   );
 }
 
-/** Shared input styling: dark surface + accent glow on focus. */
+/**
+ * Shared input styling: brand ink surface (matches the split-panel
+ * theme) + warm border, with an accent glow on focus.
+ */
 const inputClass =
-  "w-full rounded-[var(--radius-control)] border px-3 py-2.5 text-sm text-[var(--color-fg)] transition-shadow duration-[var(--duration-fast)] placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-muted)]";
+  "w-full rounded-[var(--radius-control)] border px-3 py-2.5 text-sm text-[var(--hl-cream)] transition-shadow duration-[var(--duration-fast)] placeholder:text-[var(--hl-muted)] focus:outline-none focus:border-[var(--hl-accent)] focus:ring-2 focus:ring-[var(--hl-accent-soft)]";
 const inputStyle = {
-  borderColor: "var(--color-border-subtle)",
-  background: "var(--color-surface-sunken)",
+  borderColor: "var(--hl-border)",
+  background: "var(--hl-ink-3)",
 } as const;
 
 export function AuthForm() {
@@ -110,12 +113,15 @@ export function AuthForm() {
   const showSocial = GOOGLE_ENABLED || GITHUB_ENABLED;
 
   return (
-    <Card className="w-full max-w-md" data-theme="dark">
+    <Card
+      className="w-full max-w-md"
+      style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}
+    >
       <CardHeader>
-        <CardTitle className="text-xl">
+        <CardTitle className="text-xl" style={{ color: "var(--hl-cream)" }}>
           {mode === "signin" ? "Sign in to HireLens" : "Create your account"}
         </CardTitle>
-        <CardDescription>
+        <CardDescription style={{ color: "var(--hl-mist)" }}>
           {mode === "signin"
             ? "Continue with Google or GitHub, or use your email."
             : "You'll create or join an organization next."}
@@ -129,7 +135,8 @@ export function AuthForm() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-11 bg-[var(--color-surface-raised)] text-[0.9rem] font-medium text-[var(--color-fg)] transition-colors hover:bg-[var(--color-surface-sunken)]"
+                  className="h-11 text-[0.9rem] font-medium text-[var(--hl-cream)] transition-colors hover:bg-white/[0.04]"
+                  style={{ borderColor: "var(--hl-border)" }}
                   disabled={socialBusy !== null}
                   onClick={() => social("google")}
                 >
@@ -147,7 +154,8 @@ export function AuthForm() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-11 bg-[var(--color-surface-raised)] text-[0.9rem] font-medium text-[var(--color-fg)] transition-colors hover:bg-[var(--color-surface-sunken)]"
+                  className="h-11 text-[0.9rem] font-medium text-[var(--hl-cream)] transition-colors hover:bg-white/[0.04]"
+                  style={{ borderColor: "var(--hl-border)" }}
                   disabled={socialBusy !== null}
                   onClick={() => social("github")}
                 >
@@ -164,18 +172,18 @@ export function AuthForm() {
             </div>
             <div
               className="my-5 flex items-center gap-3 text-xs"
-              style={{ color: "var(--color-fg-muted)" }}
+              style={{ color: "var(--hl-muted)" }}
             >
-              <span className="h-px flex-1" style={{ background: "var(--color-border-subtle)" }} />
+              <span className="h-px flex-1" style={{ background: "var(--hl-border)" }} />
               or continue with email
-              <span className="h-px flex-1" style={{ background: "var(--color-border-subtle)" }} />
+              <span className="h-px flex-1" style={{ background: "var(--hl-border)" }} />
             </div>
           </>
         )}
         <form onSubmit={submit} className="flex flex-col gap-3.5">
           {mode === "signup" && (
             <label className="flex flex-col gap-1.5 text-sm">
-              <span style={{ color: "var(--color-fg-muted)" }}>Name</span>
+              <span style={{ color: "var(--hl-mist)" }}>Name</span>
               <input
                 type="text"
                 value={name}
@@ -187,7 +195,7 @@ export function AuthForm() {
             </label>
           )}
           <label className="flex flex-col gap-1.5 text-sm">
-            <span style={{ color: "var(--color-fg-muted)" }}>Email</span>
+            <span style={{ color: "var(--hl-mist)" }}>Email</span>
             <input
               type="email"
               required
@@ -199,7 +207,7 @@ export function AuthForm() {
             />
           </label>
           <label className="flex flex-col gap-1.5 text-sm">
-            <span style={{ color: "var(--color-fg-muted)" }}>Password</span>
+            <span style={{ color: "var(--hl-mist)" }}>Password</span>
             <input
               type="password"
               required
@@ -213,7 +221,7 @@ export function AuthForm() {
           </label>
 
           {error && (
-            <p role="alert" className="text-sm" style={{ color: "var(--color-danger)" }}>
+            <p role="alert" className="text-sm" style={{ color: "var(--hl-bad)" }}>
               {error}
             </p>
           )}
@@ -226,7 +234,7 @@ export function AuthForm() {
             {busy ? "Working…" : mode === "signin" ? "Sign in" : "Create account"}
           </Button>
         </form>
-        <p className="mt-4 text-center text-sm" style={{ color: "var(--color-fg-muted)" }}>
+        <p className="mt-4 text-center text-sm" style={{ color: "var(--hl-mist)" }}>
           {mode === "signin" ? "Need an account? " : "Already have an account? "}
           <button
             type="button"
@@ -234,7 +242,7 @@ export function AuthForm() {
               setMode(mode === "signin" ? "signup" : "signin");
               setError(null);
             }}
-            className="font-semibold text-[var(--color-accent)] transition-opacity hover:opacity-85"
+            className="font-semibold text-[var(--hl-accent)] transition-opacity hover:opacity-85"
           >
             {mode === "signin" ? "Sign up" : "Sign in"}
           </button>
