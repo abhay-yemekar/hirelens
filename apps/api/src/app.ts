@@ -2,7 +2,9 @@ import type { LanguageModel } from "@hirelens/core";
 import { ExtractionError } from "@hirelens/core";
 import type { Database } from "@hirelens/db";
 import { auth } from "@hirelens/db";
+import type { Context } from "hono";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
@@ -24,6 +26,22 @@ export interface AppDeps {
   llm: LanguageModel | null;
 }
 
+/** Body-size caps: tight for JSON, larger for resume/zip uploads (§Day 19). */
+const MAX_JSON_BODY_BYTES = 2 * 1024 * 1024; // job descriptions cap at ~100k chars
+const MAX_RESUME_UPLOAD_BYTES = 16 * 1024 * 1024; // single resume + multipart overhead
+const MAX_ZIP_UPLOAD_BYTES = 64 * 1024 * 1024; // zip of resumes (expanded total is capped in core)
+
+function tooLarge(c: Context, maxBytes: number) {
+  return c.json(
+    {
+      ok: false as const,
+      error: "payload_too_large",
+      message: `Request body exceeds the ${Math.round(maxBytes / (1024 * 1024))} MB limit`,
+    },
+    413,
+  );
+}
+
 /**
  * Build the API app with injected dependencies. No side effects: tests
  * import this freely; main.ts performs the environment bootstrap.
@@ -34,6 +52,21 @@ export function createApp(deps: AppDeps) {
   app.use(trimTrailingSlash());
   app.use(secureHeaders());
   app.use(requestLogging());
+  // Reject oversized bodies before parsing anywhere else (DoS guard).
+  app.use("*", async (c, next) => {
+    const path = c.req.path;
+    const isZipUpload = path.endsWith("/candidates/zip");
+    const isResumeUpload = path.endsWith("/candidates") && c.req.method === "POST";
+    const maxBytes = isZipUpload
+      ? MAX_ZIP_UPLOAD_BYTES
+      : isResumeUpload
+        ? MAX_RESUME_UPLOAD_BYTES
+        : MAX_JSON_BODY_BYTES;
+    return bodyLimit({
+      maxSize: maxBytes,
+      onError: (c) => tooLarge(c, maxBytes),
+    })(c, next);
+  });
   // The web app runs on a different origin in dev (5173/3001) — allow
   // credentialed cross-origin calls from configured origins only.
   app.use(

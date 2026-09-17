@@ -184,7 +184,8 @@ export function scoringRoutes(): Hono<AppEnv> {
       .select()
       .from(scoringRuns)
       .where(eq(scoringRuns.jobId, job.id))
-      .orderBy(desc(scoringRuns.startedAt));
+      .orderBy(desc(scoringRuns.startedAt))
+      .limit(50); // hard cap (§Day 19)
     return c.json({ ok: true, runs: rows });
   });
 

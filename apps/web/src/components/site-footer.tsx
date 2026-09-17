@@ -100,7 +100,7 @@ export function SiteFooter() {
             © {new Date().getFullYear()} HireLens · MIT · Built by{" "}
             <a
               href="https://www.linkedin.com/in/abhayyemekar/"
-              className="transition-colors hover:text-[var(--hl-cream)]"
+              className="underline underline-offset-2 transition-colors hover:text-[var(--hl-cream)]"
               style={{ color: "var(--hl-mist)" }}
             >
               Abhay Yemekar
