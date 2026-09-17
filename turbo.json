@@ -3,7 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+      "outputs": ["dist/**", ".next/**", ".hirelens-api/**", "!.next/cache/**"]
     },
     "dev": {
       "dependsOn": ["^build"],

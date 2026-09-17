@@ -94,8 +94,11 @@ export function createApp(deps: AppDeps) {
   });
 
   // Resolve the better-auth session (if any) for downstream middleware.
+  // Built via hono's typed header API (not c.req.raw) so the type stays
+  // correct under every @types/node / lib.dom resolution Vercel might
+  // hoist — raw Request typings have caused TS2339 there.
   app.use("*", async (c, next) => {
-    const payload = await auth.api.getSession({ headers: c.req.raw.headers });
+    const payload = await auth.api.getSession({ headers: new Headers(c.req.header()) });
     c.set("session", (payload as AppEnv["Variables"]["session"]) ?? null);
     await next();
   });
