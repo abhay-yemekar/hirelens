@@ -44,7 +44,9 @@ export const ScoreBadge = React.forwardRef<HTMLSpanElement, ScoreBadgeProps>(
         {...props}
       >
         {level}
-        <span className="text-[0.65em] font-normal opacity-60">/5</span>
+        {/* Neutral color: score hues are mid-lightness and fail contrast for
+            the small denominator; the number alone carries the meaning. */}
+        <span className="text-[0.65em] font-normal text-[var(--color-fg-muted)]">/5</span>
       </span>
     );
   },
@@ -72,7 +74,7 @@ export const OverallScore = React.forwardRef<
       {...props}
     >
       {clamped}
-      <span className="text-[0.65em] font-normal opacity-60">/100</span>
+      <span className="text-[0.65em] font-normal text-[var(--color-fg-muted)]">/100</span>
     </span>
   );
 });

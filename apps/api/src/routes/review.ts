@@ -1,7 +1,7 @@
 import { type Criterion, weightedOverall } from "@hirelens/core";
 import { candidates, decisions, rubrics, scores, scoringRuns } from "@hirelens/db";
 import { appendAudit } from "@hirelens/orchestrator";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { ROLE_MIN, requireAuth } from "../auth.js";
@@ -145,12 +145,25 @@ export function reviewRoutes(): Hono<AppEnv> {
     const rubricRow = await latestRubric(db, job.id);
     const criteria = rubricRow ? criteriaOf(rubricRow.payload) : [];
 
-    // Most recent run per candidate: pull completed runs newest-first.
-    const runs = await db
-      .select({ id: scoringRuns.id })
-      .from(scoringRuns)
-      .where(and(eq(scoringRuns.jobId, job.id), eq(scoringRuns.status, "completed")))
-      .orderBy(desc(scoringRuns.startedAt));
+    // Newest completed run per candidate in one window-function query
+    // (was an N+1: one scores query per run — §Day 19 hardening).
+    const runRank = db.$with("run_rank").as(
+      db
+        .select({
+          candidateId: scores.candidateId,
+          runId: scoringRuns.id,
+          rank: sql<number>`row_number() over (partition by ${scores.candidateId} order by ${scoringRuns.startedAt} desc)`.as(
+            "rank",
+          ),
+        })
+        .from(scoringRuns)
+        .innerJoin(scores, eq(scores.runId, scoringRuns.id))
+        .where(and(eq(scoringRuns.jobId, job.id), eq(scoringRuns.status, "completed"))),
+    );
+    const latestRows = await db.with(runRank).select().from(runRank).where(eq(runRank.rank, 1));
+    const latestRunByCandidate = new Map(
+      latestRows.map((r) => [r.candidateId as string, r.runId as string]),
+    );
 
     // Uploaded-filename labels ("jane_doe.pdf"), fetched once for the job.
     // Withheld when blind review is requested — the label is an identity cue.
@@ -172,25 +185,27 @@ export function reviewRoutes(): Hono<AppEnv> {
       { candidateId: string; overall: number; overridden: number; criteria: number }
     >();
 
-    for (const run of runs) {
+    if (latestRunByCandidate.size > 0) {
       const rows = await db
         .select({
+          runId: scores.runId,
           candidateId: scores.candidateId,
           criterionKey: scores.criterionKey,
           score: scores.score,
           overriddenBy: scores.overriddenBy,
         })
         .from(scores)
-        .where(eq(scores.runId, run.id));
-      // Newest completed run wins per candidate — skip if already scored.
+        .where(inArray(scores.runId, [...new Set(latestRunByCandidate.values())]));
+
+      // Only each candidate's newest completed run contributes.
       const perCandidate = new Map<string, typeof rows>();
       for (const row of rows) {
+        if (latestRunByCandidate.get(row.candidateId) !== row.runId) continue;
         const list = perCandidate.get(row.candidateId) ?? [];
         list.push(row);
         perCandidate.set(row.candidateId, list);
       }
       for (const [candidateId, list] of perCandidate) {
-        if (byCandidate.has(candidateId)) continue;
         const overall = weightedOverall(
           criteria,
           list.map((s) => ({

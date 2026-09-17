@@ -374,11 +374,17 @@ export default function LandingPage() {
           <div
             className="mt-10 overflow-x-auto rounded-2xl border"
             style={{ borderColor: "var(--hl-border)" }}
+            role="region"
+            aria-label="Feature comparison table, scrollable horizontally"
+            // biome-ignore lint/a11y/noNoninteractiveTabindex: WCAG scrollable regions must be keyboard-focusable (axe-verified)
+            tabIndex={0}
           >
             <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr style={{ color: "var(--hl-muted)" }}>
-                  <th className="p-4 text-left font-medium"> </th>
+                  <th className="p-4 text-left font-medium">
+                    <span className="sr-only">Feature</span>
+                  </th>
                   <th className="p-4 text-left font-semibold text-[var(--hl-cream)]">HireLens</th>
                   <th className="p-4 text-left font-medium">Black-box AI screeners</th>
                   <th className="p-4 text-left font-medium">Legacy ATS</th>
@@ -453,6 +459,10 @@ export default function LandingPage() {
             <pre
               className="overflow-x-auto p-5 text-[13px] leading-7"
               style={{ color: "var(--hl-cream)" }}
+              role="region"
+              aria-label="Install commands, scrollable horizontally"
+              // biome-ignore lint/a11y/noNoninteractiveTabindex: WCAG scrollable regions must be keyboard-focusable (axe-verified)
+              tabIndex={0}
             >
               <code>
                 <span style={{ color: "var(--hl-muted)" }}>$ </span>git clone

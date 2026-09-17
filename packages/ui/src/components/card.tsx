@@ -1,3 +1,4 @@
+import { Slot } from "@radix-ui/react-slot";
 import * as React from "react";
 import { cn } from "../cn";
 
@@ -25,14 +26,22 @@ CardHeader.displayName = "CardHeader";
 
 export const CardTitle = React.forwardRef<
   HTMLHeadingElement,
-  React.HTMLAttributes<HTMLHeadingElement>
->(({ className, ...props }, ref) => (
-  <h3
-    ref={ref}
-    className={cn("text-lg font-semibold leading-none tracking-tight", className)}
-    {...props}
-  />
-));
+  React.HTMLAttributes<HTMLHeadingElement> & { asChild?: boolean }
+>(({ className, children, asChild = false, ...props }, ref) => {
+  // Defaults to h2: pages have an h1, and card titles sit directly under
+  // it — h1 → h2 keeps heading order valid everywhere (axe heading-order).
+  // asChild renders the caller's element (e.g. <h1 />) instead.
+  const Comp = asChild ? Slot : "h2";
+  return (
+    <Comp
+      ref={ref}
+      className={cn("text-lg font-semibold leading-none tracking-tight", className)}
+      {...props}
+    >
+      {children}
+    </Comp>
+  );
+});
 CardTitle.displayName = "CardTitle";
 
 export const CardDescription = React.forwardRef<

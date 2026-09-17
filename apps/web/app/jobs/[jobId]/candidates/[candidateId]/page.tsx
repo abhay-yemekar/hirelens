@@ -78,6 +78,10 @@ export default function CandidatePage() {
               <pre
                 className="max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-xl p-3 font-mono text-xs leading-5"
                 style={{ background: "var(--hl-ink-2)", color: "var(--color-fg)" }}
+                role="region"
+                aria-label="Extracted resume text, scrollable"
+                // biome-ignore lint/a11y/noNoninteractiveTabindex: WCAG scrollable regions must be keyboard-focusable (axe-verified)
+                tabIndex={0}
               >
                 {rawText}
               </pre>

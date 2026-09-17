@@ -79,7 +79,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         }}
       >
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-4">
-          <Link href="/jobs" className="text-[var(--hl-cream)]">
+          <Link href="/jobs" className="text-[var(--hl-cream)]" aria-label="HireLens home">
             <Logo compact />
           </Link>
           <span aria-hidden className="h-5 w-px" style={{ background: "var(--hl-border)" }} />
