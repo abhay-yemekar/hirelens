@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { normalizeOrigin } from "../src/lib/site-url";
 
 /**
  * Static marketing routes. Product routes (jobs, signin, welcome) are
@@ -24,7 +25,7 @@ const SITE_ROUTES = [
 ] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = (process.env["NEXT_PUBLIC_SITE_URL"] ?? "http://localhost:3000").replace(/\/$/, "");
+  const base = normalizeOrigin(process.env["NEXT_PUBLIC_SITE_URL"]);
   const now = new Date();
   return SITE_ROUTES.map((route) => ({
     url: `${base}${route}`,

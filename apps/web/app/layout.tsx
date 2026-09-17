@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { normalizeOrigin } from "../src/lib/site-url";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
     template: "%s",
   },
   description: "RAG + LLM powered resume screening with auditable evidence.",
-  metadataBase: new URL("http://localhost:3000"),
+  metadataBase: new URL(normalizeOrigin(process.env["NEXT_PUBLIC_SITE_URL"])),
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

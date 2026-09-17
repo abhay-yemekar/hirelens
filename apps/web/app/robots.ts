@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { normalizeOrigin } from "../src/lib/site-url";
 
 /**
  * Allow the marketing surface; keep crawlers out of the product app
@@ -6,7 +7,7 @@ import type { MetadataRoute } from "next";
  * configured origin so production emits its real absolute URL.
  */
 export default function robots(): MetadataRoute.Robots {
-  const base = (process.env["NEXT_PUBLIC_SITE_URL"] ?? "http://localhost:3000").replace(/\/$/, "");
+  const base = normalizeOrigin(process.env["NEXT_PUBLIC_SITE_URL"]);
   return {
     rules: [
       {
