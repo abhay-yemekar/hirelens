@@ -291,8 +291,12 @@ export default function RunPage() {
                   </p>
                 ) : (
                   <pre
+                    role="region"
                     className="max-h-[70vh] overflow-auto whitespace-pre-wrap rounded-xl p-3 font-mono text-xs leading-5"
                     style={{ background: "var(--hl-ink-2)", color: "var(--color-fg)" }}
+                    // biome-ignore lint/a11y/noNoninteractiveTabindex: WCAG scrollable regions must be keyboard-focusable (axe-verified)
+                    tabIndex={0}
+                    aria-label="Extracted resume text, scrollable"
                   >
                     {segments.map((p, i) =>
                       p.span ? (

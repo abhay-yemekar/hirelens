@@ -44,11 +44,14 @@ export function jobsRoutes(): Hono<AppEnv> {
 
   routes.get("/", async (c) => {
     const db = c.get("db");
+    // Hard cap on page size — the UI never asks for more (§Day 19).
+    const limit = Math.min(Number(c.req.query("limit") ?? 100) || 100, 100);
     const rows = await db
       .select()
       .from(jobs)
       .where(eq(jobs.orgId, c.get("auth").orgId))
-      .orderBy(desc(jobs.createdAt));
+      .orderBy(desc(jobs.createdAt))
+      .limit(limit);
     return c.json({ ok: true, jobs: rows });
   });
 

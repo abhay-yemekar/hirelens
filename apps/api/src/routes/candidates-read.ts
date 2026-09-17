@@ -27,7 +27,8 @@ export function candidateReadRoutes(): Hono<AppEnv> {
       .from(candidates)
       .leftJoin(documents, eq(documents.candidateId, candidates.id))
       .where(eq(candidates.jobId, job.id))
-      .orderBy(desc(candidates.createdAt));
+      .orderBy(desc(candidates.createdAt))
+      .limit(500); // hard page cap (§Day 19); UI batches via zip summaries
     return c.json({ ok: true, candidates: rows });
   });
 
