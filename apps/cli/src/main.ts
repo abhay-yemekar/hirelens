@@ -463,7 +463,11 @@ async function main(): Promise<void> {
       case "version":
       case "--version":
       case "-v": {
-        console.log("hirelens 0.1.0");
+        // Read from package.json so the printed version always matches npm
+        // (never hardcode — it will drift). With the esbuild bundle the JSON
+        // is inlined; from source, Node loads it directly.
+        const pkg = await import("../package.json", { with: { type: "json" } });
+        console.log(`hirelens ${pkg.default.version}`);
         break;
       }
       case "help":
