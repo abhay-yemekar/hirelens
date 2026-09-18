@@ -153,78 +153,81 @@ export function RankedQueueShot() {
   );
 }
 
-/** Evidence viewer — resume text with the quoted span highlighted. */
+/** Evidence viewer — resume text with the quoted span highlighted.
+ *
+ * Designed for the ~400px card it actually renders at (hero overlay and
+ * feature bento): single column — resume on top, rubric breakdown below
+ * with full-width rows. Criterion titles wrap across the whole row with
+ * the score badge aligned to the top line (never floating mid-line
+ * beside three wrapped lines), and the evidence mark pulses once on
+ * load to reinforce the glass-box pitch. */
 export function EvidenceShot() {
   return (
     <div className="hl-shot overflow-hidden">
-      <BrowserChrome title="hirelens · Olivia Brown — evidence" />{" "}
-      <div className="grid grid-cols-1 gap-0 sm:grid-cols-5">
-        <div
-          className="col-span-1 border-b p-4 sm:col-span-3 sm:border-b-0 sm:border-r"
-          style={{ borderColor: "rgba(28,35,64,0.06)" }}
+      <BrowserChrome title="hirelens · Olivia Brown — evidence" />
+      <div className="p-4">
+        <p
+          className="text-[10px] font-semibold uppercase tracking-wider"
+          style={{ color: "#7d86a8" }}
         >
-          <p
-            className="text-[10px] font-semibold uppercase tracking-wider"
-            style={{ color: "#7d86a8" }}
+          Resume
+        </p>
+        <p className="mt-2 text-[12px] leading-6" style={{ color: "#3c4568" }}>
+          Olivia Brown — Site Reliability Engineer
+          <br />
+          FintechScale · 2020–present
+          <br />
+          <mark
+            className="hl-evidence-mark rounded px-0.5"
+            style={{
+              background: "rgba(255,107,87,0.28)",
+              boxShadow: "0 0 0 2px rgba(255,107,87,0.35)",
+            }}
           >
-            Resume
-          </p>
-          <p className="mt-2 text-[12px] leading-6" style={{ color: "#3c4568" }}>
-            Olivia Brown — Site Reliability Engineer
-            <br />
-            FintechScale · 2020–present
-            <br />
-            <mark
-              className="rounded px-0.5"
-              style={{
-                background: "rgba(255,107,87,0.28)",
-                boxShadow: "0 0 0 2px rgba(255,107,87,0.35)",
-              }}
+            Owned reliability for a payments API serving 200M requests/day
+          </mark>
+          . Wrote SLOs and error budgets; drove MTTR down 60%. Built chaos experiments on Kafka and
+          PostgreSQL failover paths.
+        </p>
+
+        <p
+          className="mt-4 border-t pt-3 text-[10px] font-semibold uppercase tracking-wider"
+          style={{ borderColor: "rgba(28,35,64,0.06)", color: "#7d86a8" }}
+        >
+          Rubric breakdown
+        </p>
+        <ul className="mt-2 flex flex-col gap-2">
+          {CRITERIA.map((c) => (
+            <li
+              key={c.title}
+              className="flex items-start justify-between gap-2.5 rounded-lg border p-2.5"
+              style={{ borderColor: "rgba(28,35,64,0.08)" }}
             >
-              Owned reliability for a payments API serving 200M requests/day
-            </mark>
-            . Wrote SLOs and error budgets; drove MTTR down 60%. Built chaos experiments on Kafka
-            and PostgreSQL failover paths.
-          </p>
-        </div>
-        <div className="col-span-1 p-4 sm:col-span-2">
-          <p
-            className="text-[10px] font-semibold uppercase tracking-wider"
-            style={{ color: "#7d86a8" }}
-          >
-            Rubric breakdown
-          </p>
-          <ul className="mt-2 flex flex-col gap-2.5">
-            {CRITERIA.map((c) => (
-              <li
-                key={c.title}
-                className="min-w-0 rounded-lg border p-2.5"
-                style={{ borderColor: "rgba(28,35,64,0.08)" }}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="min-w-0 flex-1 text-[11px] font-medium leading-tight">
-                    {c.title}
-                  </span>
-                  <span
-                    className="shrink-0 whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-bold"
-                    style={{ background: "#e8f7ee", color: "#147d43" }}
-                  >
-                    {c.score}/5
-                  </span>
-                </div>
-                <p className="mt-1 line-clamp-2 text-[10px] leading-4" style={{ color: "#7d86a8" }}>
+              <span className="min-w-0 flex-1 text-[11px] font-medium leading-snug">
+                {c.title}
+                <span
+                  className="mt-1 block truncate text-[10px] font-normal"
+                  style={{ color: "#7d86a8" }}
+                  title={`“${c.quote}”`}
+                >
                   “{c.quote}”
-                </p>
-              </li>
-            ))}
-          </ul>
-          <div
-            className="mt-3 flex items-center justify-between gap-2 rounded-lg px-2.5 py-2"
-            style={{ background: "rgba(28,35,64,0.04)" }}
-          >
-            <span className="shrink-0 text-[11px] font-medium">Overall</span>
-            <span className="shrink-0 whitespace-nowrap text-[15px] font-bold">43/100</span>
-          </div>
+                </span>
+              </span>
+              <span
+                className="shrink-0 whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-bold leading-[1.4]"
+                style={{ background: "#e8f7ee", color: "#147d43" }}
+              >
+                {c.score}/5
+              </span>
+            </li>
+          ))}
+        </ul>
+        <div
+          className="mt-3 flex items-center justify-between gap-2 rounded-lg px-2.5 py-2"
+          style={{ background: "rgba(28,35,64,0.04)" }}
+        >
+          <span className="shrink-0 text-[11px] font-medium">Overall</span>
+          <span className="shrink-0 whitespace-nowrap text-[15px] font-bold">43/100</span>
         </div>
       </div>
     </div>

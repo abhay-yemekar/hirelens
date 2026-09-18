@@ -19,6 +19,7 @@ import {
   listRuns,
   type RubricVersion,
   type RunRow,
+  retryFailed,
 } from "@/lib/api";
 import {
   candidateLabel,
@@ -59,6 +60,24 @@ interface ZipSummary {
   skipped: Array<{ name: string; reason: string }>;
 }
 
+/** What happened in the latest scoring batch — drives the results banner. */
+interface ScoreSummary {
+  runId: string;
+  total: number;
+  scored: number;
+  failed: number;
+  results: Array<{ candidateId: string; ok: boolean; error?: string }>;
+}
+
+/** Rate-limit/quota errors read as server noise — translate to plain cause. */
+function friendlyFailure(error: string): string {
+  return /rate.?limit|quota|429|503|resource.?exhausted|too many requests/i.test(error)
+    ? "the AI provider rate-limited the request"
+    : error.length > 140
+      ? `${error.slice(0, 140)}…`
+      : error;
+}
+
 export default function JobDetailPage() {
   const params = useParams<{ jobId: string }>();
   const jobId = params.jobId;
@@ -70,6 +89,7 @@ export default function JobDetailPage() {
   const [runs, setRuns] = useState<RunRow[]>([]);
   const [error, setError] = useState<unknown>(null);
   const [zipSummary, setZipSummary] = useState<ZipSummary | null>(null);
+  const [scoreSummary, setScoreSummary] = useState<ScoreSummary | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -162,6 +182,25 @@ export default function JobDetailPage() {
       : candidates.length === 0
         ? "Upload at least one resume first"
         : null;
+
+  // Candidates the newest failure-carrying run could not score — surfaced in
+  // the review queue so nobody silently vanishes (the review endpoint only
+  // returns candidates that have score rows).
+  const failedRun = runs.find((r) => (r.failures?.length ?? 0) > 0) ?? null;
+  const failedRows = (failedRun?.failures ?? []).map((f) => ({
+    candidateId: f.candidateId,
+    label: fileLabel(candidates.find((c) => c.id === f.candidateId)?.sourceFileKey ?? null),
+    error: f.error,
+  }));
+
+  async function retryAllFailed() {
+    if (!failedRun) return;
+    await run("retry", async () => {
+      const res = await retryFailed(jobId, failedRun.id);
+      setScoreSummary(res.summary);
+      await load();
+    });
+  }
 
   return (
     <AppShell>
@@ -399,7 +438,8 @@ export default function JobDetailPage() {
                 disabled={busy !== null || scoreBlocker !== null}
                 onClick={() =>
                   run("score", async () => {
-                    await kickoffScore(jobId);
+                    const res = await kickoffScore(jobId);
+                    setScoreSummary(res.summary);
                     trackEvent("scoring.kickoff", { jobId });
                     await load();
                   })
@@ -432,7 +472,66 @@ export default function JobDetailPage() {
               ).
             </p>
 
-            <ReviewTable jobId={jobId} />
+            {scoreSummary && (
+              <div
+                role="status"
+                className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl px-4 py-3 text-sm"
+                style={{
+                  background:
+                    scoreSummary.failed === 0
+                      ? "color-mix(in oklab, var(--color-success) 12%, transparent)"
+                      : "color-mix(in oklab, var(--color-warning) 14%, transparent)",
+                  color: "var(--hl-cream)",
+                }}
+              >
+                {scoreSummary.failed === 0 ? (
+                  <span>
+                    ✓ Scored {scoreSummary.scored} of {scoreSummary.total} candidate
+                    {scoreSummary.total === 1 ? "" : "s"}.
+                  </span>
+                ) : (
+                  <>
+                    <span>
+                      Scored {scoreSummary.scored} of {scoreSummary.total}. Could not score:{" "}
+                      {scoreSummary.results
+                        .filter((r) => !r.ok)
+                        .map((r) => {
+                          const label =
+                            fileLabel(
+                              candidates.find((c) => c.id === r.candidateId)?.sourceFileKey ?? null,
+                            ) ?? r.candidateId.slice(0, 8);
+                          return `${label} (${friendlyFailure(r.error ?? "unknown error")})`;
+                        })
+                        .join(", ")}
+                      .
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy !== null}
+                      onClick={() => void retryAllFailed()}
+                    >
+                      {busy === "retry" ? "Retrying…" : "Retry failed"}
+                    </Button>
+                  </>
+                )}
+                <button
+                  type="button"
+                  aria-label="Dismiss"
+                  onClick={() => setScoreSummary(null)}
+                  className="ml-auto rounded px-2 py-1 text-xs transition-colors hover:bg-white/[0.08]"
+                  style={{ color: "var(--hl-mist)" }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            <ReviewTable
+              jobId={jobId}
+              failed={failedRows}
+              onRetryFailed={failedRun ? () => void retryAllFailed() : undefined}
+            />
 
             {runs.length > 0 && (
               <ul className="flex flex-col gap-2">

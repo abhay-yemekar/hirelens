@@ -1,23 +1,29 @@
 /**
  * runBatch: creates the scoring_runs row, fans out per-candidate work
- * with bounded concurrency and retries, and closes the run. Failures
- * are recorded per candidate and never abort the whole batch.
+ * with bounded concurrency and rate-limit-aware retries, and closes the
+ * run. Failures are recorded per candidate — persisted on the run row —
+ * and never abort the whole batch or vanish silently.
  */
 
 import { type LanguageModel, modelIdOf } from "@hirelens/core";
 import type { Database } from "@hirelens/db";
 import { candidates, documents, jobs, rubrics, scoringRuns } from "@hirelens/db";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { appendAudit } from "./audit.js";
 import type { BatchSummary } from "./orchestrator.js";
 import { type ScoreOneContext, type ScoreOneInvocation, scoreOneCandidate } from "./run.js";
 import { noopTraceSink } from "./trace.js";
 
 export interface RunBatchOptions extends ScoreOneContext {
-  /** Max candidates scored concurrently. Default 4. */
+  /** Max candidates scored concurrently. Default 2 (LLM rate limits). */
   concurrency?: number;
-  /** Retry attempts per candidate. Default 3. */
+  /** Retry attempts per candidate. Default 5, rate-limit aware. */
   attempts?: number;
+  /**
+   * Score only these candidate IDs (retry-failed flows). Default: every
+   * candidate on the job.
+   */
+  candidateIds?: string[];
   /**
    * Progress callback, invoked after each candidate settles. Transport-
    * agnostic: the API layer can bridge this to SSE for live progress.
@@ -27,15 +33,53 @@ export interface RunBatchOptions extends ScoreOneContext {
     | undefined;
 }
 
-/** Score every candidate on a job against the job's latest rubric version. */
+/** A candidate the batch could not score, persisted on the run row. */
+export interface RunFailure {
+  candidateId: string;
+  label: string | null;
+  error: string;
+}
+
+/**
+ * Sleep for a rate-limit-aware delay. Provider rate-limit errors (429/503,
+ * "quota", "rate limit") back off in 15 s steps up to a 60 s ceiling —
+ * Gemini's free tier resets per-minute, so sub-second retries (the old
+ * 50–200 ms ladder) burned every attempt inside one limit window. Other
+ * errors retry quickly with jitter.
+ */
+function retryDelayMs(attempt: number, error: unknown): number {
+  const message =
+    error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  const rateLimited =
+    /\b429\b|\b503\b|rate.?limit|quota|resource.?exhausted|too many requests/.test(message);
+  if (rateLimited) {
+    return Math.min(60_000, 15_000 * 2 ** (attempt - 1)) + Math.floor(Math.random() * 1_000);
+  }
+  return Math.min(5_000, 200 * 2 ** (attempt - 1)) + Math.floor(Math.random() * 100);
+}
+
+async function withRetry<T>(fn: () => Promise<T>, attempts: number): Promise<T> {
+  let lastError: unknown;
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (i < attempts) await new Promise((r) => setTimeout(r, retryDelayMs(i, err)));
+    }
+  }
+  throw lastError;
+}
+
+/** Score candidates on a job against the job's latest rubric version. */
 export async function runBatch(
   db: Database,
   model: LanguageModel,
   input: { jobId: string; orgId: string; actorId?: string | undefined },
   opts?: RunBatchOptions,
 ): Promise<BatchSummary> {
-  const concurrency = Math.max(1, opts?.concurrency ?? 4);
-  const attempts = Math.max(1, opts?.attempts ?? 3);
+  const concurrency = Math.max(1, opts?.concurrency ?? 2);
+  const attempts = Math.max(1, opts?.attempts ?? 5);
   const trace = opts?.trace ?? noopTraceSink;
 
   const [job] = await db.select().from(jobs).where(eq(jobs.id, input.jobId)).limit(1);
@@ -54,10 +98,15 @@ export async function runBatch(
       candidateId: candidates.id,
       documentId: documents.id,
       rawText: documents.rawText,
+      sourceFileKey: candidates.sourceFileKey,
     })
     .from(candidates)
     .innerJoin(documents, eq(documents.candidateId, candidates.id))
-    .where(eq(candidates.jobId, input.jobId));
+    .where(
+      opts?.candidateIds && opts.candidateIds.length > 0
+        ? inArray(candidates.id, opts.candidateIds)
+        : eq(candidates.jobId, input.jobId),
+    );
 
   const [runRow] = await db
     .insert(scoringRuns)
@@ -90,6 +139,7 @@ export async function runBatch(
   };
 
   const results: BatchSummary["results"] = [];
+  const failures: RunFailure[] = [];
   let cursor = 0;
   const overallScores: number[] = [];
 
@@ -114,10 +164,14 @@ export async function runBatch(
         overallScores.push(overall);
         results.push({ candidateId: row.candidateId, ok: true });
       } catch (err) {
-        results.push({
+        const message = err instanceof Error ? err.message : String(err);
+        results.push({ candidateId: row.candidateId, ok: false, error: message });
+        // Persisted so the UI can name the failure and offer a retry —
+        // a failed candidate must never silently vanish.
+        failures.push({
           candidateId: row.candidateId,
-          ok: false,
-          error: err instanceof Error ? err.message : String(err),
+          label: row.sourceFileKey?.split("/").pop() ?? null,
+          error: message,
         });
       }
       const last = results[results.length - 1];
@@ -138,7 +192,7 @@ export async function runBatch(
   const scored = results.filter((r) => r.ok).length;
   await db
     .update(scoringRuns)
-    .set({ status: "completed", finishedAt: new Date() })
+    .set({ status: "completed", finishedAt: new Date(), failures })
     .where(eq(scoringRuns.id, runId));
 
   await appendAudit(db, {
@@ -152,6 +206,7 @@ export async function runBatch(
       total: rows.length,
       scored,
       failed: results.length - scored,
+      failures: failures.map((f) => ({ candidateId: f.candidateId, error: f.error })),
     },
   });
 
@@ -173,17 +228,4 @@ interface RunRubricShape {
   id: string;
   version: number;
   payload: unknown;
-}
-
-async function withRetry<T>(fn: () => Promise<T>, attempts: number): Promise<T> {
-  let lastError: unknown;
-  for (let i = 1; i <= attempts; i++) {
-    try {
-      return await fn();
-    } catch (err) {
-      lastError = err;
-      if (i < attempts) await new Promise((r) => setTimeout(r, 50 * 2 ** (i - 1)));
-    }
-  }
-  throw lastError;
 }

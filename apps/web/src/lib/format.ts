@@ -36,13 +36,17 @@ export function modelLabel(modelId: string): string {
 
 /**
  * Storage key → the filename the user uploaded ("resumes/abc/John_Doe.pdf"
- * → "John_Doe.pdf"). Returns null when there is no key (e.g. zip entries
- * before persist) so callers can fall back to a candidate ID.
+ * → "John Doe"). Returns null when there is no key (e.g. zip entries
+ * before persist) so callers can fall back to a candidate ID. The
+ * extension is stripped and underscores/hyphens become spaces.
  */
 export function fileLabel(sourceFileKey: string | null | undefined): string | null {
   if (!sourceFileKey) return null;
   const last = sourceFileKey.split("/").pop();
-  return last || null;
+  if (!last) return null;
+  const withoutExt = last.replace(/\.[a-z0-9]+$/i, "");
+  const pretty = withoutExt.replace(/[_-]+/g, " ").trim();
+  return pretty || last;
 }
 
 /**

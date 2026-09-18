@@ -174,6 +174,39 @@ export function scoringRoutes(): Hono<AppEnv> {
     return c.json({ ok: true, run: detail.run, candidates });
   });
 
+  /**
+   * Retry the candidates that failed in a run: scores only the failures
+   * into a fresh run, so a rate-limited batch never strands candidates.
+   */
+  routes.post("/runs/:runId/retry-failed", requireAuth(ROLE_MIN.edit), async (c) => {
+    const db = c.get("db");
+    const auth = c.get("auth");
+    const job = await loadOrgJob(db, c.req.param("jobId"), auth.orgId);
+    if (!job) return c.json({ ok: false, error: "not_found" }, 404);
+
+    const runId = c.req.param("runId") ?? "";
+    const [run] = await db.select().from(scoringRuns).where(eq(scoringRuns.id, runId)).limit(1);
+    if (!run || run.jobId !== job.id) return c.json({ ok: false, error: "not_found" }, 404);
+    const failed = run.failures ?? [];
+    if (failed.length === 0) {
+      return c.json(
+        { ok: false, error: "nothing_to_retry", message: "No failed candidates on this run." },
+        400,
+      );
+    }
+
+    const model = c.get("model");
+    if (!model) return c.json({ ok: false, error: "llm_not_configured" }, 503);
+
+    const summary = await runBatch(
+      db,
+      model,
+      { jobId: job.id, orgId: auth.orgId, actorId: auth.userId },
+      { trace: langfuseTraceSink(), candidateIds: failed.map((f) => f.candidateId) },
+    );
+    return c.json({ ok: true, summary });
+  });
+
   /** Run history for the job, newest first. */
   routes.get("/runs", async (c) => {
     const db = c.get("db");
@@ -205,8 +238,8 @@ export function scoringRoutes(): Hono<AppEnv> {
       result = await ingestBytes(db, { jobId: job.id, filename: file.name, bytes });
     } catch (err) {
       // Parse/extract failures (empty file, unsupported format, too little
-      // text) are client-input problems — report them as 400s with the
-      // parser's message, not 500s.
+      // text) are client-input problems — report them as 422 with the
+      // parser's message, matching the global ExtractionError mapping.
       const code = (err as { code?: string })?.code;
       if (code === "LOW_INFORMATION" || code === "EMPTY_FILE" || code === "UNSUPPORTED_FORMAT") {
         return c.json(
@@ -218,7 +251,7 @@ export function scoringRoutes(): Hono<AppEnv> {
                 ? `${file.name}: ${err.message.toLowerCase()}`
                 : `${file.name}: could not read this document`,
           },
-          400,
+          422,
         );
       }
       throw err;
