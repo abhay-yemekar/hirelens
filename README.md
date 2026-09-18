@@ -81,6 +81,12 @@ packages/
 
 ## Quickstart
 
+**Try the CLI without installing anything** (Node 20+, points at a running HireLens server):
+
+```bash
+npx hirelens --help
+```
+
 **60-second self-host** (Docker only):
 
 ```bash
@@ -88,6 +94,12 @@ git clone https://github.com/abhay-yemekar/hirelens.git && cd hirelens
 cp .env.example .env                # set BETTER_AUTH_SECRET
 docker compose up --build -d        # web :3000 · api :4000 · postgres :5433
 ```
+
+Prefer prebuilt images? Per-release images live on GHCR —
+[`ghcr.io/abhay-yemekar/hirelens-web`](https://ghcr.io/abhay-yemekar/hirelens-web)
+and
+[`ghcr.io/abhay-yemekar/hirelens-api`](https://ghcr.io/abhay-yemekar/hirelens-api)
+(`v1.0.0`, `1.0`, `latest` tags).
 
 Migrations apply on first boot. Open [localhost:3000](http://localhost:3000), create an account and organization, add an LLM key in `.env` for scoring.
 
@@ -108,16 +120,18 @@ The detailed walkthrough — every command, expected output, and a troubleshooti
 
 ### CLI
 
-With the API running:
+Published on npm as [`hirelens`](https://www.npmjs.com/package/hirelens):
 
 ```bash
-pnpm --filter @hirelens/cli dev login you@example.com
-cd apps/cli && node src/main.ts jobs create "Senior Backend" --jd jd.md
-cd apps/cli && node src/main.ts rubric derive <jobId>      # LLM JD → rubric
-cd apps/cli && node src/main.ts score <jobId> ./resumes/   # upload + score + ranked table
+npx hirelens login you@example.com
+npx hirelens jobs create "Senior Backend" --jd jd.md
+npx hirelens rubric derive <jobId>      # LLM JD → rubric
+npx hirelens score <jobId> ./resumes/   # upload + score + ranked table
 ```
 
-`score` uploads every `.txt/.md/.pdf` in the path and prints a ranked table (`--breakdown` for per-criterion evidence, `--json` for machines). Sessions persist to `~/.hirelens/`. Requires Node ≥ 22.6.
+`score` uploads every `.txt/.md/.pdf` in the path and prints a ranked table (`--breakdown` for per-criterion evidence, `--json` for machines). Sessions persist to `~/.hirelens/`. Requires Node ≥ 20.
+
+Developing on the CLI itself? Run it from source with `pnpm --filter hirelens dev` (Node ≥ 22.6 native type stripping).
 
 ### API contract
 
@@ -196,11 +210,11 @@ Most hiring AI is a black box: a number with no justification. That is a liabili
 | Modern UX | ✅ | ✅ | ❌ |
 | Cost | your own LLM key | per-seat + per-resume fees | free |
 
-## Roadmap to v1.0.0 — 30 September 2026
+## Roadmap
 
 - ✅ **Hardening** — a11y sweep (zero axe violations), SEO gate (sitemap/robots), API body/list caps with proper 413s, review-query optimization, 200-resume load test.
 - ✅ **Private beta** — live at [hirelens-rosy.vercel.app](https://hirelens-rosy.vercel.app); inviting 5–10 real recruiters, fixing what they actually hit, feature freeze.
-- **Launch** — tag `v1.0.0`, GitHub Release, multi-arch GHCR images, `npx hirelens` on npm.
+- ✅ **v1.0.0 launch** — tagged release, GHCR images, [`hirelens` on npm](https://www.npmjs.com/package/hirelens).
 - **Post-launch** — RAG Q&A over resumes (pgvector embeddings + hybrid retrieval — the schema ships today), rubric editor UI, compare view, scheduled audits.
 
 Follow along in [Issues](https://github.com/abhay-yemekar/hirelens/issues).

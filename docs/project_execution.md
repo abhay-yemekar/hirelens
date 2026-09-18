@@ -182,7 +182,7 @@ The CLI scores resumes from the terminal. It ships as zero-dependency TypeScript
 export HIRELENS_API_URL=http://localhost:4000          # the API (compose or `pnpm --filter @hirelens/api dev`)
 export HIRELENS_CONFIG_DIR=~/.hirelens                  # optional; where the session cookie is stored
 
-pnpm --filter @hirelens/cli dev login you@example.com   # prompts for password (or set HIRELENS_PASSWORD)
+pnpm --filter hirelens dev login you@example.com   # prompts for password (or set HIRELENS_PASSWORD)
 cd apps/cli && node src/main.ts org create "Acme Hiring"
 cd apps/cli && node src/main.ts jobs create "Senior Backend" --jd jd.md
 cd apps/cli && node src/main.ts rubric derive <jobId>   # LLM-derives the rubric from the JD
