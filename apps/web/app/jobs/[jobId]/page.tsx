@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hirelens/ui";
+import { FileText } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -360,61 +361,72 @@ export default function JobDetailPage() {
             )}
 
             {candidates.length > 0 && (
-              <ul className="flex flex-col gap-1.5 text-sm">
-                {candidates.map((c) => {
-                  const pages = pagesLabel(c.pageCount);
-                  const uploaded = timeAgo(c.createdAt);
-                  return (
-                    <li
-                      key={c.id}
-                      className="flex items-center gap-2.5 rounded-lg px-3 py-2.5"
-                      style={{ background: "var(--hl-ink-3)" }}
-                    >
-                      <span
-                        className="truncate text-[13px] font-medium"
-                        style={{ color: "var(--hl-cream)" }}
-                        title={fileLabel(c.sourceFileKey) ?? candidateLabel(c.id, c.sourceFileKey)}
+              <div
+                className="overflow-hidden rounded-[var(--radius-card)] border"
+                style={{ borderColor: "var(--hl-border)" }}
+              >
+                <ul className="divide-y divide-[var(--hl-border)] text-sm">
+                  {candidates.map((c) => {
+                    const pages = pagesLabel(c.pageCount);
+                    const uploaded = timeAgo(c.createdAt);
+                    return (
+                      <li
+                        key={c.id}
+                        className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-white/[0.03]"
                       >
-                        {candidateLabel(c.id, c.sourceFileKey)}
-                      </span>
-                      {pages && (
+                        <FileText
+                          aria-hidden
+                          className="h-4 w-4 flex-none"
+                          style={{ color: "var(--hl-muted)" }}
+                        />
                         <span
-                          className="flex-none rounded-full px-2 py-0.5 text-xs"
-                          style={{ background: "var(--hl-card)", color: "var(--hl-muted)" }}
+                          className="min-w-0 flex-1 truncate text-[14px] font-medium"
+                          style={{ color: "var(--hl-cream)" }}
+                          title={
+                            fileLabel(c.sourceFileKey) ?? candidateLabel(c.id, c.sourceFileKey)
+                          }
                         >
-                          {pages}
+                          {candidateLabel(c.id, c.sourceFileKey)}
                         </span>
-                      )}
-                      {c.language && (
+                        {pages && (
+                          <span className="flex-none text-xs" style={{ color: "var(--hl-muted)" }}>
+                            {pages}
+                          </span>
+                        )}
+                        {c.language && (
+                          <span
+                            className="hidden flex-none text-xs md:inline"
+                            style={{ color: "var(--hl-muted)" }}
+                          >
+                            {languageName(c.language)}
+                          </span>
+                        )}
                         <span
-                          className="flex-none rounded-full px-2 py-0.5 text-xs"
-                          style={{ background: "var(--hl-card)", color: "var(--hl-muted)" }}
+                          className="hidden flex-none text-xs sm:inline"
+                          style={{ color: "var(--hl-muted)" }}
+                          title={`Uploaded ${new Date(c.createdAt).toLocaleString()}`}
                         >
-                          {languageName(c.language)}
+                          {uploaded}
                         </span>
-                      )}
-                      <span
-                        className="hidden flex-none text-xs sm:inline"
-                        style={{ color: "var(--hl-muted)" }}
-                        title={`Uploaded ${new Date(c.createdAt).toLocaleString()}`}
-                      >
-                        {uploaded}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => removeCandidate(c)}
-                        disabled={busy !== null}
-                        aria-label={`Remove ${candidateLabel(c.id, c.sourceFileKey)}`}
-                        title="Remove this resume and its scores (recorded in the audit log)"
-                        className="ml-auto flex-none rounded px-2 py-1 text-xs transition-colors hover:bg-white/[0.06] active:bg-white/[0.1] disabled:opacity-40"
-                        style={{ color: "var(--hl-bad)" }}
-                      >
-                        Remove
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+                        <button
+                          type="button"
+                          onClick={() => removeCandidate(c)}
+                          disabled={busy !== null}
+                          aria-label={`Remove ${candidateLabel(c.id, c.sourceFileKey)}`}
+                          title="Remove this resume and its scores (recorded in the audit log)"
+                          className="flex-none rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-white/[0.06] active:bg-white/[0.1] disabled:opacity-40"
+                          style={{
+                            borderColor: "color-mix(in oklab, var(--hl-bad) 45%, transparent)",
+                            color: "var(--hl-bad)",
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -534,39 +546,91 @@ export default function JobDetailPage() {
             />
 
             {runs.length > 0 && (
-              <ul className="flex flex-col gap-2">
-                {runs.map((r) => (
-                  <li
-                    key={r.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm"
-                    style={{ background: "var(--hl-ink-3)" }}
-                  >
-                    <span style={{ color: "var(--hl-mist)" }}>
-                      Scored with {modelLabel(r.modelId)} · rubric v{r.rubricVersion} ·{" "}
+              <div
+                className="overflow-hidden rounded-[var(--radius-card)] border"
+                style={{ borderColor: "var(--hl-border)" }}
+              >
+                <ul className="divide-y divide-[var(--hl-border)] text-sm">
+                  {runs.map((r) => (
+                    <li
+                      key={r.id}
+                      className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 transition-colors hover:bg-white/[0.03]"
+                    >
+                      {/* Spine dot — matches the reference's radio-pill marker. */}
                       <span
+                        aria-hidden
+                        className="flex h-6 w-6 flex-none items-center justify-center rounded-full"
                         style={{
+                          background: "color-mix(in oklab, var(--hl-accent) 14%, transparent)",
+                          border: "1px solid var(--hl-border)",
+                        }}
+                      >
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{
+                            background:
+                              r.status === "completed"
+                                ? "var(--hl-accent)"
+                                : r.status === "failed"
+                                  ? "var(--hl-bad)"
+                                  : "var(--hl-muted)",
+                          }}
+                        />
+                      </span>
+                      <span className="min-w-0 truncate" style={{ color: "var(--hl-cream)" }}>
+                        Scored with {modelLabel(r.modelId)}
+                      </span>
+                      <span aria-hidden style={{ color: "var(--hl-muted)" }}>
+                        ·
+                      </span>
+                      <span
+                        className="whitespace-nowrap text-xs"
+                        style={{ color: "var(--hl-muted)" }}
+                      >
+                        rubric v{r.rubricVersion}
+                      </span>
+                      <span
+                        className="flex-none rounded-[var(--radius-pill)] px-2.5 py-0.5 text-xs font-medium"
+                        style={{
+                          background:
+                            r.status === "completed"
+                              ? "color-mix(in oklab, var(--color-success) 18%, transparent)"
+                              : r.status === "failed"
+                                ? "color-mix(in oklab, var(--color-danger) 14%, transparent)"
+                                : "transparent",
                           color:
                             r.status === "completed"
                               ? "var(--color-success)"
                               : r.status === "failed"
-                                ? "var(--hl-bad)"
+                                ? "var(--color-danger)"
                                 : "var(--hl-muted)",
+                          ...(r.status === "running"
+                            ? { border: "1px solid var(--hl-border)" }
+                            : {}),
                         }}
                       >
                         {cap(r.status)}
                       </span>
-                      {r.finishedAt ? ` · ${timeAgo(r.finishedAt)}` : ""}
-                    </span>
-                    <Link
-                      href={`/jobs/${jobId}/runs/${r.id}`}
-                      className="underline underline-offset-2"
-                      style={{ color: "var(--hl-accent)" }}
-                    >
-                      View results →
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+                      <span
+                        className="flex-none text-xs"
+                        style={{ color: "var(--hl-muted)" }}
+                        title={
+                          r.finishedAt
+                            ? `Finished ${new Date(r.finishedAt).toLocaleString()}`
+                            : undefined
+                        }
+                      >
+                        {r.finishedAt ? timeAgo(r.finishedAt) : ""}
+                      </span>
+                      <Link href={`/jobs/${jobId}/runs/${r.id}`} className="ml-auto">
+                        <Button variant="outline" size="sm">
+                          View results →
+                        </Button>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </CardContent>
         </Card>

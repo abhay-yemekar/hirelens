@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, OverallScore } from "@hirelens/ui";
+import { Button } from "@hirelens/ui";
 import { Info } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { NoticeBanner } from "@/components/notice-banner";
@@ -36,6 +36,12 @@ export interface FailedCandidate {
 function csvEscape(v: string | number | null): string {
   const s = String(v ?? "");
   return /[",\n]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s;
+}
+
+/** Score-ramp color for an overall 0–100 value (same mapping as OverallScore). */
+function scoreColor(overall: number): string {
+  const level = Math.min(5, Math.max(0, Math.round(overall / 20)));
+  return `var(--color-score-${level})`;
 }
 
 export function ReviewTable({
@@ -171,20 +177,22 @@ export function ReviewTable({
     return r.label ?? `Candidate ${r.candidateId.slice(0, 8)}`;
   }
 
-  /** Fixed-column grid: rank | candidate | score | stage | actions. Columns
-   * line up across every row (the old free-flowing flex-wrap let each
-   * row's name length push the score/stage columns around). On mobile the
-   * stage pill and actions wrap beneath the name; on sm+ everything is one
-   * aligned row under a matching header. */
-  const rowGrid =
-    "grid grid-cols-[1.75rem,minmax(0,1fr),auto] items-center gap-x-3 gap-y-2 px-4 py-3 " +
-    "sm:grid-cols-[1.75rem,minmax(9rem,1fr),6.5rem,5.5rem,auto] sm:gap-x-4";
+  /** One compact line per candidate: # · avatar+name · score · stage · actions.
+   * A real <table> guarantees the columns line up across every row (the
+   * previous CSS-grid used commas in arbitrary values, which Tailwind drops —
+   * every cell then stacked vertically and rows grew 5 lines tall).
+   * Narrow screens scroll horizontally instead of wrapping. */
+  const cell = "px-4 py-2.5 align-middle";
+  const headCell = `${cell} text-xs font-medium whitespace-nowrap`;
+  const headStyle = { color: "var(--color-fg-muted)", borderColor: "var(--hl-border)" };
 
   return (
     <section className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium text-[var(--hl-cream)]">Review queue</h2>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <h2 className="whitespace-nowrap text-lg font-medium text-[var(--hl-cream)]">
+          Review queue
+        </h2>
+        <div className="flex flex-wrap items-center gap-2">
           <label
             className="flex items-center gap-1.5 text-sm"
             style={{ color: "var(--color-fg-muted)" }}
@@ -224,116 +232,182 @@ export function ReviewTable({
         </p>
       ) : (
         <div
-          className="overflow-hidden rounded-[var(--radius-card)] border"
+          className="overflow-x-auto rounded-[var(--radius-card)] border"
           style={{ borderColor: "var(--hl-border)" }}
         >
-          {/* Desktop column header — matches the grid template exactly. */}
-          <div
-            className={`${rowGrid} border-b py-2 text-xs font-medium`}
-            style={{ borderColor: "var(--hl-border)", color: "var(--color-fg-muted)" }}
-          >
-            <span>#</span>
-            <span>Candidate</span>
-            <span>Score</span>
-            <span>Stage</span>
-            <span className="text-right">Decision</span>
-          </div>
-
-          {rows.map((r, i) => (
-            <div
-              key={r.candidateId}
-              className={rowGrid}
-              style={{
-                borderBottom: "1px solid var(--hl-border)",
-                background: i === cursor ? "var(--color-surface-raised)" : undefined,
-              }}
-            >
-              <span className="text-sm tabular-nums" style={{ color: "var(--color-fg-muted)" }}>
-                {i + 1}
-              </span>
-              <a
-                href={
-                  blind
-                    ? `/jobs/${jobId}/candidates/${r.candidateId}?blind=1`
-                    : `/jobs/${jobId}/candidates/${r.candidateId}`
-                }
-                className="truncate text-sm font-medium underline-offset-2 hover:underline"
-                style={{ color: "var(--color-accent)" }}
-                title={blind ? "Blinded — open to read the masked resume" : displayName(r, i)}
-              >
-                {displayName(r, i)}
-              </a>
-              <OverallScore score={r.overall} label={`Candidate rank ${i + 1} overall`} />
-              <span
-                className="col-start-2 justify-self-start rounded-[var(--radius-pill)] px-2 py-0.5 text-xs font-medium sm:col-auto sm:justify-self-center"
-                style={{
-                  background: STAGE_STYLE[r.stage].bg,
-                  color: STAGE_STYLE[r.stage].fg,
-                  ...(STAGE_STYLE[r.stage].border
-                    ? { border: `1px solid ${STAGE_STYLE[r.stage].border}` }
-                    : {}),
-                }}
-              >
-                {cap(r.stage)}
-              </span>
-              <span className="col-span-3 flex flex-wrap justify-end gap-1.5 sm:col-span-1 sm:flex-nowrap">
-                {STAGES.map((s) => (
-                  <Button
-                    key={s}
-                    variant="outline"
-                    size="sm"
-                    disabled={busy || r.stage === s}
-                    onClick={() => void decide(s, r.candidateId)}
+          <table className="w-full min-w-[680px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b" style={{ borderColor: "var(--hl-border)" }}>
+                <th className={`${headCell} w-12 text-left`} style={headStyle}>
+                  #
+                </th>
+                <th className={`${headCell} text-left`} style={headStyle}>
+                  Candidate
+                </th>
+                <th className={`${headCell} text-center`} style={headStyle}>
+                  Score
+                </th>
+                <th className={`${headCell} text-center`} style={headStyle}>
+                  Stage
+                </th>
+                <th className={`${headCell} text-right`} style={headStyle}>
+                  Decision
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr
+                  key={r.candidateId}
+                  className="border-b transition-colors"
+                  style={{
+                    borderColor: "var(--hl-border)",
+                    background: i === cursor ? "var(--color-surface-raised)" : undefined,
+                  }}
+                >
+                  <td className={`${cell} tabular-nums`} style={{ color: "var(--color-fg-muted)" }}>
+                    {i + 1}
+                  </td>
+                  <td className={cell}>
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <span
+                        aria-hidden
+                        className="flex h-7 w-7 flex-none items-center justify-center rounded-full text-xs font-semibold"
+                        style={{
+                          background: "color-mix(in oklab, var(--hl-accent) 16%, transparent)",
+                          color: "var(--hl-accent)",
+                        }}
+                      >
+                        {displayName(r, i).charAt(0).toUpperCase()}
+                      </span>
+                      <a
+                        href={
+                          blind
+                            ? `/jobs/${jobId}/candidates/${r.candidateId}?blind=1`
+                            : `/jobs/${jobId}/candidates/${r.candidateId}`
+                        }
+                        className="max-w-[16rem] truncate font-medium underline-offset-2 hover:underline"
+                        style={{ color: "var(--hl-cream)" }}
+                        title={
+                          blind ? "Blinded — open to read the masked resume" : displayName(r, i)
+                        }
+                      >
+                        {displayName(r, i)}
+                      </a>
+                    </span>
+                  </td>
+                  <td
+                    className={`${cell} whitespace-nowrap text-center font-mono font-bold tabular-nums`}
+                    style={{ color: scoreColor(r.overall) }}
+                    aria-label={`Overall score ${Math.round(r.overall)} of 100`}
                   >
-                    {s === "shortlisted" ? "Shortlist" : s === "advanced" ? "Advance" : "Reject"}
-                  </Button>
-                ))}
-              </span>
-            </div>
-          ))}
+                    {Math.round(r.overall)}
+                    <span
+                      className="text-[0.65em] font-normal"
+                      style={{ color: "var(--color-fg-muted)" }}
+                    >
+                      {" "}
+                      / 100
+                    </span>
+                  </td>
+                  <td className={`${cell} text-center`}>
+                    <span
+                      className="inline-flex min-w-[5.5rem] items-center justify-center whitespace-nowrap rounded-[var(--radius-pill)] px-2.5 py-0.5 text-xs font-medium"
+                      style={{
+                        background: STAGE_STYLE[r.stage].bg,
+                        color: STAGE_STYLE[r.stage].fg,
+                        ...(STAGE_STYLE[r.stage].border
+                          ? { border: `1px solid ${STAGE_STYLE[r.stage].border}` }
+                          : {}),
+                      }}
+                    >
+                      {cap(r.stage)}
+                    </span>
+                  </td>
+                  <td className={cell}>
+                    <span className="flex flex-nowrap items-center justify-end gap-1.5">
+                      {STAGES.map((s) => (
+                        <Button
+                          key={s}
+                          variant="outline"
+                          size="sm"
+                          disabled={busy || r.stage === s}
+                          onClick={() => void decide(s, r.candidateId)}
+                        >
+                          {s === "shortlisted"
+                            ? "Shortlist"
+                            : s === "advanced"
+                              ? "Advance"
+                              : "Reject"}
+                        </Button>
+                      ))}
+                    </span>
+                  </td>
+                </tr>
+              ))}
 
-          {/* Candidates the run could not score — visible, named, retryable. */}
-          {failed.map((f) => (
-            <div
-              key={f.candidateId}
-              className={rowGrid}
-              style={{
-                borderBottom: "1px solid var(--hl-border)",
-                background: "color-mix(in oklab, var(--color-warning) 6%, transparent)",
-              }}
-            >
-              <span className="text-sm tabular-nums" style={{ color: "var(--color-fg-muted)" }}>
-                —
-              </span>
-              <span
-                className="truncate text-sm font-medium"
-                style={{ color: "var(--hl-cream)" }}
-                title={f.label ?? f.candidateId}
-              >
-                {f.label ?? `Candidate ${f.candidateId.slice(0, 8)}`}
-              </span>
-              <span className="text-xs" style={{ color: "var(--color-fg-muted)" }}>
-                —
-              </span>
-              <span
-                className="col-start-2 justify-self-start rounded-[var(--radius-pill)] px-2 py-0.5 text-xs font-medium sm:col-auto sm:justify-self-center"
-                style={{
-                  background: "color-mix(in oklab, var(--color-warning) 16%, transparent)",
-                  color: "var(--color-warning)",
-                }}
-                title={f.error}
-              >
-                Scoring failed
-              </span>
-              <span className="col-span-3 flex justify-end sm:col-span-1">
-                {onRetryFailed && (
-                  <Button variant="outline" size="sm" onClick={onRetryFailed}>
-                    Retry
-                  </Button>
-                )}
-              </span>
-            </div>
-          ))}
+              {/* Candidates the run could not score — visible, named, retryable. */}
+              {failed.map((f) => (
+                <tr
+                  key={f.candidateId}
+                  className="border-b"
+                  style={{
+                    borderColor: "var(--hl-border)",
+                    background: "color-mix(in oklab, var(--color-warning) 6%, transparent)",
+                  }}
+                >
+                  <td className={`${cell} tabular-nums`} style={{ color: "var(--color-fg-muted)" }}>
+                    —
+                  </td>
+                  <td className={cell}>
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <span
+                        aria-hidden
+                        className="flex h-7 w-7 flex-none items-center justify-center rounded-full text-xs font-semibold"
+                        style={{
+                          background: "color-mix(in oklab, var(--color-warning) 16%, transparent)",
+                          color: "var(--color-warning)",
+                        }}
+                      >
+                        {(f.label ?? "?").charAt(0).toUpperCase()}
+                      </span>
+                      <span
+                        className="max-w-[16rem] truncate font-medium"
+                        style={{ color: "var(--hl-cream)" }}
+                        title={f.label ?? f.candidateId}
+                      >
+                        {f.label ?? `Candidate ${f.candidateId.slice(0, 8)}`}
+                      </span>
+                    </span>
+                  </td>
+                  <td className={`${cell} text-center`} style={{ color: "var(--color-fg-muted)" }}>
+                    —
+                  </td>
+                  <td className={`${cell} text-center`}>
+                    <span
+                      className="inline-flex min-w-[5.5rem] cursor-help items-center justify-center whitespace-nowrap rounded-[var(--radius-pill)] px-2.5 py-0.5 text-xs font-medium"
+                      style={{
+                        background: "color-mix(in oklab, var(--color-warning) 16%, transparent)",
+                        color: "var(--color-warning)",
+                      }}
+                      title={f.error}
+                    >
+                      Failed
+                    </span>
+                  </td>
+                  <td className={cell}>
+                    <span className="flex items-center justify-end">
+                      {onRetryFailed && (
+                        <Button variant="outline" size="sm" onClick={onRetryFailed}>
+                          Retry
+                        </Button>
+                      )}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
