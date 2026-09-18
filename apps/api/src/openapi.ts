@@ -532,6 +532,24 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/jobs/{jobId}/runs/{runId}/retry-failed": {
+      post: {
+        tags: ["Scoring"],
+        summary:
+          "Re-score only the candidates that failed in this run (e.g. rate limits), into a fresh run.",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          { name: "runId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        responses: {
+          200: ok({ type: "object", properties: { summary: { type: "object" } } }),
+          400: errorResponse,
+          404: errorResponse,
+          503: errorResponse,
+        },
+      },
+    },
+
     "/api/jobs/{jobId}/review": {
       get: {
         tags: ["Review"],

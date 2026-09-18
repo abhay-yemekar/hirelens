@@ -1,6 +1,7 @@
 import {
   index,
   integer,
+  jsonb,
   pgTable,
   real,
   text,
@@ -32,6 +33,12 @@ export const scoringRuns = pgTable(
     seed: integer("seed").notNull(),
     temperature: real("temperature").notNull().default(0),
     status: scoringRunStatusEnum("status").notNull().default("pending"),
+    /**
+     * Per-candidate scoring failures, persisted so no candidate ever
+     * silently vanishes: [{ candidateId, error }]. Empty/null when every
+     * candidate in the run scored.
+     */
+    failures: jsonb("failures").$type<Array<{ candidateId: string; error: string }>>(),
     startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
     finishedAt: timestamp("finished_at", { withTimezone: true }),
   },

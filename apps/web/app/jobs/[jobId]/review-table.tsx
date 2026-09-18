@@ -26,12 +26,27 @@ const STAGE_STYLE: Record<Stage, { bg: string; fg: string; border?: string }> = 
 
 const STAGES: Stage[] = ["shortlisted", "advanced", "rejected"];
 
+/** A candidate the newest scoring run could not score. */
+export interface FailedCandidate {
+  candidateId: string;
+  label: string | null;
+  error: string;
+}
+
 function csvEscape(v: string | number | null): string {
   const s = String(v ?? "");
   return /[",\n]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s;
 }
 
-export function ReviewTable({ jobId }: { jobId: string }) {
+export function ReviewTable({
+  jobId,
+  failed = [],
+  onRetryFailed,
+}: {
+  jobId: string;
+  failed?: FailedCandidate[];
+  onRetryFailed?: (() => void) | undefined;
+}) {
   const [rows, setRows] = useState<ReviewRow[]>([]);
   const [cursor, setCursor] = useState(0);
   const [blind, setBlind] = useState(false);
@@ -156,6 +171,15 @@ export function ReviewTable({ jobId }: { jobId: string }) {
     return r.label ?? `Candidate ${r.candidateId.slice(0, 8)}`;
   }
 
+  /** Fixed-column grid: rank | candidate | score | stage | actions. Columns
+   * line up across every row (the old free-flowing flex-wrap let each
+   * row's name length push the score/stage columns around). On mobile the
+   * stage pill and actions wrap beneath the name; on sm+ everything is one
+   * aligned row under a matching header. */
+  const rowGrid =
+    "grid grid-cols-[1.75rem,minmax(0,1fr),auto] items-center gap-x-3 gap-y-2 px-4 py-3 " +
+    "sm:grid-cols-[1.75rem,minmax(9rem,1fr),6.5rem,5.5rem,auto] sm:gap-x-4";
+
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
@@ -194,7 +218,7 @@ export function ReviewTable({ jobId }: { jobId: string }) {
 
       {error ? <NoticeBanner error={error} /> : null}
 
-      {rows.length === 0 ? (
+      {rows.length === 0 && failed.length === 0 ? (
         <p className="text-sm" style={{ color: "var(--color-fg-muted)" }}>
           No scored candidates yet — run scoring above to populate the review queue.
         </p>
@@ -203,16 +227,28 @@ export function ReviewTable({ jobId }: { jobId: string }) {
           className="overflow-hidden rounded-[var(--radius-card)] border"
           style={{ borderColor: "var(--hl-border)" }}
         >
+          {/* Desktop column header — matches the grid template exactly. */}
+          <div
+            className={`${rowGrid} border-b py-2 text-xs font-medium`}
+            style={{ borderColor: "var(--hl-border)", color: "var(--color-fg-muted)" }}
+          >
+            <span>#</span>
+            <span>Candidate</span>
+            <span>Score</span>
+            <span>Stage</span>
+            <span className="text-right">Decision</span>
+          </div>
+
           {rows.map((r, i) => (
             <div
               key={r.candidateId}
-              className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+              className={rowGrid}
               style={{
-                borderBottom: i < rows.length - 1 ? "1px solid var(--hl-border)" : undefined,
+                borderBottom: "1px solid var(--hl-border)",
                 background: i === cursor ? "var(--color-surface-raised)" : undefined,
               }}
             >
-              <span className="w-6 text-sm tabular-nums" style={{ color: "var(--color-fg-muted)" }}>
+              <span className="text-sm tabular-nums" style={{ color: "var(--color-fg-muted)" }}>
                 {i + 1}
               </span>
               <a
@@ -221,20 +257,15 @@ export function ReviewTable({ jobId }: { jobId: string }) {
                     ? `/jobs/${jobId}/candidates/${r.candidateId}?blind=1`
                     : `/jobs/${jobId}/candidates/${r.candidateId}`
                 }
-                className="max-w-[220px] truncate text-sm font-medium underline-offset-2 hover:underline"
+                className="truncate text-sm font-medium underline-offset-2 hover:underline"
                 style={{ color: "var(--color-accent)" }}
                 title={blind ? "Blinded — open to read the masked resume" : displayName(r, i)}
               >
                 {displayName(r, i)}
               </a>
               <OverallScore score={r.overall} label={`Candidate rank ${i + 1} overall`} />
-              {r.overridden > 0 && (
-                <span className="text-xs" style={{ color: "var(--color-warning)" }}>
-                  {r.overridden} override{r.overridden > 1 ? "s" : ""}
-                </span>
-              )}
               <span
-                className="rounded-[var(--radius-pill)] px-2 py-0.5 text-xs font-medium"
+                className="col-start-2 justify-self-start rounded-[var(--radius-pill)] px-2 py-0.5 text-xs font-medium sm:col-auto sm:justify-self-center"
                 style={{
                   background: STAGE_STYLE[r.stage].bg,
                   color: STAGE_STYLE[r.stage].fg,
@@ -245,7 +276,7 @@ export function ReviewTable({ jobId }: { jobId: string }) {
               >
                 {cap(r.stage)}
               </span>
-              <span className="flex gap-1.5">
+              <span className="col-span-3 flex flex-wrap justify-end gap-1.5 sm:col-span-1 sm:flex-nowrap">
                 {STAGES.map((s) => (
                   <Button
                     key={s}
@@ -257,6 +288,49 @@ export function ReviewTable({ jobId }: { jobId: string }) {
                     {s === "shortlisted" ? "Shortlist" : s === "advanced" ? "Advance" : "Reject"}
                   </Button>
                 ))}
+              </span>
+            </div>
+          ))}
+
+          {/* Candidates the run could not score — visible, named, retryable. */}
+          {failed.map((f) => (
+            <div
+              key={f.candidateId}
+              className={rowGrid}
+              style={{
+                borderBottom: "1px solid var(--hl-border)",
+                background: "color-mix(in oklab, var(--color-warning) 6%, transparent)",
+              }}
+            >
+              <span className="text-sm tabular-nums" style={{ color: "var(--color-fg-muted)" }}>
+                —
+              </span>
+              <span
+                className="truncate text-sm font-medium"
+                style={{ color: "var(--hl-cream)" }}
+                title={f.label ?? f.candidateId}
+              >
+                {f.label ?? `Candidate ${f.candidateId.slice(0, 8)}`}
+              </span>
+              <span className="text-xs" style={{ color: "var(--color-fg-muted)" }}>
+                —
+              </span>
+              <span
+                className="col-start-2 justify-self-start rounded-[var(--radius-pill)] px-2 py-0.5 text-xs font-medium sm:col-auto sm:justify-self-center"
+                style={{
+                  background: "color-mix(in oklab, var(--color-warning) 16%, transparent)",
+                  color: "var(--color-warning)",
+                }}
+                title={f.error}
+              >
+                Scoring failed
+              </span>
+              <span className="col-span-3 flex justify-end sm:col-span-1">
+                {onRetryFailed && (
+                  <Button variant="outline" size="sm" onClick={onRetryFailed}>
+                    Retry
+                  </Button>
+                )}
               </span>
             </div>
           ))}

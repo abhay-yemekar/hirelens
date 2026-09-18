@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { NoticeBanner } from "@/components/notice-banner";
 import { getCandidate, getRun, type RunCandidate } from "@/lib/api";
-import { candidateLabel, cap, modelLabel } from "@/lib/format";
+import { candidateLabel, cap, fileLabel, modelLabel } from "@/lib/format";
 
 interface Span {
   start: number;
@@ -123,7 +123,7 @@ export default function RunPage() {
       try {
         const detail = await getCandidate(jobId, selected);
         setDocText(detail.documents[0]?.rawText ?? "");
-        setDocName(detail.candidate?.sourceFileKey?.split("/").pop() ?? null);
+        setDocName(fileLabel(detail.candidate?.sourceFileKey ?? null));
       } catch {
         setDocText(null);
       }
@@ -190,15 +190,25 @@ export default function RunPage() {
             {candidates.map((c) => (
               <Card
                 key={c.candidateId}
+                role="button"
+                tabIndex={0}
+                aria-pressed={c.candidateId === selected}
+                aria-label={`Show ${c.label ?? candidateLabel(c.candidateId, null)} — scored ${Math.round(c.overall)} of 100`}
+                onClick={() => setSelected(c.candidateId)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSelected(c.candidateId);
+                  }
+                }}
                 className={
                   c.candidateId === selected
                     ? "ring-2 ring-[var(--color-accent)]"
-                    : "transition-colors hover:border-[var(--color-border-strong)]"
+                    : "cursor-pointer transition-colors hover:border-[var(--color-border-strong)]"
                 }
                 style={{
                   background: "var(--hl-card)",
                   borderColor: "var(--hl-border)",
-                  cursor: "pointer",
                 }}
               >
                 <CardHeader className="flex-row items-center justify-between gap-3">

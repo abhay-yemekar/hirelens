@@ -12,7 +12,9 @@ export const metadata: Metadata = {
     description:
       "Evidence-linked resume scoring, bias audits, and a tamper-evident decision trail. MIT, self-hostable, model-agnostic.",
     type: "website",
-    url: "https://github.com/abhay-yemekar/hirelens",
+    // Resolved against metadataBase (NEXT_PUBLIC_SITE_URL) — always the
+    // live site, never a hardcoded domain.
+    url: "/",
   },
 };
 
@@ -211,7 +213,9 @@ export default function LandingPage() {
               }}
             />
             <RankedQueueShot />
-            <div className="absolute -bottom-10 -left-6 hidden w-[54%] sm:block lg:-left-16">
+            {/* Overlap the queue's stage column, not its candidate names —
+                the evidence card got taller when it went single-column. */}
+            <div className="absolute -bottom-12 -right-4 hidden w-[52%] sm:block lg:-right-8">
               <EvidenceShot />
             </div>
           </div>

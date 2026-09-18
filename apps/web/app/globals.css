@@ -209,3 +209,27 @@ body {
   color: var(--color-fg);
   font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
 }
+
+/* ── Hero evidence pulse ─────────────────────────────────────────
+   One restrained highlight sweep on load, reinforcing the glass-box
+   pitch ("the resume lights up where the score came from"). Respects
+   prefers-reduced-motion: the mark simply stays lit. */
+@keyframes hl-evidence-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 87, 0);
+  }
+  35% {
+    box-shadow: 0 0 0 4px rgba(255, 107, 87, 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 87, 0);
+  }
+}
+.hl-evidence-mark {
+  animation: hl-evidence-pulse 2.4s var(--ease-spring, ease) 0.6s 2 both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hl-evidence-mark {
+    animation: none;
+  }
+}

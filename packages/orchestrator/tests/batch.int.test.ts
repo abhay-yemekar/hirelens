@@ -210,13 +210,20 @@ describe.skipIf(!available)("batch orchestrator (integration)", () => {
 
   it("records per-candidate failures without aborting the batch", async () => {
     const { model } = createMockModel({ failWith: new Error("provider down") });
-    const summary = await runBatch(db, model as LanguageModel, {
-      jobId: JOB_ID,
-      orgId: ORG_ID,
-    });
+    // attempts: 1 — this test covers failure recording, not retry timing.
+    const summary = await runBatch(
+      db,
+      model as LanguageModel,
+      { jobId: JOB_ID, orgId: ORG_ID },
+      { attempts: 1 },
+    );
     expect(summary.failed).toBe(5);
     expect(summary.results.every((r) => !r.ok)).toBe(true);
     const run = (await db.select().from(scoringRuns).where(eq(scoringRuns.id, summary.runId)))[0];
     expect(run?.status).toBe("completed");
+    // Failures persist on the run row so the UI can name and retry them.
+    expect(run?.failures).toHaveLength(5);
+    expect(run?.failures?.[0]?.candidateId).toEqual(expect.any(String));
+    expect(run?.failures?.[0]?.error).toContain("provider down");
   });
 });

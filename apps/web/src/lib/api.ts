@@ -90,6 +90,8 @@ export interface RunRow {
   rubricVersion: number;
   modelId: string;
   status: "pending" | "running" | "completed" | "failed";
+  /** Candidates the run could not score: [{ candidateId, error }]. */
+  failures: Array<{ candidateId: string; error: string }> | null;
   startedAt: string;
   finishedAt: string | null;
 }
@@ -199,10 +201,33 @@ export const kickoffScore = (
   jobId: string,
   init?: RequestInit & { serverCookie?: string | null },
 ) =>
-  apiFetch<{ ok: true; summary: { runId: string; total: number; scored: number; failed: number } }>(
-    `/api/jobs/${jobId}/score`,
-    { method: "POST", ...init },
-  );
+  apiFetch<{
+    ok: true;
+    summary: {
+      runId: string;
+      total: number;
+      scored: number;
+      failed: number;
+      results: Array<{ candidateId: string; ok: boolean; error?: string }>;
+    };
+  }>(`/api/jobs/${jobId}/score`, { method: "POST", ...init });
+
+/** Re-score only the candidates that failed in a run (rate-limit recovery). */
+export const retryFailed = (
+  jobId: string,
+  runId: string,
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{
+    ok: true;
+    summary: {
+      runId: string;
+      total: number;
+      scored: number;
+      failed: number;
+      results: Array<{ candidateId: string; ok: boolean; error?: string }>;
+    };
+  }>(`/api/jobs/${jobId}/runs/${runId}/retry-failed`, { method: "POST", ...init });
 
 export type Stage = "new" | "shortlisted" | "advanced" | "rejected";
 

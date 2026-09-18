@@ -168,7 +168,7 @@ Deployment is a single Vercel project from the repo root (root directory `apps/w
 - **Position bias** — Kendall τ between rank orderings when input order is shuffled (1.0 = order-invariant)
 - **Name-swap bias** — score movement when only the name changes (0 = invariant); movement above 5 points is flagged
 
-Latest committed numbers (`packages/eval-report.json`, offline mock-model run — validates the harness plumbing; regenerate live with `pnpm --filter @hirelens/evals run evals` and a billing-enabled key):
+Latest committed numbers (`packages/eval-report.json`) — **important caveat: this is the offline mock-model run. It validates that the harness plumbing works end-to-end; the 0.47 accuracy is the mock baseline, NOT real model performance.** Regenerate live with `pnpm --filter @hirelens/evals run evals` and a billing-enabled key:
 
 | Metric | Value |
 |---|---|
