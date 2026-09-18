@@ -4,7 +4,7 @@
 
 The open-source, glass-box hiring intelligence platform. Rank candidates against a rubric you control — with evidence-linked scores, tamper-evident audit trails, blind review, and built-in adverse-impact reporting.
 
-**[▶ Try the live demo — no signup](https://hirelens.demo/demo)** · [📖 Documentation](#documentation) · [⚡ Self-host in one command](#quickstart)
+**[▶ Try the live demo — no signup](https://hirelens-rosy.vercel.app/demo)** · [📖 Documentation](#documentation) · [⚡ Self-host in one command](#quickstart)
 
 [![CI](https://github.com/abhay-yemekar/hirelens/actions/workflows/ci.yml/badge.svg)](https://github.com/abhay-yemekar/hirelens/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -12,7 +12,7 @@ The open-source, glass-box hiring intelligence platform. Rank candidates against
 [![pnpm](https://img.shields.io/badge/pnpm-11-FC6D26)](https://pnpm.io)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-> **Status: feature-complete for v1.0.0 (target 30 September 2026).** Hardening, private beta, and launch polish remain — see the [roadmap](#roadmap-to-v100--30-september-2026). Every feature in this README exists on `main` today, verified by tests.
+> **Status: live in private beta.** Production runs at **[hirelens-rosy.vercel.app](https://hirelens-rosy.vercel.app)** — hardening is complete (a11y, SEO gate, API caps, load-tested 200-resume batches); v1.0.0 launch polish (30 September 2026) remains — see the [roadmap](#roadmap-to-v100--30-september-2026). Every feature in this README exists on `main` today, verified by tests.
 
 ---
 
@@ -131,11 +131,33 @@ One `.env` per package that needs secrets, with `.env.example` documenting every
 |---|---|
 | `DATABASE_URL` | Postgres connection (local: `postgres://postgres:postgres@localhost:5433/hirelens`) |
 | `BETTER_AUTH_SECRET` | Better Auth secret — generate: `openssl rand -base64 32` |
+| `BETTER_AUTH_URL` | Public origin of the app (e.g. `https://hirelens-rosy.vercel.app`) — auth callbacks are built from it |
+| `TRUSTED_ORIGINS` / `CORS_ORIGINS` | Comma-separated origins allowed to initiate auth / call the API |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth sign-in (redirect: `<origin>/api/auth/callback/google`) |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth sign-in (redirect: `<origin>/api/auth/callback/github`) |
+| `NEXT_PUBLIC_SITE_URL` | Canonical site URL used by sitemap/robots/metadata |
+| `NEXT_PUBLIC_API_URL` | Leave **empty** on Vercel (same-origin API mount at `/api/*`); set only for split-origin self-hosts |
 | `HIRELENS_LLM_PROVIDER` + `HIRELENS_LLM_MODEL` (+ `_API_KEY`, `_BASE_URL`) | Enables LLM routes (google/anthropic/groq/openrouter/ollama) |
 | `SENTRY_DSN` | Error tracking (optional) |
 | `LANGFUSE_PUBLIC_KEY` / `_SECRET_KEY` / `_BASE_URL` | LLM tracing (optional) |
 | `NEXT_PUBLIC_POSTHOG_KEY` | Product analytics — explicit events only, autocapture off (optional) |
 | `PORT` | API port (default 4000) |
+
+## Deployment — the free-tier stack
+
+The production deployment runs entirely on free tiers — deliberate choices, documented so you can reproduce or audit them:
+
+| Need | Service (free tier) | Why this one |
+|---|---|---|
+| Web + API hosting | **Vercel** (Hobby) | Next.js-native with per-PR preview deploys. The **Hono API is embedded in the same deployment** (same-origin mount at `/api/*`), so auth cookies stay first-party and there's no second service to run |
+| Database | **Neon** (Free plan) | Serverless Postgres with scale-to-zero (idle costs nothing), built-in connection pooling for serverless, and pgvector in the same database |
+| LLM | **Google Gemini** (free tier) | Generous free quota on `gemini-2.5-flash`; the engine is model-agnostic — Anthropic, Groq, OpenRouter, or local Ollama swap in via one env var |
+| Errors | **Sentry** (Developer plan) | Wired and active when `SENTRY_DSN` is set — nothing phones home until you opt in |
+| Product analytics | **PostHog** (free tier) | Privacy-first configuration: explicit events only, autocapture off — matches the product's data-minimization stance |
+| LLM tracing | **Langfuse** (free tier) | Traces every prompt/score for eval reproducibility; no-op until keys exist |
+| CI | **GitHub Actions** | Free for public repos — lint, typecheck, tests, eval harness, CodeQL, and secrets scanning on every PR |
+
+Deployment is a single Vercel project from the repo root (root directory `apps/web`); migrations run with `pnpm --filter @hirelens/db db:migrate` against the Neon pooled connection string. Self-hosters use the Docker path above instead — same app, your infrastructure.
 
 ## Evaluation harness — an unevaluated ranker is a liability
 
@@ -176,8 +198,8 @@ Most hiring AI is a black box: a number with no justification. That is a liabili
 
 ## Roadmap to v1.0.0 — 30 September 2026
 
-- **Hardening** — rate limiting, deeper input validation, a11y pass, load test a 200-resume batch.
-- **Private beta** — 5–10 real recruiters; fix what they actually hit; feature freeze.
+- ✅ **Hardening** — a11y sweep (zero axe violations), SEO gate (sitemap/robots), API body/list caps with proper 413s, review-query optimization, 200-resume load test.
+- ✅ **Private beta** — live at [hirelens-rosy.vercel.app](https://hirelens-rosy.vercel.app); inviting 5–10 real recruiters, fixing what they actually hit, feature freeze.
 - **Launch** — tag `v1.0.0`, GitHub Release, multi-arch GHCR images, `npx hirelens` on npm.
 - **Post-launch** — RAG Q&A over resumes (pgvector embeddings + hybrid retrieval — the schema ships today), rubric editor UI, compare view, scheduled audits.
 
@@ -194,6 +216,15 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md). **Do not open a public is
 ## A note on privacy
 
 Resumes are personal data. Never commit real resumes to git, always know where your candidate data is stored, and use the local Ollama mode if resumes must not leave your infrastructure. HireLens itself never phones home — observability integrations are opt-in via env vars.
+
+## Built by
+
+**HireLens is created and maintained by [Abhay Yemekar](https://github.com/abhay-yemekar).**
+
+- LinkedIn: <https://www.linkedin.com/in/abhayyemekar/>
+- GitHub: <https://github.com/abhay-yemekar>
+
+Questions or feedback? Open an [issue](https://github.com/abhay-yemekar/hirelens/issues) or reach out on LinkedIn.
 
 ## License
 

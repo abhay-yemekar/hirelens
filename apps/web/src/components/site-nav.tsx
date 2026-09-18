@@ -40,11 +40,11 @@ export function SiteNav() {
             </Link>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-3 md:ml-0">
+        <div className="ml-auto flex items-center gap-2 md:ml-0 md:gap-3">
           <Link
             href="/signin"
-            className="hidden rounded-lg px-3 py-2 text-sm font-semibold transition-colors hover:text-[var(--hl-cream)] md:inline-block"
-            style={{ color: "var(--hl-mist)" }}
+            className="rounded-lg border px-3 py-2 text-sm font-semibold text-[var(--hl-cream)] transition-colors hover:border-[var(--hl-mist)]"
+            style={{ borderColor: "var(--hl-border)" }}
           >
             Sign in
           </Link>
@@ -84,11 +84,6 @@ export function SiteNav() {
                 </Link>
               </li>
             ))}
-            <li>
-              <Link href="/signin" onClick={() => setOpen(false)}>
-                Sign in
-              </Link>
-            </li>
             <li>
               <Link
                 href="/demo"

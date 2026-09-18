@@ -331,14 +331,14 @@ export default function LandingPage() {
                 note: "agreement with expected strong/weak per criterion",
               },
               {
-                label: "Self-consistency",
+                label: "Self-consistency (σ)",
                 value: `${sigma}σ`,
-                note: "score variance across repeated runs — 0 is deterministic",
+                note: "σ (sigma) = score wobble across identical reruns — 0 means the same resume always gets the same score",
               },
               {
-                label: "Position bias",
+                label: "Order fairness (τ)",
                 value: `τ ${tau}`,
-                note: "rank agreement under shuffled input order — 1 is perfect",
+                note: "τ (tau) = rank agreement when resume order is shuffled — 1.0 means order never changes the ranking",
               },
             ].map((m) => (
               <div

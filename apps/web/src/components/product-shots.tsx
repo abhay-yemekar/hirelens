@@ -157,9 +157,12 @@ export function RankedQueueShot() {
 export function EvidenceShot() {
   return (
     <div className="hl-shot overflow-hidden">
-      <BrowserChrome title="hirelens · Olivia Brown — evidence" />
-      <div className="grid grid-cols-5 gap-0">
-        <div className="col-span-3 border-r p-4" style={{ borderColor: "rgba(28,35,64,0.06)" }}>
+      <BrowserChrome title="hirelens · Olivia Brown — evidence" />{" "}
+      <div className="grid grid-cols-1 gap-0 sm:grid-cols-5">
+        <div
+          className="col-span-1 border-b p-4 sm:col-span-3 sm:border-b-0 sm:border-r"
+          style={{ borderColor: "rgba(28,35,64,0.06)" }}
+        >
           <p
             className="text-[10px] font-semibold uppercase tracking-wider"
             style={{ color: "#7d86a8" }}
@@ -184,7 +187,7 @@ export function EvidenceShot() {
             and PostgreSQL failover paths.
           </p>
         </div>
-        <div className="col-span-2 p-4">
+        <div className="col-span-1 p-4 sm:col-span-2">
           <p
             className="text-[10px] font-semibold uppercase tracking-wider"
             style={{ color: "#7d86a8" }}
@@ -195,13 +198,15 @@ export function EvidenceShot() {
             {CRITERIA.map((c) => (
               <li
                 key={c.title}
-                className="rounded-lg border p-2.5"
+                className="min-w-0 rounded-lg border p-2.5"
                 style={{ borderColor: "rgba(28,35,64,0.08)" }}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-medium">{c.title}</span>
+                  <span className="min-w-0 flex-1 text-[11px] font-medium leading-tight">
+                    {c.title}
+                  </span>
                   <span
-                    className="rounded px-1.5 py-0.5 text-[10px] font-bold"
+                    className="shrink-0 whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-bold"
                     style={{ background: "#e8f7ee", color: "#147d43" }}
                   >
                     {c.score}/5
@@ -214,11 +219,11 @@ export function EvidenceShot() {
             ))}
           </ul>
           <div
-            className="mt-3 flex items-center justify-between rounded-lg px-2.5 py-2"
+            className="mt-3 flex items-center justify-between gap-2 rounded-lg px-2.5 py-2"
             style={{ background: "rgba(28,35,64,0.04)" }}
           >
-            <span className="text-[11px] font-medium">Overall</span>
-            <span className="text-[15px] font-bold">43/100</span>
+            <span className="shrink-0 text-[11px] font-medium">Overall</span>
+            <span className="shrink-0 whitespace-nowrap text-[15px] font-bold">43/100</span>
           </div>
         </div>
       </div>
