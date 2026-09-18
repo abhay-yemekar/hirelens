@@ -1,6 +1,6 @@
 {
   "name": "hirelens",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "description": "Command-line companion for HireLens — create jobs, derive rubrics, upload resumes, and score candidates from any pipeline.",
   "license": "MIT",
