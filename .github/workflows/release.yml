@@ -1,0 +1,135 @@
+name: Release
+
+# Publishes on version tags (v1.0.0 …):
+#  - Docker images → GHCR (hirelens-api, hirelens-web)
+#  - CLI → npm (hirelens), only when NPM_TOKEN is configured
+#  - GitHub Release with auto-generated notes
+#
+# Create a release:  git tag v1.0.0 && git push origin v1.0.0
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
+
+jobs:
+  docker:
+    name: Docker images → GHCR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - name: hirelens-api
+            dockerfile: apps/api/Dockerfile
+          - name: hirelens-web
+            dockerfile: apps/web/Dockerfile
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}-${{ matrix.name }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      - name: Build and push ${{ matrix.name }}
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  npm:
+    name: CLI → npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      # Job-level so steps can branch on it; publishes only when the
+      # NPM_TOKEN repo secret exists (Settings → Secrets → Actions).
+      NPM_TOKEN_SET: ${{ secrets.NPM_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.7.0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build CLI bundle
+        run: pnpm --filter hirelens... build
+
+      - name: Publish to npm
+        if: ${{ env.NPM_TOKEN_SET == 'true' }}
+        working-directory: apps/cli
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Skip notice (no NPM_TOKEN)
+        if: ${{ env.NPM_TOKEN_SET != 'true' }}
+        run: |
+          echo "NPM_TOKEN repo secret is not set — skipping npm publish."
+          echo "Add it (npm → Access Tokens → Generate, then repo Settings → Secrets → Actions) and re-tag to publish."
+
+  release:
+    name: GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: [docker, npm]
+    if: ${{ always() }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            HireLens ${{ github.ref_name }} — see the [changelog](https://github.com/abhay-yemekar/hirelens/blob/main/CHANGELOG.md) and the [README](https://github.com/abhay-yemekar/hirelens#readme) for install instructions.
+
+            **Try it:**
+            ```bash
+            npx hirelens --help
+            ```
+            or self-host:
+            ```bash
+            docker compose up --build -d
+            ```
+          fail_on_unmatched_files: false

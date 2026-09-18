@@ -1,25 +1,46 @@
 {
-  "name": "@hirelens/cli",
-  "version": "0.1.0",
-  "private": true,
+  "name": "hirelens",
+  "version": "1.0.0",
+  "description": "Command-line companion for HireLens — create jobs, derive rubrics, upload resumes, and score candidates from any pipeline.",
+  "license": "MIT",
   "type": "module",
+  "private": false,
   "bin": {
-    "hirelens": "./src/main.ts"
+    "hirelens": "./dist/main.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "engines": {
-    "node": ">=22.6"
+    "node": ">=20"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abhay-yemekar/hirelens.git",
+    "directory": "apps/cli"
+  },
+  "keywords": [
+    "hiring",
+    "recruiting",
+    "ats",
+    "resume-screening",
+    "ai",
+    "llm",
+    "cli"
+  ],
+  "homepage": "https://github.com/abhay-yemekar/hirelens",
   "scripts": {
+    "build": "node scripts/build.mjs",
     "dev": "node src/main.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
-  "dependencies": {
-    "@hirelens/core": "workspace:*"
-  },
   "devDependencies": {
     "@hirelens/config": "workspace:*",
     "@types/node": "^26.5.1",
+    "esbuild": "^0.28.2",
     "typescript": "~5.9.3",
     "vitest": "^5.0.0"
   }
