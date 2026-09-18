@@ -25,6 +25,7 @@ import { runBatch } from "../src/index.js";
 
 const DATABASE_URL = process.env["DATABASE_URL"] ?? "";
 const available = DATABASE_URL.length > 0;
+const allowSkip = !process.env["CI"]; // On CI these suites must never silently skip — fail loudly instead
 
 const ORG_ID = "org-orchestrator-test";
 const USER_ID = "user-orchestrator-test";
@@ -133,7 +134,7 @@ async function seed(db: Database): Promise<void> {
   }
 }
 
-describe.skipIf(!available)("batch orchestrator (integration)", () => {
+describe.skipIf(!available && allowSkip)("batch orchestrator (integration)", () => {
   let db: Database;
 
   beforeAll(async () => {

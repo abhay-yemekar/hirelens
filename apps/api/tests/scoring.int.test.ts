@@ -21,6 +21,7 @@ import { createApp } from "../src/app.js";
 
 const DATABASE_URL = process.env["DATABASE_URL"] ?? "";
 const available = DATABASE_URL.length > 0;
+const allowSkip = !process.env["CI"]; // On CI these suites must never silently skip — fail loudly instead
 
 let db: Database;
 let app: ReturnType<typeof createApp>;
@@ -105,7 +106,7 @@ afterAll(async () => {
   if (orgId !== "") await db.delete(organization).where(eq(organization.id, orgId));
 });
 
-describe.skipIf(!available)("end-to-end scoring", () => {
+describe.skipIf(!available && allowSkip)("end-to-end scoring", () => {
   it("runs upload → score → persisted evidence", async () => {
     // 1. Create a job.
     const jobRes = await app.request("/api/jobs", {

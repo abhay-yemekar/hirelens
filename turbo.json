@@ -1,5 +1,6 @@
 {
   "$schema": "https://turborepo.com/schema.json",
+  "globalEnv": ["DATABASE_URL", "CI"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

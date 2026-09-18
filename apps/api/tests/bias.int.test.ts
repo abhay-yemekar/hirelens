@@ -12,6 +12,7 @@ import { createApp } from "../src/app.js";
 
 const DATABASE_URL = process.env["DATABASE_URL"] ?? "";
 const available = DATABASE_URL.length > 0;
+const allowSkip = !process.env["CI"]; // On CI these suites must never silently skip — fail loudly instead
 
 let db: ReturnType<typeof createDb>;
 let app: ReturnType<typeof createApp>;
@@ -87,7 +88,7 @@ afterAll(async () => {
   await createDb(DATABASE_URL).delete(organization).where(eq(organization.id, orgId));
 });
 
-describe.skipIf(!available)("bias audit", () => {
+describe.skipIf(!available && allowSkip)("bias audit", () => {
   let jobId = "";
 
   it("sets up job, rubric, 4 candidates, scores, demographics, decisions", async () => {

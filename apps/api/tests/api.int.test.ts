@@ -17,6 +17,7 @@ import { createApp } from "../src/app.js";
 
 const DATABASE_URL = process.env["DATABASE_URL"] ?? "";
 const available = DATABASE_URL.length > 0;
+const allowSkip = !process.env["CI"]; // On CI these suites must never silently skip — fail loudly instead
 
 let db: Database;
 let app: ReturnType<typeof createApp>;
@@ -64,7 +65,7 @@ afterAll(async () => {
   }
 });
 
-describe.skipIf(!available)("API routes", () => {
+describe.skipIf(!available && allowSkip)("API routes", () => {
   it("serves health without auth", async () => {
     const res = await app.request("/api/health");
     expect(res.status).toBe(200);
