@@ -10,6 +10,7 @@ import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { requireAuth } from "./auth.js";
 import { ApiInputError } from "./errors.js";
+import { createIndexer, type HireLensIndexer } from "./indexing.js";
 import { requestLogging } from "./middleware.js";
 import { captureException } from "./observability.js";
 import { openApiDocument } from "./openapi.js";
@@ -19,11 +20,14 @@ import { jobsRoutes } from "./routes/jobs.js";
 import { reviewRoutes } from "./routes/review.js";
 import { rubricsRoutes } from "./routes/rubrics.js";
 import { scoringRoutes } from "./routes/scoring.js";
+import { searchRoutes } from "./routes/search.js";
 import type { AppEnv } from "./types.js";
 
 export interface AppDeps {
   db: Database;
   llm: LanguageModel | null;
+  /** Semantic indexer; null/omitted → search falls back to keyword mode. */
+  indexer?: HireLensIndexer | null;
 }
 
 /** Body-size caps: tight for JSON, larger for resume/zip uploads (§Day 19). */
@@ -86,10 +90,11 @@ export function createApp(deps: AppDeps) {
     }),
   );
 
-  // Attach per-request db + model.
+  // Attach per-request db + model + indexer.
   app.use("*", async (c, next) => {
     c.set("db", deps.db);
     c.set("model", deps.llm);
+    c.set("indexer", deps.indexer ?? null);
     await next();
   });
 
@@ -123,6 +128,7 @@ export function createApp(deps: AppDeps) {
   protectedApi.route("/jobs/:jobId", scoringRoutes());
   protectedApi.route("/jobs/:jobId", reviewRoutes());
   protectedApi.route("/jobs/:jobId/bias-audit", biasAuditRoutes());
+  protectedApi.route("/jobs/:jobId", searchRoutes());
   protectedApi.route("/jobs", jobsRoutes());
   app.route("/api", protectedApi);
 

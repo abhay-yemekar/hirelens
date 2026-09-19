@@ -3,15 +3,19 @@ import "dotenv/config";
 import { serve } from "@hono/node-server";
 import { createApp } from "./app.js";
 import { loadEnv, readLlmEnv } from "./env.js";
+import { createIndexer, embeddingModelFromEnv } from "./indexing.js";
 import { modelFromEnv } from "./model.js";
 import { flushSentry, initSentry } from "./observability.js";
 
 initSentry();
 
 const env = loadEnv();
+const database = createDb(env.DATABASE_URL);
+const embedding = embeddingModelFromEnv(process.env);
 const app = createApp({
-  db: createDb(env.DATABASE_URL),
+  db: database,
   llm: modelFromEnv(readLlmEnv()),
+  indexer: embedding ? createIndexer(database, embedding) : null,
 });
 
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {

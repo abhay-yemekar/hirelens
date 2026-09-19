@@ -17,6 +17,7 @@ import type { Database } from "@hirelens/db";
 import { candidates, documents } from "@hirelens/db";
 import { and, eq } from "drizzle-orm";
 import { ApiInputError } from "./errors.js";
+import type { HireLensIndexer } from "./indexing.js";
 
 export type IngestResult =
   | { status: "created"; candidateId: string; documentId: string; filename: string }
@@ -33,6 +34,7 @@ const MIME_BY_KIND: Record<string, string> = {
 export async function ingestBytes(
   db: Database,
   input: { jobId: string; filename: string; bytes: Uint8Array },
+  indexer?: HireLensIndexer | null,
 ): Promise<IngestResult> {
   if (input.bytes.length > MAX_DOCUMENT_BYTES) {
     throw new ApiInputError(
@@ -100,6 +102,17 @@ export async function ingestBytes(
     })
     .returning({ id: documents.id });
   if (!document) throw new Error("document insert returned no row");
+
+  // Semantic index (pgvector). Best-effort: the embedding provider may be
+  // down or unconfigured — keyword search still covers unindexed docs, and
+  // an outage must never fail an upload.
+  if (indexer) {
+    try {
+      await indexer.indexDocument(document.id, rawText);
+    } catch {
+      // Swallow: search falls back to keyword mode for this document.
+    }
+  }
 
   return {
     status: "created",

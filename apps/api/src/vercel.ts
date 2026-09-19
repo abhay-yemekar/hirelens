@@ -1,6 +1,7 @@
 import { createDb } from "@hirelens/db";
 import { createApp } from "./app.js";
 import { readLlmEnv } from "./env.js";
+import { createIndexer, embeddingModelFromEnv } from "./indexing.js";
 import { modelFromEnv } from "./model.js";
 import { flushSentry, initSentry } from "./observability.js";
 
@@ -39,7 +40,12 @@ async function buildApp(): Promise<HonoLikeApp> {
     throw new Error("DATABASE_URL must be set in the deployment environment");
   }
   const db = createDb(databaseUrl);
-  return createApp({ db, llm: modelFromEnv(readLlmEnv()) });
+  const embedding = embeddingModelFromEnv(process.env);
+  return createApp({
+    db,
+    llm: modelFromEnv(readLlmEnv()),
+    indexer: embedding ? createIndexer(db, embedding) : null,
+  });
 }
 
 export type HonoLikeApp = ReturnType<typeof createApp>;

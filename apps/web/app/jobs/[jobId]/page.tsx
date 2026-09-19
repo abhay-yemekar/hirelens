@@ -13,7 +13,6 @@ import {
   deleteCandidate,
   deleteJob,
   getJob,
-  importRubric,
   type Job,
   kickoffScore,
   listCandidates,
@@ -27,27 +26,8 @@ import {
 import { candidateLabel, cap, fileLabel, modelLabel, pagesLabel, timeAgo } from "@/lib/format";
 import { BiasAuditCard } from "./bias-audit";
 import { ReviewTable } from "./review-table";
-
-/** The demo rubric imported by "Use the demo rubric" (valid RubricSchema shape). */
-function demoRubric() {
-  const levels = [0, 1, 2, 3, 4, 5].map((n) => ({
-    label: String(n),
-    description: n === 0 ? "none" : n === 5 ? "expert" : `level ${n}`,
-  }));
-  return {
-    version: 1,
-    key: "backend-eng",
-    title: "Backend Engineer",
-    criteria: ["system-design", "databases", "testing", "ops", "communication"].map((key) => ({
-      key,
-      title: key,
-      weight: 1,
-      scale: levels,
-      doNotUse: [],
-    })),
-    exclusions: [],
-  };
-}
+import { RubricEditor } from "./rubric-editor";
+import { SearchAskCard } from "./search-ask";
 
 interface ZipSummary {
   created: number;
@@ -360,67 +340,15 @@ export default function JobDetailPage() {
               criterion, combined into an overall score with cited evidence you can open and read.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-3">
-              {rubrics.length === 0 ? (
-                <p className="text-sm" style={{ color: "var(--hl-muted)" }}>
-                  No rubric yet — use the demo rubric below to try scoring end-to-end.
-                </p>
-              ) : (
-                <div className="flex flex-wrap items-center gap-2">
-                  {rubrics.map((r, i) => (
-                    <span
-                      key={r.id}
-                      className="rounded-full px-3 py-1 text-sm"
-                      title={
-                        i === rubrics.length - 1
-                          ? `Version ${r.version} — the one scoring uses right now`
-                          : `Version ${r.version} — kept for the audit trail; only the newest version is used`
-                      }
-                      style={
-                        i === rubrics.length - 1
-                          ? {
-                              background: "var(--hl-accent)",
-                              color: "var(--hl-ink)",
-                              fontWeight: 600,
-                            }
-                          : {
-                              background: "transparent",
-                              color: "var(--hl-muted)",
-                              border: "1px solid var(--hl-border)",
-                            }
-                      }
-                    >
-                      v{r.version}
-                      {i === rubrics.length - 1 ? " · active" : ""}
-                    </span>
-                  ))}
-                  <span className="text-xs" style={{ color: "var(--hl-muted)" }}>
-                    Scoring always uses the newest version — older ones stay for the audit trail.
-                  </span>
-                </div>
-              )}
-              <Button
-                variant="outline"
-                disabled={busy !== null}
-                className="ml-auto"
-                style={{ borderColor: "var(--hl-border)", color: "var(--hl-cream)" }}
-                title="Loads a sample scorecard so you can try scoring without waiting for AI rubric drafting"
-                onClick={() =>
-                  run("rubric", async () => {
-                    await importRubric(jobId, demoRubric());
-                    await load();
-                  })
-                }
-              >
-                {busy === "rubric" ? "Importing…" : "Use the demo rubric"}
-              </Button>
-            </div>
-            <p className="text-xs" style={{ color: "var(--hl-muted)" }}>
-              With an LLM key configured, HireLens can also draft a rubric automatically from the
-              job description — the docs and CLI call this "deriving".
-            </p>
-          </CardContent>
+          <RubricEditor
+            jobId={jobId}
+            rubrics={rubrics}
+            onSaved={() =>
+              run("rubric-save", async () => {
+                await load();
+              })
+            }
+          />
         </Card>
 
         {/* Candidates */}
@@ -586,6 +514,8 @@ export default function JobDetailPage() {
             )}
           </CardContent>
         </Card>
+
+        <SearchAskCard jobId={jobId} />
 
         <BiasAuditCard jobId={jobId} />
 

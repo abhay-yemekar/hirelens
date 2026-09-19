@@ -1,3 +1,4 @@
+export type { EmbeddingModel } from "ai";
 export {
   AuditChain,
   type AuditRecord,
@@ -76,6 +77,20 @@ export {
 } from "./score/engine.js";
 export { percentileRank, poolMean } from "./score/pool.js";
 export { type CriterionScore, weightedOverall } from "./score/weighting.js";
+export {
+  type AskResult,
+  CHUNK_OVERLAP_CHARS,
+  CHUNK_TARGET_CHARS,
+  chunkText,
+  createEmbeddingModel,
+  EMBEDDING_DIMENSIONS,
+  EMBEDDING_MODEL_ID,
+  embedChunkTexts,
+  embedQuery,
+  type SearchHit,
+  synthesizeAnswer,
+  type TextChunk,
+} from "./search/index.js";
 export {
   expandZip,
   MAX_ZIP_ENTRIES,

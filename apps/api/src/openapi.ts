@@ -587,6 +587,98 @@ export const openApiDocument = {
       },
     },
 
+    "/api/jobs/{jobId}/search": {
+      get: {
+        tags: ["Search"],
+        summary:
+          "Semantic search over the job's resumes — pgvector KNN when indexed, keyword matching otherwise.",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          { name: "q", in: "query", required: true, schema: { type: "string", minLength: 1 } },
+        ],
+        responses: {
+          200: ok({
+            type: "object",
+            properties: {
+              hits: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    candidateId: { type: "string", format: "uuid" },
+                    label: { type: "string" },
+                    snippet: { type: "string" },
+                    score: { type: "number" },
+                    mode: { type: "string", enum: ["semantic", "keyword"] },
+                  },
+                },
+              },
+            },
+          }),
+          400: errorResponse,
+          404: errorResponse,
+        },
+      },
+    },
+    "/api/jobs/{jobId}/ask": {
+      post: {
+        tags: ["Search"],
+        summary:
+          "LLM answer over retrieved resume chunks; citations are verified server-side against the retrieved set.",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        requestBody: jsonBody({
+          type: "object",
+          required: ["question"],
+          properties: { question: { type: "string", minLength: 1, maxLength: 2000 } },
+        }),
+        responses: {
+          200: ok({
+            type: "object",
+            properties: {
+              answer: { type: "string" },
+              citations: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    candidateId: { type: "string", format: "uuid" },
+                    label: { type: "string" },
+                    snippet: { type: "string" },
+                  },
+                },
+              },
+            },
+          }),
+          400: errorResponse,
+          404: errorResponse,
+          503: errorResponse,
+        },
+      },
+    },
+    "/api/jobs/{jobId}/index": {
+      post: {
+        tags: ["Search"],
+        summary:
+          "Backfill embeddings for every document in the job (best-effort per document; failures reported, never thrown).",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        responses: {
+          200: ok({
+            type: "object",
+            properties: {
+              indexed: { type: "number" },
+              failed: { type: "number" },
+            },
+          }),
+          404: errorResponse,
+          503: errorResponse,
+        },
+      },
+    },
+
     "/api/jobs/{jobId}/review": {
       get: {
         tags: ["Review"],
