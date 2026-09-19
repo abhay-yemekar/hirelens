@@ -79,6 +79,124 @@ function ScoreMeter({ score, title }: { score: number; title: string }) {
   );
 }
 
+/**
+ * Side-by-side comparison of 2–3 scored candidates: criteria as rows,
+ * candidates as columns. The best overall score is accented so the
+ * trade-offs (and the winner) read at a glance.
+ */
+function CompareTable({
+  candidates,
+  onRemove,
+}: {
+  candidates: RunCandidate[];
+  onRemove: (candidateId: string) => void;
+}) {
+  const keys = useMemo(() => {
+    const seen: string[] = [];
+    for (const c of candidates)
+      for (const s of c.criteria) if (!seen.includes(s.criterionKey)) seen.push(s.criterionKey);
+    return seen;
+  }, [candidates]);
+  const best = Math.max(...candidates.map((c) => c.overall));
+
+  return (
+    <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
+      <CardHeader>
+        <CardTitle className="text-base" style={{ color: "var(--hl-cream)" }}>
+          Compare ({candidates.length})
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="overflow-x-auto">
+        <table className="w-full min-w-[480px] border-collapse text-sm">
+          <thead>
+            <tr>
+              <th
+                scope="col"
+                className="px-2 pb-3 text-left text-xs font-medium uppercase tracking-wide"
+                style={{ color: "var(--color-fg-muted)" }}
+              >
+                Criterion
+              </th>
+              {candidates.map((c) => (
+                <th
+                  key={c.candidateId}
+                  scope="col"
+                  className="px-2 pb-3 text-left"
+                  style={{ color: "var(--hl-cream)" }}
+                >
+                  <span className="flex items-center gap-2">
+                    {c.label ?? candidateLabel(c.candidateId, null)}
+                    <button
+                      type="button"
+                      aria-label={`Remove ${c.label ?? c.candidateId} from comparison`}
+                      onClick={() => onRemove(c.candidateId)}
+                      className="rounded px-1 text-xs transition-colors hover:text-[var(--hl-cream)]"
+                      style={{ color: "var(--color-fg-muted)" }}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {keys.map((key) => (
+              <tr key={key} className="border-t" style={{ borderColor: "var(--hl-border)" }}>
+                <td className="px-2 py-2.5 font-medium" style={{ color: "var(--hl-cream)" }}>
+                  {criterionTitle(key)}
+                </td>
+                {candidates.map((c) => {
+                  const s = c.criteria.find((x) => x.criterionKey === key);
+                  return (
+                    <td key={c.candidateId} className="px-2 py-2.5">
+                      {s ? (
+                        <ScoreMeter score={s.score} title={key} />
+                      ) : (
+                        <span className="text-xs" style={{ color: "var(--color-fg-muted)" }}>
+                          —
+                        </span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+            <tr className="border-t" style={{ borderColor: "var(--hl-border)" }}>
+              <td
+                className="px-2 py-3 text-xs font-medium uppercase tracking-wide"
+                style={{ color: "var(--color-fg-muted)" }}
+              >
+                Overall
+              </td>
+              {candidates.map((c) => (
+                <td key={c.candidateId} className="px-2 py-3">
+                  <span
+                    className="text-lg font-semibold"
+                    style={{
+                      color: c.overall === best ? "var(--hl-accent)" : "var(--hl-cream)",
+                    }}
+                  >
+                    {Math.round(c.overall)}
+                  </span>
+                  {c.overall === best && candidates.length > 1 && (
+                    <span
+                      className="ml-2 rounded-full px-2 py-0.5 text-xs font-medium"
+                      style={{ background: "var(--hl-accent)", color: "var(--hl-ink)" }}
+                    >
+                      top
+                    </span>
+                  )}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function RunPage() {
   const params = useParams<{ jobId: string; runId: string }>();
   const jobId = params.jobId;
@@ -93,6 +211,8 @@ export default function RunPage() {
   const [docText, setDocText] = useState<string | null>(null);
   const [docName, setDocName] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [compare, setCompare] = useState<string[]>([]);
+  const [compareMode, setCompareMode] = useState(false);
   const [focus, setFocus] = useState<string | null>(null);
   const [error, setError] = useState<unknown>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -179,6 +299,48 @@ export default function RunPage() {
 
         {error ? <NoticeBanner error={error} /> : null}
 
+        {compareMode && compare.length >= 2 ? (
+          <CompareTable
+            candidates={compare
+              .map((id) => candidates.find((c) => c.candidateId === id))
+              .filter((c): c is RunCandidate => Boolean(c))}
+            onRemove={(id) => setCompare((prev) => prev.filter((x) => x !== id))}
+          />
+        ) : null}
+
+        {candidates.length >= 2 ? (
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              aria-pressed={compareMode}
+              onClick={() => setCompareMode((m) => !m)}
+              className="rounded-full border px-4 py-1.5 text-sm font-medium transition-colors"
+              style={
+                compareMode
+                  ? {
+                      background: "var(--hl-accent)",
+                      color: "var(--hl-ink)",
+                      borderColor: "var(--hl-accent)",
+                    }
+                  : {
+                      background: "transparent",
+                      color: "var(--hl-cream)",
+                      borderColor: "var(--hl-border)",
+                    }
+              }
+            >
+              Compare
+            </button>
+            {compareMode ? (
+              <span className="text-xs" style={{ color: "var(--color-fg-muted)" }}>
+                {compare.length < 2
+                  ? "Select at least 2 candidates below"
+                  : `${compare.length} selected — pick up to 3`}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Left: candidates + criteria */}
           <section className="flex flex-col gap-4">
@@ -222,10 +384,32 @@ export default function RunPage() {
                       {c.label ?? candidateLabel(c.candidateId, null)}
                     </CardTitle>
                   </button>
-                  <OverallScore
-                    score={c.overall}
-                    label={`${c.label ?? c.candidateId.slice(0, 8)} overall`}
-                  />
+                  <span className="flex items-center gap-3">
+                    {compareMode && candidates.length >= 2 ? (
+                      <label
+                        className="flex cursor-pointer items-center gap-1.5 text-xs"
+                        style={{ color: "var(--color-fg-muted)" }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={compare.includes(c.candidateId)}
+                          disabled={!compare.includes(c.candidateId) && compare.length >= 3}
+                          onChange={(e) =>
+                            setCompare((prev) =>
+                              e.target.checked
+                                ? [...prev, c.candidateId]
+                                : prev.filter((x) => x !== c.candidateId),
+                            )
+                          }
+                        />
+                        Compare
+                      </label>
+                    ) : null}
+                    <OverallScore
+                      score={c.overall}
+                      label={`${c.label ?? c.candidateId.slice(0, 8)} overall`}
+                    />
+                  </span>
                 </CardHeader>
                 {c.candidateId === selected && (
                   <CardContent className="flex flex-col gap-3">

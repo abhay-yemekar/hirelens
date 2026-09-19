@@ -235,7 +235,11 @@ export function scoringRoutes(): Hono<AppEnv> {
     const bytes = new Uint8Array(await file.arrayBuffer());
     let result: Awaited<ReturnType<typeof ingestBytes>>;
     try {
-      result = await ingestBytes(db, { jobId: job.id, filename: file.name, bytes });
+      result = await ingestBytes(
+        db,
+        { jobId: job.id, filename: file.name, bytes },
+        c.get("indexer"),
+      );
     } catch (err) {
       // Parse/extract failures (empty file, unsupported format, too little
       // text) are client-input problems — report them as 422 with the

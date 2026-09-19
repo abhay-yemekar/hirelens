@@ -75,6 +75,8 @@ export interface RubricVersion {
   id: string;
   version: number;
   createdAt: string;
+  /** Full rubric JSON (criteria with weights + anchored scales). */
+  payload?: Record<string, unknown>;
 }
 
 export interface CandidateRow {
@@ -163,6 +165,73 @@ export const deleteJob = (jobId: string, init?: RequestInit & { serverCookie?: s
 
 export const listRubrics = (jobId: string, init?: RequestInit & { serverCookie?: string | null }) =>
   apiFetch<{ ok: true; rubrics: RubricVersion[] }>(`/api/jobs/${jobId}/rubrics`, { ...init });
+
+export const deriveRubric = (
+  jobId: string,
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{ ok: true; rubric: { version: number } }>(`/api/jobs/${jobId}/rubrics/derive`, {
+    method: "POST",
+    ...init,
+  });
+
+// ---------- semantic search & ask ----------
+
+export interface SearchHitRow {
+  candidateId: string;
+  label: string | null;
+  score: number;
+}
+
+export interface SearchResponse {
+  ok: true;
+  mode: string;
+  embeddingModel: string | null;
+  indexed: number;
+  total: number;
+  hits: SearchHitRow[];
+}
+
+export const searchCandidates = (
+  jobId: string,
+  q: string,
+  init?: RequestInit & { serverCookie?: string | null },
+) => apiFetch<SearchResponse>(`/api/jobs/${jobId}/search?q=${encodeURIComponent(q)}`, { ...init });
+
+export interface AskCitation {
+  chunkId: string;
+  candidateId: string;
+  label: string | null;
+}
+
+export interface AskResponse {
+  ok: true;
+  answer: string | null;
+  message?: string;
+  confidence?: "high" | "medium" | "low";
+  citations?: AskCitation[];
+}
+
+export const askQuestion = (
+  jobId: string,
+  question: string,
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<AskResponse>(`/api/jobs/${jobId}/ask`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ question }),
+    ...init,
+  });
+
+export const indexJobResumes = (
+  jobId: string,
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{ ok: true; indexed: number; total: number }>(`/api/jobs/${jobId}/index`, {
+    method: "POST",
+    ...init,
+  });
 
 export const listCandidates = (
   jobId: string,
