@@ -1,5 +1,6 @@
 import type { Database } from "@hirelens/db";
 import { jobs } from "@hirelens/db";
+import { appendAudit } from "@hirelens/orchestrator";
 import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -96,7 +97,31 @@ export function jobsRoutes(): Hono<AppEnv> {
       .set(parsed.data)
       .where(eq(jobs.id, job.id))
       .returning();
+    await appendAudit(c.get("db"), {
+      orgId: c.get("auth").orgId,
+      actorId: c.get("auth").userId,
+      action: "job.updated",
+      payload: { jobId: job.id, fields: Object.keys(parsed.data) },
+    });
     return c.json({ ok: true, job: row });
+  });
+
+  /**
+   * Delete a job. Owner-only: candidates, scores, decisions, rubrics and
+   * runs cascade via FK, but the append-only audit log records who deleted
+   * what — the trail stays tamper-evident after the rows are gone.
+   */
+  routes.delete("/:id", requireAuth(ROLE_MIN.admin), async (c) => {
+    const job = await loadOrgJob(c.get("db"), c.req.param("id"), c.get("auth").orgId);
+    if (!job) return c.json({ ok: false, error: "not_found" }, 404);
+    await c.get("db").delete(jobs).where(eq(jobs.id, job.id));
+    await appendAudit(c.get("db"), {
+      orgId: c.get("auth").orgId,
+      actorId: c.get("auth").userId,
+      action: "job.deleted",
+      payload: { jobId: job.id },
+    });
+    return c.json({ ok: true, deleted: job.id });
   });
 
   return routes;

@@ -15,6 +15,13 @@
       "when": 1789714936986,
       "tag": "0001_dazzling_mister_fear",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789732889358,
+      "tag": "0002_lucky_tag",
+      "breakpoints": true
     }
   ]
 }

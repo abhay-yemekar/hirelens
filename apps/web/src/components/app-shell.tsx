@@ -149,6 +149,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="ml-auto flex items-center gap-3">
             <Link
+              href="/settings"
+              className="text-sm transition-colors hover:text-[var(--hl-cream)]"
+              style={{ color: "var(--hl-mist)" }}
+              title="Organization settings"
+            >
+              Settings
+            </Link>
+            <Link
               href="/docs"
               className="hidden text-sm transition-colors hover:text-[var(--hl-cream)] sm:inline-block"
               style={{ color: "var(--hl-mist)" }}

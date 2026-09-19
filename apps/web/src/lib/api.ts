@@ -81,6 +81,8 @@ export interface CandidateRow {
   id: string;
   language: string | null;
   sourceFileKey: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
   createdAt: string;
   pageCount: number | null;
 }
@@ -138,6 +140,24 @@ export const createJob = (
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
+    ...init,
+  });
+
+export const updateJob = (
+  jobId: string,
+  body: { title?: string; description?: string; status?: "draft" | "open" | "closed" },
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{ ok: true; job: Job }>(`/api/jobs/${jobId}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+    ...init,
+  });
+
+export const deleteJob = (jobId: string, init?: RequestInit & { serverCookie?: string | null }) =>
+  apiFetch<{ ok: true; deleted: string }>(`/api/jobs/${jobId}`, {
+    method: "DELETE",
     ...init,
   });
 

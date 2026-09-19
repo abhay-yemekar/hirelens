@@ -24,6 +24,9 @@ export const candidates = pgTable(
     sourceFileKey: text("source_file_key"),
     /** BCP-47 language tag from detection. */
     language: text("language"),
+    /** Contact info extracted from the resume (null when not found). */
+    contactEmail: text("contact_email"),
+    contactPhone: text("contact_phone"),
     /** JSON-Resume-compatible parsed profile. */
     parsed: jsonb("parsed").$type<Record<string, unknown>>(),
     /** Maskable PII snapshot for blind review (name, school, etc). */
@@ -45,6 +48,9 @@ export const documents = pgTable(
       .references(() => candidates.id, { onDelete: "cascade" }),
     kind: documentKindEnum("kind").notNull().default("resume"),
     rawText: text("raw_text").notNull(),
+    /** Original uploaded bytes (so recruiters can view the real resume). */
+    fileBytes: text("file_bytes"),
+    fileMime: text("file_mime"),
     /** Layout metadata: page count, columns, reading-order notes. */
     layoutMeta: jsonb("layout_meta").$type<Record<string, unknown>>(),
     pageCount: integer("page_count"),

@@ -76,6 +76,8 @@ const candidate = {
     id: { type: "string", format: "uuid" },
     jobId: { type: "string", format: "uuid" },
     displayName: { type: "string", description: "File label; never parsed from resume identity." },
+    contactEmail: { type: "string", nullable: true, description: "Null during blind review." },
+    contactPhone: { type: "string", nullable: true, description: "Null during blind review." },
     source: { type: "string", enum: ["upload", "zip"] },
     createdAt: { type: "string", format: "date-time" },
   },
@@ -282,6 +284,14 @@ export const openApiDocument = {
         }),
         responses: { 200: ok({ type: "object", properties: { job } }) },
       },
+      delete: {
+        tags: ["Jobs"],
+        summary: "Delete a job and its candidates/scores/decisions. Owner-only; audit-logged.",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        responses: { 200: ok({ type: "object" }), 404: errorResponse },
+      },
     },
     "/api/jobs/{jobId}/rubrics": {
       get: {
@@ -437,6 +447,33 @@ export const openApiDocument = {
           },
         ],
         responses: { 200: ok({ type: "object" }), 404: errorResponse },
+      },
+    },
+    "/api/jobs/{jobId}/candidates/{candidateId}/resume": {
+      get: {
+        tags: ["Candidates"],
+        summary: "Serve the original uploaded resume file (inline).",
+        description:
+          "Returns the stored original bytes with their content type. 404 when nothing was stored (legacy rows) or when blind review is active — the original file carries identity cues.",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          {
+            name: "candidateId",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        responses: {
+          200: {
+            description: "The original file bytes.",
+            content: {
+              "application/pdf": { schema: { type: "string", format: "binary" } },
+              "text/plain": { schema: { type: "string" } },
+            },
+          },
+          404: errorResponse,
+        },
       },
     },
     "/api/jobs/{jobId}/candidates/{candidateId}/demographics": {
