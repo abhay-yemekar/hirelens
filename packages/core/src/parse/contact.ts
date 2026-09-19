@@ -47,6 +47,18 @@ export const PHONE_RE =
 
 export const URL_RE = /https?:\/\/[^\s<>)"']+/;
 
+/**
+ * True when a phone-shaped match is actually an employment date range
+ * ("2019-2024"): two 4-digit year-like groups joined by a separator.
+ * These pass the digit-count check but are never phone numbers.
+ */
+export function isYearRange(s: string): boolean {
+  const compact = s.replace(/[()\s]/g, "");
+  const m = /^(\d{4})[.-](\d{4})$/.exec(compact);
+  if (!m?.[1] || !m[2]) return false;
+  return /^(?:19|20)\d{2}$/.test(m[1]) && /^(?:19|20)\d{2}$/.test(m[2]);
+}
+
 export function countDigits(s: string): number {
   return (s.match(/\d/g) ?? []).length;
 }
@@ -64,7 +76,10 @@ export function findPhone(lines: string[]): string | null {
     // Skip lines that are clearly dates or ids
     if (/^\d{4}[-/]\d{2,4}/.test(line.trim())) continue;
     const m = PHONE_RE.exec(line);
-    if (m && countDigits(m[0]) >= 7 && countDigits(m[0]) <= 15) {
+    if (!m) continue;
+    // "2019-2024" and friends: 8 digits, valid count, but a date range.
+    if (isYearRange(m[0])) continue;
+    if (countDigits(m[0]) >= 7 && countDigits(m[0]) <= 15) {
       return m[0].trim();
     }
   }

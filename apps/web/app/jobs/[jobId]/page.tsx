@@ -1,9 +1,9 @@
 "use client";
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hirelens/ui";
-import { FileText } from "lucide-react";
+import { Eye, FileText, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { NoticeBanner } from "@/components/notice-banner";
@@ -11,6 +11,7 @@ import { trackEvent } from "@/lib/analytics";
 import {
   type CandidateRow,
   deleteCandidate,
+  deleteJob,
   getJob,
   importRubric,
   type Job,
@@ -21,16 +22,9 @@ import {
   type RubricVersion,
   type RunRow,
   retryFailed,
+  updateJob,
 } from "@/lib/api";
-import {
-  candidateLabel,
-  cap,
-  fileLabel,
-  languageName,
-  modelLabel,
-  pagesLabel,
-  timeAgo,
-} from "@/lib/format";
+import { candidateLabel, cap, fileLabel, modelLabel, pagesLabel, timeAgo } from "@/lib/format";
 import { BiasAuditCard } from "./bias-audit";
 import { ReviewTable } from "./review-table";
 
@@ -83,6 +77,10 @@ export default function JobDetailPage() {
   const params = useParams<{ jobId: string }>();
   const jobId = params.jobId;
   const fileRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
 
   const [job, setJob] = useState<Job | null>(null);
   const [rubrics, setRubrics] = useState<RubricVersion[]>([]);
@@ -162,6 +160,36 @@ export default function JobDetailPage() {
     if (fileRef.current) fileRef.current.value = "";
   };
 
+  function startEdit() {
+    if (!job) return;
+    setEditTitle(job.title);
+    setEditDescription(job.description);
+    setEditing(true);
+  }
+
+  function removeJob() {
+    if (!job) return;
+    if (
+      !window.confirm(
+        `Delete "${job.title}" permanently? All candidates, scores, decisions and runs go with it. The audit log records the deletion. Consider Archive instead if you may need the history.`,
+      )
+    )
+      return;
+    void run("delete-job", async () => {
+      await deleteJob(jobId);
+      trackEvent("job.deleted", { jobId });
+      router.push("/jobs");
+    });
+  }
+
+  function archiveJob() {
+    if (!job) return;
+    void run("archive-job", async () => {
+      await updateJob(jobId, { status: "closed" });
+      await load();
+    });
+  }
+
   function removeCandidate(candidate: CandidateRow) {
     const label = candidateLabel(candidate.id, candidate.sourceFileKey);
     if (
@@ -230,7 +258,95 @@ export default function JobDetailPage() {
                 {cap(job.status)}
               </span>
             )}
+            {job && (
+              <div className="ml-auto flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={startEdit}
+                  title="Edit title and job description"
+                >
+                  <Pencil aria-hidden className="mr-1.5 h-3.5 w-3.5" />
+                  Edit
+                </Button>
+                {job.status !== "closed" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={busy !== null}
+                    onClick={archiveJob}
+                    title="Close this job — it stays listed with a Closed badge, history intact"
+                  >
+                    Archive
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={busy !== null}
+                  onClick={removeJob}
+                  title="Permanently delete this job and everything in it"
+                  style={{
+                    borderColor: "color-mix(in oklab, var(--hl-bad) 45%, transparent)",
+                    color: "var(--hl-bad)",
+                  }}
+                >
+                  <Trash2 aria-hidden className="mr-1.5 h-3.5 w-3.5" />
+                  Delete
+                </Button>
+              </div>
+            )}
           </div>
+
+          {editing && job && (
+            <form
+              className="mt-3 flex flex-col gap-3 rounded-[var(--radius-card)] border p-4"
+              style={{ borderColor: "var(--hl-border)", background: "var(--hl-ink-3)" }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                void run("edit-job", async () => {
+                  await updateJob(jobId, {
+                    title: editTitle.trim() || job.title,
+                    description: editDescription.trim() || job.description,
+                  });
+                  trackEvent("job.edited", { jobId });
+                  setEditing(false);
+                  await load();
+                });
+              }}
+            >
+              <label className="flex flex-col gap-1 text-sm">
+                <span style={{ color: "var(--hl-mist)" }}>Job title</span>
+                <input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  maxLength={200}
+                  required
+                  className="rounded-[var(--radius-control)] border px-3 py-2 text-sm text-[var(--hl-cream)] focus:outline-none focus:border-[var(--hl-accent)]"
+                  style={{ borderColor: "var(--hl-border)", background: "var(--hl-input)" }}
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm">
+                <span style={{ color: "var(--hl-mist)" }}>Job description</span>
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  rows={6}
+                  maxLength={100_000}
+                  className="rounded-[var(--radius-control)] border px-3 py-2 text-sm text-[var(--hl-cream)] focus:outline-none focus:border-[var(--hl-accent)]"
+                  style={{ borderColor: "var(--hl-border)", background: "var(--hl-input)" }}
+                />
+              </label>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={busy !== null}>
+                  {busy === "edit-job" ? "Saving…" : "Save changes"}
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => setEditing(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          )}
         </header>
         {error ? <NoticeBanner error={error} /> : null}
 
@@ -336,7 +452,6 @@ export default function JobDetailPage() {
                 onChange={(e) => uploadFiles(e.target.files)}
               />
             </label>
-
             {zipSummary && (
               <div
                 className="rounded-xl px-4 py-3 text-sm"
@@ -358,8 +473,7 @@ export default function JobDetailPage() {
                   : ""}
                 .
               </div>
-            )}
-
+            )}{" "}
             {candidates.length > 0 && (
               <div
                 className="overflow-hidden rounded-[var(--radius-card)] border"
@@ -388,17 +502,48 @@ export default function JobDetailPage() {
                         >
                           {candidateLabel(c.id, c.sourceFileKey)}
                         </span>
-                        {pages && (
-                          <span className="flex-none text-xs" style={{ color: "var(--hl-muted)" }}>
-                            {pages}
+                        {c.contactEmail ? (
+                          <button
+                            type="button"
+                            onClick={() => void navigator.clipboard.writeText(c.contactEmail ?? "")}
+                            className="hidden min-w-0 max-w-[15rem] truncate flex-none text-xs underline-offset-2 hover:underline sm:inline"
+                            style={{ color: "var(--hl-mist)" }}
+                            title={`Copy email — ${c.contactEmail}`}
+                          >
+                            {c.contactEmail}
+                          </button>
+                        ) : (
+                          <span
+                            className="hidden flex-none text-xs sm:inline"
+                            style={{ color: "var(--hl-muted)" }}
+                          >
+                            —
                           </span>
                         )}
-                        {c.language && (
+                        {c.contactPhone ? (
+                          <button
+                            type="button"
+                            onClick={() => void navigator.clipboard.writeText(c.contactPhone ?? "")}
+                            className="hidden flex-none text-xs underline-offset-2 hover:underline md:inline"
+                            style={{ color: "var(--hl-mist)" }}
+                            title={`Copy phone — ${c.contactPhone}`}
+                          >
+                            {c.contactPhone}
+                          </button>
+                        ) : (
                           <span
                             className="hidden flex-none text-xs md:inline"
                             style={{ color: "var(--hl-muted)" }}
                           >
-                            {languageName(c.language)}
+                            —
+                          </span>
+                        )}
+                        {pages && (
+                          <span
+                            className="hidden flex-none text-xs lg:inline"
+                            style={{ color: "var(--hl-muted)" }}
+                          >
+                            {pages}
                           </span>
                         )}
                         <span
@@ -408,6 +553,17 @@ export default function JobDetailPage() {
                         >
                           {uploaded}
                         </span>
+                        <a
+                          href={`/api/jobs/${jobId}/candidates/${c.id}/resume`}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`View original resume — ${candidateLabel(c.id, c.sourceFileKey)}`}
+                          title="View the original resume"
+                          className="flex-none rounded-md border p-1.5 transition-colors hover:bg-white/[0.06] active:bg-white/[0.1]"
+                          style={{ borderColor: "var(--hl-border)", color: "var(--hl-mist)" }}
+                        >
+                          <Eye aria-hidden className="h-4 w-4" />
+                        </a>
                         <button
                           type="button"
                           onClick={() => removeCandidate(c)}

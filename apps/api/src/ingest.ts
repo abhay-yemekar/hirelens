@@ -22,6 +22,14 @@ export type IngestResult =
   | { status: "created"; candidateId: string; documentId: string; filename: string }
   | { status: "duplicate"; candidateId: string; filename: string };
 
+/** Content types for serving the stored original file. */
+const MIME_BY_KIND: Record<string, string> = {
+  pdf: "application/pdf",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  txt: "text/plain",
+  md: "text/markdown",
+};
+
 export async function ingestBytes(
   db: Database,
   input: { jobId: string; filename: string; bytes: Uint8Array },
@@ -64,6 +72,10 @@ export async function ingestBytes(
       contentHash: textSha,
       sourceFileKey: input.filename,
       language: parsed.languageTag,
+      // Contact info comes straight from the parser — surfaced as columns
+      // so recruiters can reach candidates without opening the resume.
+      contactEmail: parsed.email ?? null,
+      contactPhone: parsed.phone || null,
       parsed: parsed as unknown as Record<string, unknown>,
     })
     .returning({ id: candidates.id });
@@ -75,6 +87,10 @@ export async function ingestBytes(
       candidateId: candidate.id,
       kind: "resume",
       rawText,
+      // Keep the original file so the UI can show the real resume (eye
+      // button). Text-only storage used to throw these bytes away.
+      fileBytes: Buffer.from(input.bytes).toString("base64"),
+      fileMime: MIME_BY_KIND[extracted.kind] ?? "application/octet-stream",
       pageCount: extracted.pageCount,
       layoutMeta: {
         kind: extracted.kind,

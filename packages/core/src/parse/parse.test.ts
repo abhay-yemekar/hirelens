@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseCandidate } from "./candidate.js";
+import { findPhone } from "./contact.js";
 import { ParseError } from "./schema.js";
 import { segmentSections } from "./sections.js";
 
@@ -30,11 +31,22 @@ AWS Solutions Architect Associate (2020)
 Summary
 Engineer focused on reliable payments infrastructure and clean APIs.`;
 
+describe("findPhone", () => {
+  it("rejects employment year ranges (2019-2024)", () => {
+    expect(findPhone(["Experience", "2019-2024", "2018 - 2022", "(555) 123-4567"])).toBe(
+      "(555) 123-4567",
+    );
+    expect(findPhone(["Senior Engineer", "Mar 2019-2024 · Acme"])).toBeNull();
+  });
+});
+
 describe("parseCandidate", () => {
   it("parses contact details from the header", () => {
     const c = parseCandidate(RESUME);
     expect(c.name).toBe("JORDAN AVERY");
     expect(c.email).toBe("jordan@example.com");
+    // Year ranges on the line below must not be mistaken for a phone.
+    expect(c.phone).toBeNull();
     expect(c.profiles).toEqual([
       { network: "github", username: "javery", url: "https://github.com/javery" },
     ]);
