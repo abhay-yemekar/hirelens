@@ -21,6 +21,7 @@ import { reviewRoutes } from "./routes/review.js";
 import { rubricsRoutes } from "./routes/rubrics.js";
 import { scoringRoutes } from "./routes/scoring.js";
 import { searchRoutes } from "./routes/search.js";
+import { auditExportRoutes, publicShareRoutes, sharingRoutes } from "./routes/sharing.js";
 import type { AppEnv } from "./types.js";
 
 export interface AppDeps {
@@ -119,6 +120,11 @@ export function createApp(deps: AppDeps) {
   // Public API contract (public document; auth still governs the endpoints it describes).
   app.get("/api/openapi.json", (c) => c.json(openApiDocument));
 
+  // Public, token-gated share report — mounted BEFORE the protected API so
+  // the token is the only credential (requireAuth's /api/* middleware must
+  // not intercept these reads).
+  app.route("/api", publicShareRoutes());
+
   // Authenticated, org-scoped API surface.
   const protectedApi = new Hono<AppEnv>();
   protectedApi.use("*", requireAuth());
@@ -129,6 +135,8 @@ export function createApp(deps: AppDeps) {
   protectedApi.route("/jobs/:jobId", reviewRoutes());
   protectedApi.route("/jobs/:jobId/bias-audit", biasAuditRoutes());
   protectedApi.route("/jobs/:jobId", searchRoutes());
+  protectedApi.route("/jobs/:jobId", sharingRoutes());
+  protectedApi.route("/jobs/:jobId", auditExportRoutes());
   protectedApi.route("/jobs", jobsRoutes());
   app.route("/api", protectedApi);
 

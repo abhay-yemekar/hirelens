@@ -22,8 +22,9 @@ function criteriaOf(payload: Record<string, unknown>): Criterion[] {
   return Array.isArray(c) ? (c as Criterion[]) : [];
 }
 
-/** Run detail: the run, per-candidate overall + per-criterion scores, evidence. */
-async function runDetail(db: AppEnv["Variables"]["db"], runId: string) {
+/** Run detail: the run, per-candidate overall + per-criterion scores, evidence.
+ * Exported for the public share-report route (token-gated read-only view). */
+export async function runDetail(db: AppEnv["Variables"]["db"], runId: string) {
   const [run] = await db.select().from(scoringRuns).where(eq(scoringRuns.id, runId)).limit(1);
   if (!run) return null;
 

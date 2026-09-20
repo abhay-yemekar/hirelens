@@ -6,6 +6,8 @@ import { AppShell } from "@/components/app-shell";
 import { NoticeBanner } from "@/components/notice-banner";
 import { organization, useSession } from "@/lib/auth-client";
 
+import { MembersCard } from "./members-card";
+
 interface OrgRow {
   id: string;
   name: string;
@@ -16,8 +18,8 @@ interface OrgRow {
 
 /**
  * Organization settings: rename the active organization (Better Auth
- * organization.update, owner-only) and see what it is. Member/role
- * management ships with the team wave — the client SDK already has it.
+ * organization.update, owner-only) and manage the team — invite members
+ * with roles, promote/demote, remove (Better Auth organization plugin).
  */
 export default function SettingsPage() {
   const { data: session } = useSession();
@@ -139,16 +141,7 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
-          <CardHeader>
-            <CardTitle style={{ color: "var(--hl-cream)" }}>Members &amp; roles</CardTitle>
-            <CardDescription style={{ color: "var(--hl-mist)" }}>
-              Inviting teammates and assigning recruiter / hiring-manager roles is coming in the
-              next update — the underlying permission system is already live (owners can delete
-              jobs; recruiters can edit everything else).
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <MembersCard />
       </div>
     </AppShell>
   );
