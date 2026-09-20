@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { NoticeBanner } from "@/components/notice-banner";
-import { getCandidate, getRun, type RunCandidate } from "@/lib/api";
+import { getCandidate, getRun, interviewKitHtmlUrl, type RunCandidate } from "@/lib/api";
 import { candidateLabel, cap, fileLabel, modelLabel } from "@/lib/format";
 
 import { SharePanel } from "./share-panel";
@@ -302,6 +302,27 @@ export default function RunPage() {
         {error ? <NoticeBanner error={error} /> : null}
 
         <SharePanel jobId={jobId} />
+
+        {current ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href={interviewKitHtmlUrl(jobId, runId, current.candidateId)}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border px-4 py-1.5 text-sm font-medium transition-colors"
+              style={{
+                borderColor: "var(--hl-accent)",
+                color: "var(--hl-accent)",
+              }}
+              title="Opens a printable debrief pack: probes from the rubric's anchored scale, what strong looks like, and the exact quotes the model scored."
+            >
+              Interview kit — {current.label ?? current.candidateId.slice(0, 8)} ↗
+            </a>
+            <span className="text-xs" style={{ color: "var(--color-fg-muted)" }}>
+              Printable debrief: probes, anchors, and the evidence behind every score.
+            </span>
+          </div>
+        ) : null}
 
         {compareMode && compare.length >= 2 ? (
           <CompareTable

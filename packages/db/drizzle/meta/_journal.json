@@ -36,6 +36,13 @@
       "when": 1789816261718,
       "tag": "0004_lonely_dagger",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789914654258,
+      "tag": "0005_red_malice",
+      "breakpoints": true
     }
   ]
 }

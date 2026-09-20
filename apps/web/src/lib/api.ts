@@ -454,3 +454,37 @@ export interface PublicShareReport {
 
 export const fetchPublicReport = (token: string) =>
   fetch(`/api/share/${token}`, { headers: { accept: "application/json" } });
+
+/* ---------- Wave 4: interview kits + candidate portal ---------- */
+
+/** Download the printable interview kit (opens in a new tab for print→PDF). */
+export const interviewKitHtmlUrl = (jobId: string, runId: string, candidateId: string) =>
+  `/api/jobs/${jobId}/runs/${runId}/interview-kit.html?candidate=${candidateId}`;
+
+export interface PortalLinkRow {
+  id: string;
+  candidateId: string;
+  submittedAt: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+}
+
+export const createPortalLink = (
+  jobId: string,
+  candidateId: string,
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{ ok: true; link: { id: string; token: string; createdAt: string } }>(
+    `/api/jobs/${jobId}/portal/${candidateId}`,
+    { method: "POST", ...init },
+  );
+
+export const revokePortalLink = (
+  jobId: string,
+  linkId: string,
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{ ok: true }>(`/api/jobs/${jobId}/portal/${linkId}`, {
+    method: "DELETE",
+    ...init,
+  });
