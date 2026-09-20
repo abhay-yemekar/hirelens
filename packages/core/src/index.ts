@@ -31,6 +31,13 @@ export {
   sniffKind,
 } from "./extract/index.js";
 export {
+  buildInterviewKit,
+  type EvidenceSpan,
+  type InterviewKit,
+  type KitCriterion,
+  renderKitHtml,
+} from "./interview/kit.js";
+export {
   createMockModel,
   DEFAULT_REGISTRY,
   type GenerationRequest,

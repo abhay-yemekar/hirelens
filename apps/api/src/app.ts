@@ -22,6 +22,7 @@ import { rubricsRoutes } from "./routes/rubrics.js";
 import { scoringRoutes } from "./routes/scoring.js";
 import { searchRoutes } from "./routes/search.js";
 import { auditExportRoutes, publicShareRoutes, sharingRoutes } from "./routes/sharing.js";
+import { interviewKitRoutes, portalRoutes, publicPortalRoutes } from "./routes/wave4.js";
 import type { AppEnv } from "./types.js";
 
 export interface AppDeps {
@@ -124,6 +125,7 @@ export function createApp(deps: AppDeps) {
   // the token is the only credential (requireAuth's /api/* middleware must
   // not intercept these reads).
   app.route("/api", publicShareRoutes());
+  app.route("/api", publicPortalRoutes());
 
   // Authenticated, org-scoped API surface.
   const protectedApi = new Hono<AppEnv>();
@@ -136,6 +138,8 @@ export function createApp(deps: AppDeps) {
   protectedApi.route("/jobs/:jobId/bias-audit", biasAuditRoutes());
   protectedApi.route("/jobs/:jobId", searchRoutes());
   protectedApi.route("/jobs/:jobId", sharingRoutes());
+  protectedApi.route("/jobs/:jobId/portal", portalRoutes());
+  protectedApi.route("/jobs/:jobId", interviewKitRoutes());
   protectedApi.route("/jobs/:jobId", auditExportRoutes());
   protectedApi.route("/jobs", jobsRoutes());
   app.route("/api", protectedApi);

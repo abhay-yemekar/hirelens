@@ -751,6 +751,108 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/jobs/{jobId}/runs/{runId}/interview-kit.json": {
+      get: {
+        tags: ["Interview kits"],
+        summary:
+          "Structured interview kit for a scored candidate (probes, anchors, evidence quotes).",
+        description:
+          "Deterministic debrief pack derived from the run's rubric anchors and the candidate's evidence. No LLM call.",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          { name: "runId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          { name: "candidate", in: "query", schema: { type: "string", format: "uuid" } },
+        ],
+        responses: {
+          200: ok({ type: "object", properties: { kit: { type: "object" } } }),
+          404: errorResponse,
+        },
+      },
+    },
+    "/api/jobs/{jobId}/runs/{runId}/interview-kit.html": {
+      get: {
+        tags: ["Interview kits"],
+        summary: "Printable HTML interview kit (print → PDF).",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          { name: "runId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          { name: "candidate", in: "query", schema: { type: "string", format: "uuid" } },
+        ],
+        responses: {
+          200: {
+            description: "Standalone HTML document.",
+            content: { "text/html": { schema: { type: "string" } } },
+          },
+          404: errorResponse,
+        },
+      },
+    },
+    "/api/jobs/{jobId}/portal/{candidateId}": {
+      post: {
+        tags: ["Portal"],
+        summary:
+          "Create a candidate portal link (opt-in demographics self-report). Token shown once.",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          {
+            name: "candidateId",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        responses: {
+          201: ok({ type: "object", properties: { link: { type: "object" } } }),
+          404: errorResponse,
+        },
+      },
+      delete: {
+        tags: ["Portal"],
+        summary: "Revoke a portal link by link id.",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          {
+            name: "linkId",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        responses: { 200: ok({ type: "object" }), 404: errorResponse },
+      },
+    },
+    "/api/portal/{token}": {
+      get: {
+        tags: ["Portal"],
+        summary: "Public portal invitation (no auth — the token is the credential).",
+        description: "Job title + opt-in disclosure only. 410 revoked, 409 already submitted.",
+        parameters: [{ name: "token", in: "path", required: true, schema: { type: "string" } }],
+        security: [],
+        responses: {
+          200: ok({ type: "object", properties: { invitation: { type: "object" } } }),
+          404: errorResponse,
+          409: errorResponse,
+          410: errorResponse,
+        },
+      },
+      post: {
+        tags: ["Portal"],
+        summary: "Submit the opt-in demographics self-report. Consumes the link.",
+        parameters: [{ name: "token", in: "path", required: true, schema: { type: "string" } }],
+        security: [],
+        requestBody: jsonBody({
+          type: "object",
+          required: ["dimension", "value"],
+          properties: { dimension: { type: "string" }, value: { type: "string" } },
+        }),
+        responses: {
+          200: ok({ type: "object" }),
+          400: errorResponse,
+          409: errorResponse,
+          410: errorResponse,
+        },
+      },
+    },
     "/api/jobs/{jobId}/audit-export.csv": {
       get: {
         tags: ["Sharing"],

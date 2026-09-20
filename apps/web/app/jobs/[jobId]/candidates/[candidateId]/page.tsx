@@ -9,6 +9,8 @@ import { NoticeBanner } from "@/components/notice-banner";
 import { getCandidate, type Stage } from "@/lib/api";
 import { candidateLabel, cap } from "@/lib/format";
 
+import { PortalPanel } from "./portal-panel";
+
 interface DecisionRow {
   stage: Stage;
   reason: string;
@@ -88,6 +90,8 @@ export default function CandidatePage() {
             )}
           </CardContent>
         </Card>
+
+        <PortalPanel jobId={params.jobId} candidateId={params.candidateId} />
 
         <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
           <CardHeader>
