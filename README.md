@@ -27,12 +27,17 @@ A pnpm + Turborepo monorepo shipping the full product:
 5. **Batch orchestration** — fan-out scoring with bounded concurrency, retries, hash-chained audit records, and live progress.
 6. **Product UI** — sign-in/up, org onboarding, jobs, ranked review queue (advance/shortlist/reject with required reasons), the **evidence viewer** (click a criterion → the exact quoted span lights up), and **blind review** (identity cues masked with offsets preserved).
 7. **Bias audit** — one-click adverse-impact report: per-group selection rates, the EEOC four-fifths rule, demographic parity difference, JSON export. Opt-in self-reported demographics only.
-8. **Audit log** — immutable, hash-chained; tampering breaks the chain visibly.
-9. **API** — authenticated (Better Auth), org-scoped REST surface with a live **OpenAPI 3.1** contract at `GET /api/openapi.json`.
-10. **CLI** — `hirelens login / org / jobs / rubric derive / score` — the whole pipeline from a terminal, zero runtime dependencies.
-11. **Self-host** — `docker compose up --build -d` brings up web + API + Postgres with migrations applied automatically.
-12. **Observability** — structured logging always on; Sentry, Langfuse LLM tracing, and privacy-first PostHog behind env flags.
-13. **Eval harness** — seeded benchmark measuring direction accuracy, self-consistency, position bias, and name-swap bias, wired into CI ([numbers below](#evaluation-harness--an-unevaluated-ranker-is-a-liability)).
+8. **Interview kits** — every scored candidate gets a printable debrief pack: probe questions derived from the rubric's anchored scale, plus the exact evidence quotes as a listen-for list. No extra LLM call.
+9. **Candidate portal** — a one-shot token link lets a candidate opt in to a demographics self-report (no account), feeding the same bias audit. Data policy stated on the page, every step hash-chain audited.
+10. **Teams & sharing** — invite teammates with roles (owner / recruiter / hiring manager / viewer); publish a read-only scored report behind a revocable public link; export the hash-chained audit log as verifiable CSV.
+11. **Semantic search & ask** — pgvector embeddings over every resume; keyword fallback keeps search alive before indexing; Ask answers with server-verified citations.
+12. **Rubric editor** — criteria, weights, anchored 0–5 scales, JSON power mode, AI draft, version pills.
+13. **Audit log** — immutable, hash-chained; tampering breaks the chain visibly.
+14. **API** — authenticated (Better Auth), org-scoped REST surface with a live **OpenAPI 3.1** contract at `GET /api/openapi.json`.
+15. **CLI** — `hirelens login / org / jobs / rubric derive / score` — the whole pipeline from a terminal, zero runtime dependencies.
+16. **Self-host** — `docker compose up --build -d` brings up web + API + Postgres with migrations applied automatically.
+17. **Observability** — structured logging always on; Sentry, Langfuse LLM tracing, and privacy-first PostHog behind env flags.
+18. **Eval harness** — seeded benchmark measuring direction accuracy, self-consistency, position bias, and name-swap bias, wired into CI ([numbers below](#evaluation-harness--an-unevaluated-ranker-is-a-liability)).
 
 Everything is model-agnostic: bring your own key (**Google, Anthropic, Groq, OpenRouter**) or run fully local via **Ollama** — resumes never have to leave your machine. Providers that reject complex JSON schemas (e.g. Gemini's nested-array limits) are handled automatically by a validated JSON-text fallback.
 
@@ -215,7 +220,8 @@ Most hiring AI is a black box: a number with no justification. That is a liabili
 - ✅ **Hardening** — a11y sweep (zero axe violations), SEO gate (sitemap/robots), API body/list caps with proper 413s, review-query optimization, 200-resume load test.
 - ✅ **Private beta** — live at [hirelens-rosy.vercel.app](https://hirelens-rosy.vercel.app); inviting 5–10 real recruiters, fixing what they actually hit, feature freeze.
 - ✅ **v1.0.0 launch** — tagged release, GHCR images, [`hirelens` on npm](https://www.npmjs.com/package/hirelens).
-- **Post-launch** — RAG Q&A over resumes (pgvector embeddings + hybrid retrieval — the schema ships today), rubric editor UI, compare view, scheduled audits.
+- ✅ **Post-launch waves 1–4** — recruiter essentials (resume viewer, contacts, job lifecycle, org settings), semantic search + rubric editor + compare view, teams/sharing (members, public report links, audit CSV), interview kits + candidate portal.
+- **Next (v1.1)** — skill-graph adjacency, richer analytics dashboards, scheduled audits, AI-content detection. See the [site roadmap](https://hirelens-rosy.vercel.app/roadmap).
 
 Follow along in [Issues](https://github.com/abhay-yemekar/hirelens/issues).
 

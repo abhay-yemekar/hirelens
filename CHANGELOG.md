@@ -4,6 +4,28 @@ All notable changes to HireLens are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning is
 [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Interview kits** — printable debrief pack per scored candidate: probe
+  questions derived from the rubric's anchored 0–5 scale, awarded/next-level
+  anchors, and the evidence quotes as a listen-for list. JSON + standalone
+  HTML; deterministic (no extra LLM call); exports are audit-logged.
+- **Candidate portal** — one-shot, token-gated links (`/portal/[token]`) let
+  candidates opt in to a demographics self-report without an account. The
+  page states the data policy before any input; submissions feed the same
+  isolated demographics table the bias audit reads; create/submit/revoke are
+  hash-chain audited; links revoke instantly and never replay after submit.
+- **API surface** — four new endpoints documented in the live OpenAPI 3.1
+  contract (kit JSON/HTML export, portal create/revoke, public invite/submit).
+
+### Changed
+
+- Roadmap and README updated: the four post-launch waves (recruiter
+  essentials, semantic search + rubric editor + compare view, teams &
+  sharing, interview kits + portal) are shipped and documented.
+
 ## [1.0.0] — 2026-09-18
 
 First public release. 🎉

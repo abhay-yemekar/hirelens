@@ -12,6 +12,13 @@ const NOW = [
   "Review workflow: ranked queue, required-reason decisions, blind review, score overrides",
   "Adverse-impact bias audit with the four-fifths rule and opt-in self-reported demographics",
   "Tamper-evident hash-chained audit log of every run, override, and decision",
+  "Semantic search & ask over resumes (pgvector) with server-verified citations",
+  "Rubric editor: criteria, weights, anchored scales, versions, AI draft",
+  "Interview kits: printable debrief packs with probes, anchors, and the evidence behind every score",
+  "Candidate portal: one-shot opt-in demographics self-report links",
+  "Team seats: invite, roles (owner / recruiter / hiring manager / viewer), pending-invite management",
+  "Shareable scored reports (public read-only link, instant revoke, view counts) + hash-chain-verified audit CSV export",
+  "Compare view: 2–3 candidates side-by-side on one scoring run",
   "Eval harness: direction accuracy, self-consistency, position bias, name-swap bias — in CI",
   "Public REST API with a live OpenAPI 3.1 contract; zero-dependency CLI",
   "One-command self-host via Docker Compose; local Ollama mode",
@@ -50,11 +57,11 @@ const NEXT = [
 const LATER = [
   {
     version: "v1.1 — Nov 2026",
-    text: "Interview kit generation, skill-graph adjacency, richer analytics, Postgres full-text search",
+    text: "Skill-graph adjacency, richer analytics dashboards, scheduled audits, AI-content detection",
   },
   {
     version: "v1.2 — Jan 2027",
-    text: "ATS integrations (Greenhouse, Lever, Ashby), candidate transparency portal, rubric marketplace UI, AI-content detection",
+    text: "ATS integrations (Greenhouse, Lever, Ashby), rubric marketplace UI, e-sign decision records",
   },
   { version: "v1.3 — Mar 2027", text: "i18n, SSO/SAML, advanced RBAC" },
   {
