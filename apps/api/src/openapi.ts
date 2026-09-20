@@ -132,6 +132,7 @@ export const openApiDocument = {
     { name: "Scoring" },
     { name: "Review" },
     { name: "Bias audit" },
+    { name: "Sharing" },
   ],
   components: {
     securitySchemes: {
@@ -675,6 +676,96 @@ export const openApiDocument = {
           }),
           404: errorResponse,
           503: errorResponse,
+        },
+      },
+    },
+
+    "/api/jobs/{jobId}/share": {
+      get: {
+        tags: ["Sharing"],
+        summary: "List the job's public report links (token itself is never listed).",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        responses: {
+          200: ok({
+            type: "object",
+            properties: { links: { type: "array", items: { type: "object" } } },
+          }),
+          404: errorResponse,
+        },
+      },
+      post: {
+        tags: ["Sharing"],
+        summary:
+          "Create a public, read-only report link. The full URL (with token) is returned exactly once. Requires recruiter or owner; audit-logged.",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        requestBody: jsonBody({ type: "object", properties: { title: { type: "string" } } }),
+        responses: {
+          201: ok({
+            type: "object",
+            properties: {
+              link: {
+                type: "object",
+                properties: {
+                  id: { type: "string", format: "uuid" },
+                  token: { type: "string", description: "Opaque token; shown only here." },
+                },
+              },
+            },
+          }),
+          404: errorResponse,
+        },
+      },
+    },
+    "/api/jobs/{jobId}/share/{linkId}": {
+      delete: {
+        tags: ["Sharing"],
+        summary: "Revoke a public report link — takes effect on the next request. Audit-logged.",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          {
+            name: "linkId",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        responses: { 200: ok({ type: "object" }), 404: errorResponse },
+      },
+    },
+    "/api/share/{token}": {
+      get: {
+        tags: ["Sharing"],
+        summary: "Public report behind a share token (no auth — the token is the credential).",
+        description:
+          "Shareable projection only: labels, overalls, criterion scores and rationales. Never contact info, demographics, or resume files. 410 when revoked; 404 `no_report` when nothing scored yet. Counts a read for the owner.",
+        parameters: [{ name: "token", in: "path", required: true, schema: { type: "string" } }],
+        security: [],
+        responses: {
+          200: ok({ type: "object", properties: { report: { type: "object" } } }),
+          404: errorResponse,
+          410: errorResponse,
+        },
+      },
+    },
+    "/api/jobs/{jobId}/audit-export.csv": {
+      get: {
+        tags: ["Sharing"],
+        summary: "Hash-chained audit log for this job as CSV, with per-row chain verification.",
+        description:
+          "Each row recomputes its linkage hash so a reviewer can verify the chain outside the product. `chain_valid` is `yes`/`NO`.",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        responses: {
+          200: {
+            description: "CSV attachment.",
+            content: { "text/csv": { schema: { type: "string" } } },
+          },
+          404: errorResponse,
         },
       },
     },

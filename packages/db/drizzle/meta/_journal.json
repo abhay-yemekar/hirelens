@@ -22,6 +22,20 @@
       "when": 1789732889358,
       "tag": "0002_lucky_tag",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789815373403,
+      "tag": "0003_striped_marvel_boy",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789816261718,
+      "tag": "0004_lonely_dagger",
+      "breakpoints": true
     }
   ]
 }

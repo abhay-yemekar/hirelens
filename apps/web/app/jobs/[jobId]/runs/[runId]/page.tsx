@@ -9,6 +9,8 @@ import { NoticeBanner } from "@/components/notice-banner";
 import { getCandidate, getRun, type RunCandidate } from "@/lib/api";
 import { candidateLabel, cap, fileLabel, modelLabel } from "@/lib/format";
 
+import { SharePanel } from "./share-panel";
+
 interface Span {
   start: number;
   end: number;
@@ -298,6 +300,8 @@ export default function RunPage() {
         </header>
 
         {error ? <NoticeBanner error={error} /> : null}
+
+        <SharePanel jobId={jobId} />
 
         {compareMode && compare.length >= 2 ? (
           <CompareTable

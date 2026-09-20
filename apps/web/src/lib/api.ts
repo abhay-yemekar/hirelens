@@ -397,3 +397,60 @@ export const runBiasAudit = (
     body: JSON.stringify(body),
     ...init,
   });
+
+/* ---------- Sharing (Wave 3) ---------- */
+
+export interface ShareLinkRow {
+  id: string;
+  title: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+  readCount: number;
+}
+
+export const listShareLinks = (
+  jobId: string,
+  init?: RequestInit & { serverCookie?: string | null },
+) => apiFetch<{ ok: true; links: ShareLinkRow[] }>(`/api/jobs/${jobId}/share`, { ...init });
+
+export const createShareLink = (
+  jobId: string,
+  body: { title?: string },
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{ ok: true; link: { id: string; token: string; createdAt: string } }>(
+    `/api/jobs/${jobId}/share`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+      ...init,
+    },
+  );
+
+export const revokeShareLink = (
+  jobId: string,
+  linkId: string,
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{ ok: true }>(`/api/jobs/${jobId}/share/${linkId}`, {
+    method: "DELETE",
+    ...init,
+  });
+
+export interface PublicShareReport {
+  jobTitle: string;
+  linkTitle: string | null;
+  rubricVersion: number;
+  modelId: string;
+  finishedAt: string | null;
+  candidates: Array<{
+    candidateId: string;
+    label: string | null;
+    overall: number;
+    criteria: Array<{ criterionKey: string; score: number; rationale: string | null }>;
+  }>;
+}
+
+export const fetchPublicReport = (token: string) =>
+  fetch(`/api/share/${token}`, { headers: { accept: "application/json" } });

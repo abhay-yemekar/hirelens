@@ -249,6 +249,15 @@ export default function JobDetailPage() {
                   <Pencil aria-hidden className="mr-1.5 h-3.5 w-3.5" />
                   Edit
                 </Button>
+                <a
+                  href={`/api/jobs/${jobId}/audit-export.csv`}
+                  download
+                  title="Download the hash-chained audit log for this job as CSV"
+                  className="inline-flex h-8 items-center rounded-[var(--radius-control)] border px-3 text-sm font-medium transition-colors hover:bg-[var(--hl-ink-3)]"
+                  style={{ borderColor: "var(--hl-border)", color: "var(--hl-mist)" }}
+                >
+                  Export audit
+                </a>
                 {job.status !== "closed" && (
                   <Button
                     variant="outline"

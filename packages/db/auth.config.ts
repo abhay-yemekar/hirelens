@@ -1,6 +1,7 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { betterAuth } from "better-auth";
 import { organization } from "better-auth/plugins";
+import { createAccessControl } from "better-auth/plugins/access";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as authSchema from "./auth-schema.js";
@@ -8,6 +9,15 @@ import * as authSchema from "./auth-schema.js";
 const pool = new Pool({
   connectionString:
     process.env["DATABASE_URL"] ?? "postgres://postgres:postgres@localhost:5433/hirelens",
+});
+
+// HireLens access statements — shared by every role definition below.
+const ac = createAccessControl({
+  organization: ["update", "delete"],
+  member: ["create", "update", "delete"],
+  invitation: ["create", "cancel"],
+  team: ["create", "update", "delete"],
+  ac: ["create", "read", "update", "delete"],
 });
 
 export const auth = betterAuth({
@@ -46,5 +56,42 @@ export const auth = betterAuth({
       enabled: Boolean(process.env["GOOGLE_CLIENT_ID"] && process.env["GOOGLE_CLIENT_SECRET"]),
     },
   },
-  plugins: [organization()],
+  plugins: [
+    organization({
+      // HireLens role hierarchy (mirrors apps/api ROLE_RANK). Registered so
+      // invites/role-changes validate: better-auth only accepts roles it
+      // knows about (its defaults are admin/member/owner).
+      ac: ac,
+      roles: {
+        owner: ac.newRole({
+          organization: ["update", "delete"],
+          member: ["create", "update", "delete"],
+          invitation: ["create", "cancel"],
+          team: ["create", "update", "delete"],
+          ac: ["create", "read", "update", "delete"],
+        }),
+        recruiter: ac.newRole({
+          organization: ["update"],
+          member: ["create"],
+          invitation: ["create", "cancel"],
+          team: [],
+          ac: ["read"],
+        }),
+        hiring_manager: ac.newRole({
+          organization: [],
+          member: [],
+          invitation: [],
+          team: [],
+          ac: ["read"],
+        }),
+        viewer: ac.newRole({
+          organization: [],
+          member: [],
+          invitation: [],
+          team: [],
+          ac: ["read"],
+        }),
+      },
+    }),
+  ],
 });
