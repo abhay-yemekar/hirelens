@@ -53,6 +53,9 @@ function friendlyFailure(error: string): string {
       : error;
 }
 
+/** Rows per page for the candidates table — matches the API default. */
+const CANDIDATES_PAGE_SIZE = 25;
+
 export default function JobDetailPage() {
   const params = useParams<{ jobId: string }>();
   const jobId = params.jobId;
@@ -65,11 +68,28 @@ export default function JobDetailPage() {
   const [job, setJob] = useState<Job | null>(null);
   const [rubrics, setRubrics] = useState<RubricVersion[]>([]);
   const [candidates, setCandidates] = useState<CandidateRow[]>([]);
+  /** True total across all pages — shown in the header and pagination. */
+  const [candidateTotal, setCandidateTotal] = useState(0);
+  const [candPage, setCandPage] = useState(1);
+  /** Committed (debounced) search query sent to the server. */
+  const [candQuery, setCandQuery] = useState("");
+  /** What the user is typing — committed after 350 ms. */
+  const [searchInput, setSearchInput] = useState("");
   const [runs, setRuns] = useState<RunRow[]>([]);
   const [error, setError] = useState<unknown>(null);
   const [zipSummary, setZipSummary] = useState<ZipSummary | null>(null);
   const [scoreSummary, setScoreSummary] = useState<ScoreSummary | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+
+  // Debounce search: typing pauses 350 ms before the query hits the server,
+  // and a new search always restarts at page 1.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setCandQuery(searchInput.trim());
+      setCandPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const load = useCallback(async () => {
     setError(null);
@@ -77,17 +97,22 @@ export default function JobDetailPage() {
       const [j, r, c, rn] = await Promise.all([
         getJob(jobId),
         listRubrics(jobId),
-        listCandidates(jobId),
+        listCandidates(jobId, {
+          page: candPage,
+          pageSize: CANDIDATES_PAGE_SIZE,
+          q: candQuery || undefined,
+        }),
         listRuns(jobId),
       ]);
       setJob(j.job);
       setRubrics(r.rubrics);
       setCandidates(c.candidates);
+      setCandidateTotal(c.total);
       setRuns(rn.runs);
     } catch (err) {
       setError(err);
     }
-  }, [jobId]);
+  }, [jobId, candPage, candQuery]);
 
   useEffect(() => {
     void load();
@@ -184,7 +209,9 @@ export default function JobDetailPage() {
     });
   }
 
-  const latestRubricVersion = rubrics[rubrics.length - 1]?.version;
+  // Rubrics arrive newest-first from the API — index 0 is the active
+  // version scoring will use (the pills in the rubric card show the same).
+  const latestRubricVersion = rubrics[0]?.version;
   const scoreBlocker =
     rubrics.length === 0
       ? "Add a rubric first — use the demo rubric above to get started"
@@ -364,7 +391,7 @@ export default function JobDetailPage() {
         <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
           <CardHeader>
             <CardTitle style={{ color: "var(--hl-cream)" }}>
-              Candidates ({candidates.length})
+              Candidates ({candidateTotal})
             </CardTitle>
             <CardDescription style={{ color: "var(--hl-mist)" }}>
               Upload resumes one by one, or zip them all together. Duplicates are skipped
@@ -411,116 +438,204 @@ export default function JobDetailPage() {
                 .
               </div>
             )}{" "}
-            {candidates.length > 0 && (
+            {/* Search — debounced server-side identity search (name/email/phone). */}
+            {candidateTotal > 0 || searchInput.length > 0 ? (
+              <input
+                type="search"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search candidates by name, email, or phone…"
+                aria-label="Search candidates by name, email, or phone"
+                className="w-full max-w-md rounded-[var(--radius-control)] border px-3 py-2 text-sm text-[var(--hl-cream)] placeholder:text-[var(--hl-muted)] focus:border-[var(--hl-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--hl-accent-soft)]"
+                style={{ borderColor: "var(--hl-border)", background: "var(--hl-input)" }}
+              />
+            ) : null}
+            {candidates.length > 0 ? (
               <div
-                className="overflow-hidden rounded-[var(--radius-card)] border"
+                className="overflow-x-auto rounded-[var(--radius-card)] border"
                 style={{ borderColor: "var(--hl-border)" }}
               >
-                <ul className="divide-y divide-[var(--hl-border)] text-sm">
-                  {candidates.map((c) => {
-                    const pages = pagesLabel(c.pageCount);
-                    const uploaded = timeAgo(c.createdAt);
-                    return (
-                      <li
-                        key={c.id}
-                        className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-white/[0.03]"
-                      >
-                        <FileText
-                          aria-hidden
-                          className="h-4 w-4 flex-none"
-                          style={{ color: "var(--hl-muted)" }}
-                        />
-                        <span
-                          className="min-w-0 flex-1 truncate text-[14px] font-medium"
-                          style={{ color: "var(--hl-cream)" }}
-                          title={
-                            fileLabel(c.sourceFileKey) ?? candidateLabel(c.id, c.sourceFileKey)
-                          }
-                        >
-                          {candidateLabel(c.id, c.sourceFileKey)}
-                        </span>
-                        {c.contactEmail ? (
-                          <button
-                            type="button"
-                            onClick={() => void navigator.clipboard.writeText(c.contactEmail ?? "")}
-                            className="hidden min-w-0 max-w-[15rem] truncate flex-none text-xs underline-offset-2 hover:underline sm:inline"
-                            style={{ color: "var(--hl-mist)" }}
-                            title={`Copy email — ${c.contactEmail}`}
-                          >
-                            {c.contactEmail}
-                          </button>
-                        ) : (
-                          <span
-                            className="hidden flex-none text-xs sm:inline"
-                            style={{ color: "var(--hl-muted)" }}
-                          >
-                            —
-                          </span>
-                        )}
-                        {c.contactPhone ? (
-                          <button
-                            type="button"
-                            onClick={() => void navigator.clipboard.writeText(c.contactPhone ?? "")}
-                            className="hidden flex-none text-xs underline-offset-2 hover:underline md:inline"
-                            style={{ color: "var(--hl-mist)" }}
-                            title={`Copy phone — ${c.contactPhone}`}
-                          >
-                            {c.contactPhone}
-                          </button>
-                        ) : (
-                          <span
-                            className="hidden flex-none text-xs md:inline"
-                            style={{ color: "var(--hl-muted)" }}
-                          >
-                            —
-                          </span>
-                        )}
-                        {pages && (
-                          <span
-                            className="hidden flex-none text-xs lg:inline"
-                            style={{ color: "var(--hl-muted)" }}
-                          >
-                            {pages}
-                          </span>
-                        )}
-                        <span
-                          className="hidden flex-none text-xs sm:inline"
-                          style={{ color: "var(--hl-muted)" }}
-                          title={`Uploaded ${new Date(c.createdAt).toLocaleString()}`}
-                        >
-                          {uploaded}
-                        </span>
-                        <a
-                          href={`/api/jobs/${jobId}/candidates/${c.id}/resume`}
-                          target="_blank"
-                          rel="noreferrer"
-                          aria-label={`View original resume — ${candidateLabel(c.id, c.sourceFileKey)}`}
-                          title="View the original resume"
-                          className="flex-none rounded-md border p-1.5 transition-colors hover:bg-white/[0.06] active:bg-white/[0.1]"
-                          style={{ borderColor: "var(--hl-border)", color: "var(--hl-mist)" }}
-                        >
-                          <Eye aria-hidden className="h-4 w-4" />
-                        </a>
-                        <button
-                          type="button"
-                          onClick={() => removeCandidate(c)}
-                          disabled={busy !== null}
-                          aria-label={`Remove ${candidateLabel(c.id, c.sourceFileKey)}`}
-                          title="Remove this resume and its scores (recorded in the audit log)"
-                          className="flex-none rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-white/[0.06] active:bg-white/[0.1] disabled:opacity-40"
+                <table className="w-full min-w-[720px] border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b" style={{ borderColor: "var(--hl-border)" }}>
+                      {["Candidate", "Email", "Phone", "Pages", "Uploaded", ""].map((h, i) => (
+                        <th
+                          key={h || "actions"}
+                          className={`px-4 py-2.5 text-xs font-medium whitespace-nowrap ${
+                            i === 0 ? "text-left" : i >= 5 ? "text-right" : "text-left"
+                          }`}
                           style={{
-                            borderColor: "color-mix(in oklab, var(--hl-bad) 45%, transparent)",
-                            color: "var(--hl-bad)",
+                            color: "var(--color-fg-muted)",
+                            borderColor: "var(--hl-border)",
                           }}
                         >
-                          Remove
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {candidates.map((c) => {
+                      const pages = pagesLabel(c.pageCount);
+                      const uploaded = timeAgo(c.createdAt);
+                      return (
+                        <tr
+                          key={c.id}
+                          className="border-b transition-colors hover:bg-white/[0.03]"
+                          style={{ borderColor: "var(--hl-border)" }}
+                        >
+                          <td className="max-w-[18rem] px-4 py-2.5">
+                            <span className="flex min-w-0 items-center gap-2.5">
+                              <FileText
+                                aria-hidden
+                                className="h-4 w-4 flex-none"
+                                style={{ color: "var(--hl-muted)" }}
+                              />
+                              <span
+                                className="min-w-0 truncate text-[14px] font-medium"
+                                style={{ color: "var(--hl-cream)" }}
+                                title={
+                                  fileLabel(c.sourceFileKey) ??
+                                  candidateLabel(c.id, c.sourceFileKey)
+                                }
+                              >
+                                {candidateLabel(c.id, c.sourceFileKey)}
+                              </span>
+                            </span>
+                          </td>
+                          <td className="max-w-[16rem] px-4 py-2.5">
+                            {c.contactEmail ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void navigator.clipboard.writeText(c.contactEmail ?? "")
+                                }
+                                className="max-w-full truncate text-xs underline-offset-2 hover:underline"
+                                style={{ color: "var(--hl-mist)" }}
+                                title={`Copy email — ${c.contactEmail}`}
+                              >
+                                {c.contactEmail}
+                              </button>
+                            ) : (
+                              <span className="text-xs" style={{ color: "var(--hl-muted)" }}>
+                                —
+                              </span>
+                            )}
+                          </td>
+                          <td className="max-w-[12rem] px-4 py-2.5">
+                            {c.contactPhone ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void navigator.clipboard.writeText(c.contactPhone ?? "")
+                                }
+                                className="text-xs underline-offset-2 hover:underline"
+                                style={{ color: "var(--hl-mist)" }}
+                                title={`Copy phone — ${c.contactPhone}`}
+                              >
+                                {c.contactPhone}
+                              </button>
+                            ) : (
+                              <span className="text-xs" style={{ color: "var(--hl-muted)" }}>
+                                —
+                              </span>
+                            )}
+                          </td>
+                          <td
+                            className="whitespace-nowrap px-4 py-2.5 text-xs tabular-nums"
+                            style={{ color: "var(--hl-muted)" }}
+                          >
+                            {pages ?? "—"}
+                          </td>
+                          <td
+                            className="whitespace-nowrap px-4 py-2.5 text-xs"
+                            style={{ color: "var(--hl-muted)" }}
+                            title={`Uploaded ${new Date(c.createdAt).toLocaleString()}`}
+                          >
+                            {uploaded}
+                          </td>
+                          <td className="px-4 py-2.5 text-right">
+                            <span className="flex flex-nowrap items-center justify-end gap-1.5">
+                              <a
+                                href={`/api/jobs/${jobId}/candidates/${c.id}/resume`}
+                                target="_blank"
+                                rel="noreferrer"
+                                aria-label={`View original resume — ${candidateLabel(c.id, c.sourceFileKey)}`}
+                                title="View the original resume"
+                                className="flex-none rounded-md border p-1.5 transition-colors hover:bg-white/[0.06] active:bg-white/[0.1]"
+                                style={{ borderColor: "var(--hl-border)", color: "var(--hl-mist)" }}
+                              >
+                                <Eye aria-hidden className="h-4 w-4" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => removeCandidate(c)}
+                                disabled={busy !== null}
+                                aria-label={`Remove ${candidateLabel(c.id, c.sourceFileKey)}`}
+                                title="Remove this resume and its scores (recorded in the audit log)"
+                                className="flex-none rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-white/[0.06] active:bg-white/[0.1] disabled:opacity-40"
+                                style={{
+                                  borderColor:
+                                    "color-mix(in oklab, var(--hl-bad) 45%, transparent)",
+                                  color: "var(--hl-bad)",
+                                }}
+                              >
+                                Remove
+                              </button>
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {candQuery.length > 0 && candidates.length === 0 ? (
+                  <p className="px-4 py-6 text-center text-sm" style={{ color: "var(--hl-muted)" }}>
+                    No candidates match “{candQuery}”. Try a different name, email, or phone.
+                  </p>
+                ) : null}
               </div>
-            )}
+            ) : candQuery.length > 0 ? (
+              <p className="text-sm" style={{ color: "var(--hl-muted)" }}>
+                No candidates match “{candQuery}”. Try a different name, email, or phone.
+              </p>
+            ) : null}
+            {/* Pagination — server-side; total comes from the API. */}
+            {candidateTotal > CANDIDATES_PAGE_SIZE ? (
+              <div
+                className="flex flex-wrap items-center justify-between gap-2 pt-1 text-sm"
+                style={{ color: "var(--hl-mist)" }}
+              >
+                <span className="text-xs">
+                  Showing {(candPage - 1) * CANDIDATES_PAGE_SIZE + 1}–
+                  {Math.min(candPage * CANDIDATES_PAGE_SIZE, candidateTotal)} of {candidateTotal}
+                </span>
+                <span className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={candPage <= 1 || busy !== null}
+                    onClick={() => setCandPage((p) => Math.max(1, p - 1))}
+                  >
+                    ← Prev
+                  </Button>
+                  <span className="text-xs tabular-nums">
+                    Page {candPage} of{" "}
+                    {Math.max(1, Math.ceil(candidateTotal / CANDIDATES_PAGE_SIZE))}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={
+                      candPage >= Math.ceil(candidateTotal / CANDIDATES_PAGE_SIZE) || busy !== null
+                    }
+                    onClick={() => setCandPage((p) => p + 1)}
+                  >
+                    Next →
+                  </Button>
+                </span>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 

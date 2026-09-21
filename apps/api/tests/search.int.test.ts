@@ -109,7 +109,7 @@ describe.skipIf(!available && allowSkip)("search & ask", () => {
     expect(body.total).toBe(1);
     expect(body.hits).toHaveLength(1);
     expect(body.hits[0]?.label).toBe("jordan");
-    expect(body.hits[0]!.score).toBeGreaterThan(0);
+    expect(body.hits[0]?.score).toBeGreaterThan(0);
 
     // No indexer configured → backfill explains what to set.
     const idx = await app.request(`/api/jobs/${job.id}/index`, {
