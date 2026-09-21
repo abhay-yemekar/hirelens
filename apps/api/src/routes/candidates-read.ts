@@ -1,5 +1,5 @@
 import { candidates, decisions, documents } from "@hirelens/db";
-import { desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 import { Hono } from "hono";
 import { blindView } from "../blind.js";
 import type { AppEnv } from "../types.js";
@@ -9,12 +9,39 @@ import { loadOrgJob } from "./jobs.js";
 export function candidateReadRoutes(): Hono<AppEnv> {
   const routes = new Hono<AppEnv>();
 
-  /** List candidates for the job (no raw text — that is the detail endpoint). */
+  /**
+   * List candidates for the job (no raw text — that is the detail endpoint).
+   * Paginated (server-side; the UI never fetches the whole corpus) with an
+   * optional `q` search across uploaded filename, email, and phone — the
+   * "find one person out of hundreds" path. Content search lives on /search.
+   */
   routes.get("/", async (c) => {
     const db = c.get("db");
     const auth = c.get("auth");
     const job = await loadOrgJob(db, c.req.param("jobId"), auth.orgId);
     if (!job) return c.json({ ok: false, error: "not_found" }, 404);
+
+    const page = Math.max(1, Number(c.req.query("page") ?? 1) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(c.req.query("pageSize") ?? 25) || 25));
+    // Blind mode never filters by identity: matching rows would confirm a
+    // candidate with that name/email exists, which is itself a leak.
+    const blind = c.req.query("blind") === "1";
+    const q = blind ? "" : (c.req.query("q") ?? "").trim().slice(0, 200);
+
+    const filters = [eq(candidates.jobId, job.id)];
+    if (q.length > 0) {
+      const like = `%${q}%`;
+      const match = or(
+        ilike(candidates.sourceFileKey, like),
+        ilike(candidates.contactEmail, like),
+        ilike(candidates.contactPhone, like),
+      );
+      if (match) filters.push(match);
+    }
+    const condition = filters.length === 1 ? filters[0] : and(...filters);
+
+    const totalRows = await db.select({ total: count() }).from(candidates).where(condition);
+    const total = totalRows[0]?.total ?? 0;
 
     const rows = await db
       .select({
@@ -28,16 +55,16 @@ export function candidateReadRoutes(): Hono<AppEnv> {
       })
       .from(candidates)
       .leftJoin(documents, eq(documents.candidateId, candidates.id))
-      .where(eq(candidates.jobId, job.id))
+      .where(condition)
       .orderBy(desc(candidates.createdAt))
-      .limit(500); // hard page cap (§Day 19); UI batches via zip summaries
-    // Blind review is opt-in per request; the list masks contact info and
-    // filenames when set (the review queue drives it with ?blind=1).
-    const blind = c.req.query("blind") === "1";
+      .limit(pageSize)
+      .offset((page - 1) * pageSize);
+    // Blind review masks contact info and filenames (the review queue
+    // drives it with ?blind=1).
     const out = blind
       ? rows.map((r) => ({ ...r, sourceFileKey: null, contactEmail: null, contactPhone: null }))
       : rows;
-    return c.json({ ok: true, candidates: out });
+    return c.json({ ok: true, candidates: out, total, page, pageSize });
   });
 
   /** Candidate detail: parsed profile + full document text + decisions. */

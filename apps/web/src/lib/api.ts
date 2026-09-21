@@ -233,11 +233,32 @@ export const indexJobResumes = (
     ...init,
   });
 
+/** Server-side pagination + identity search for the candidates table. */
+export interface CandidateListParams {
+  page?: number | undefined;
+  pageSize?: number | undefined;
+  /** Search uploaded filename, email, and phone (server-side ILIKE). */
+  q?: string | undefined;
+}
+
 export const listCandidates = (
   jobId: string,
+  params: CandidateListParams = {},
   init?: RequestInit & { serverCookie?: string | null },
-) =>
-  apiFetch<{ ok: true; candidates: CandidateRow[] }>(`/api/jobs/${jobId}/candidates`, { ...init });
+) => {
+  const search = new URLSearchParams();
+  if (params.page && params.page > 1) search.set("page", String(params.page));
+  if (params.pageSize && params.pageSize !== 25) search.set("pageSize", String(params.pageSize));
+  if (params.q && params.q.trim().length > 0) search.set("q", params.q.trim());
+  const qs = search.toString();
+  return apiFetch<{
+    ok: true;
+    candidates: CandidateRow[];
+    total: number;
+    page: number;
+    pageSize: number;
+  }>(`/api/jobs/${jobId}/candidates${qs ? `?${qs}` : ""}`, { ...init });
+};
 
 export const deleteCandidate = (
   jobId: string,

@@ -10,7 +10,7 @@ import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { requireAuth } from "./auth.js";
 import { ApiInputError } from "./errors.js";
-import { createIndexer, type HireLensIndexer } from "./indexing.js";
+import type { HireLensIndexer } from "./indexing.js";
 import { requestLogging } from "./middleware.js";
 import { captureException } from "./observability.js";
 import { openApiDocument } from "./openapi.js";

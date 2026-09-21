@@ -22,7 +22,6 @@ import { and, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { ROLE_MIN, requireAuth } from "../auth.js";
-import { ApiInputError } from "../errors.js";
 import { readJson } from "../http.js";
 import { labelFromFileKey } from "../labels.js";
 import type { AppEnv } from "../types.js";
