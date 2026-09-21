@@ -43,6 +43,13 @@
       "when": 1789914654258,
       "tag": "0005_red_malice",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789976658568,
+      "tag": "0006_simple_sumo",
+      "breakpoints": true
     }
   ]
 }

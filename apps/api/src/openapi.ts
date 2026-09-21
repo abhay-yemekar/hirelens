@@ -853,6 +853,80 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/jobs/{jobId}/candidates/{candidateId}/report": {
+      get: {
+        tags: ["Candidate report"],
+        summary: "List this candidate's report links (read counts, revocation state).",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          {
+            name: "candidateId",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        responses: { 200: ok({ type: "object" }), 404: errorResponse },
+      },
+      post: {
+        tags: ["Candidate report"],
+        summary:
+          "Create a candidate report link (token shown once; supersedes earlier active links).",
+        description:
+          "Requires at least one completed scoring run for the job (409 otherwise). The link lets the candidate see their own scores + evidence without an account.",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          {
+            name: "candidateId",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        requestBody: jsonBody({
+          type: "object",
+          properties: { message: { type: "string", maxLength: 500 } },
+        }),
+        responses: { 201: ok({ type: "object" }), 404: errorResponse, 409: errorResponse },
+      },
+    },
+    "/api/jobs/{jobId}/candidates/{candidateId}/report/{linkId}": {
+      delete: {
+        tags: ["Candidate report"],
+        summary: "Revoke a candidate report link (instant).",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          {
+            name: "candidateId",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+          {
+            name: "linkId",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        responses: { 200: ok({ type: "object" }), 404: errorResponse },
+      },
+    },
+    "/api/report/{token}": {
+      get: {
+        tags: ["Candidate report"],
+        summary: "Public candidate report (no auth — the token is the credential).",
+        description:
+          "The candidate's own outcome: per-criterion scores with quoted evidence, anchored scale, overall band, optional recruiter note. No contact info, files, or other candidates. 410 revoked.",
+        parameters: [{ name: "token", in: "path", required: true, schema: { type: "string" } }],
+        security: [],
+        responses: {
+          200: ok({ type: "object", properties: { report: { type: "object" } } }),
+          404: errorResponse,
+          410: errorResponse,
+        },
+      },
+    },
     "/api/jobs/{jobId}/audit-export.csv": {
       get: {
         tags: ["Sharing"],

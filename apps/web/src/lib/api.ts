@@ -260,6 +260,53 @@ export const listCandidates = (
   }>(`/api/jobs/${jobId}/candidates${qs ? `?${qs}` : ""}`, { ...init });
 };
 
+// ---------- candidate report (v1.1 — candidate-side transparency) ----------
+
+export interface CandidateReportLinkRow {
+  id: string;
+  message: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+  readCount: number;
+}
+
+export const listReportLinks = (
+  jobId: string,
+  candidateId: string,
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{ ok: true; links: CandidateReportLinkRow[] }>(
+    `/api/jobs/${jobId}/candidates/${candidateId}/report`,
+    { ...init },
+  );
+
+export const createReportLink = (
+  jobId: string,
+  candidateId: string,
+  body: { message?: string | undefined } = {},
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{ ok: true; link: { id: string; token: string; createdAt: string } }>(
+    `/api/jobs/${jobId}/candidates/${candidateId}/report`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+      ...init,
+    },
+  );
+
+export const revokeReportLink = (
+  jobId: string,
+  candidateId: string,
+  linkId: string,
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{ ok: true }>(`/api/jobs/${jobId}/candidates/${candidateId}/report/${linkId}`, {
+    method: "DELETE",
+    ...init,
+  });
+
 export const deleteCandidate = (
   jobId: string,
   candidateId: string,
