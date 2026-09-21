@@ -15,6 +15,7 @@ import { requestLogging } from "./middleware.js";
 import { captureException } from "./observability.js";
 import { openApiDocument } from "./openapi.js";
 import { biasAuditRoutes, demographicsRoutes } from "./routes/bias.js";
+import { candidateReportRoutes, publicCandidateReportRoutes } from "./routes/candidate-report.js";
 import { candidateReadRoutes } from "./routes/candidates-read.js";
 import { jobsRoutes } from "./routes/jobs.js";
 import { reviewRoutes } from "./routes/review.js";
@@ -126,6 +127,7 @@ export function createApp(deps: AppDeps) {
   // not intercept these reads).
   app.route("/api", publicShareRoutes());
   app.route("/api", publicPortalRoutes());
+  app.route("/api", publicCandidateReportRoutes());
 
   // Authenticated, org-scoped API surface.
   const protectedApi = new Hono<AppEnv>();
@@ -139,6 +141,7 @@ export function createApp(deps: AppDeps) {
   protectedApi.route("/jobs/:jobId", searchRoutes());
   protectedApi.route("/jobs/:jobId", sharingRoutes());
   protectedApi.route("/jobs/:jobId/portal", portalRoutes());
+  protectedApi.route("/jobs/:jobId/candidates", candidateReportRoutes());
   protectedApi.route("/jobs/:jobId", interviewKitRoutes());
   protectedApi.route("/jobs/:jobId", auditExportRoutes());
   protectedApi.route("/jobs", jobsRoutes());
