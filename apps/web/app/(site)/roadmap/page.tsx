@@ -17,6 +17,7 @@ const NOW = [
   "Interview kits: printable debrief packs with probes, anchors, and the evidence behind every score",
   "Candidate portal: one-shot opt-in demographics self-report links",
   "Team seats: invite, roles (owner / recruiter / hiring manager / viewer), pending-invite management",
+  "Candidates table: server-side pagination (25/page) and identity search across name, email, and phone",
   "Shareable scored reports (public read-only link, instant revoke, view counts) + hash-chain-verified audit CSV export",
   "Compare view: 2–3 candidates side-by-side on one scoring run",
   "Eval harness: direction accuracy, self-consistency, position bias, name-swap bias — in CI",
@@ -27,29 +28,12 @@ const NOW = [
 
 const NEXT = [
   {
-    title: "Hardening — before v1.0",
+    title: "In progress — launch window (Sept–Oct 2026)",
     items: [
-      "Deeper input validation and rate limiting beyond the demo endpoint",
-      "Accessibility pass against WCAG 2.2 AA across the product UI",
-      "Load test a 200-resume batch end to end",
-      "Lighthouse ≥ 95 on performance, a11y, best practices, SEO",
-    ],
-  },
-  {
-    title: "Private beta",
-    items: [
-      "5–10 real recruiters screen a real job with HireLens",
-      "Fix what they actually hit — not what we guess they will",
-      "Feature freeze; polish only",
-    ],
-  },
-  {
-    title: "Launch — v1.0.0, 30 September 2026",
-    items: [
-      "Tag v1.0.0 + GitHub Release generated from Conventional Commits",
-      "Multi-arch container images on GHCR (amd64 + arm64)",
-      "npx hirelens on npm",
-      "10+ stocked good-first-issues for new contributors",
+      "v1.0.0 tagged with GitHub Release, CHANGELOG, and GHCR images (done)",
+      "npx hirelens CLI published on npm (done)",
+      "Private beta with real recruiters — feedback drives the polish list",
+      "Launch posts: Product Hunt and Show HN (drafted in docs/launch-kit.md)",
     ],
   },
 ];
@@ -57,11 +41,11 @@ const NEXT = [
 const LATER = [
   {
     version: "v1.1 — Nov 2026",
-    text: "Skill-graph adjacency, richer analytics dashboards, scheduled audits, AI-content detection",
+    text: "Candidate report — recruiters share an evidence-backed, read-only score report with each candidate through the portal link (transparent screening nobody else offers), plus skill-graph adjacency and analytics dashboards",
   },
   {
     version: "v1.2 — Jan 2027",
-    text: "ATS integrations (Greenhouse, Lever, Ashby), rubric marketplace UI, e-sign decision records",
+    text: "ATS integrations (Greenhouse, Lever, Ashby), scheduled audits, AI-content detection, rubric marketplace UI",
   },
   { version: "v1.3 — Mar 2027", text: "i18n, SSO/SAML, advanced RBAC" },
   {
