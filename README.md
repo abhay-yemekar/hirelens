@@ -30,6 +30,7 @@ A pnpm + Turborepo monorepo shipping the full product:
 8. **Interview kits** — every scored candidate gets a printable debrief pack: probe questions derived from the rubric's anchored scale, plus the exact evidence quotes as a listen-for list. No extra LLM call.
 9. **Candidate portal** — a one-shot token link lets a candidate opt in to a demographics self-report (no account), feeding the same bias audit. Data policy stated on the page, every step hash-chain audited.
 10. **Teams & sharing** — invite teammates with roles (owner / recruiter / hiring manager / viewer); publish a read-only scored report behind a revocable public link; export the hash-chained audit log as verifiable CSV.
+10b. **Candidates table** — server-side pagination (25/page with true totals) and identity search across uploaded filename, email, and phone; blind mode disables search so queries can't reveal who exists.
 11. **Semantic search & ask** — pgvector embeddings over every resume; keyword fallback keeps search alive before indexing; Ask answers with server-verified citations.
 12. **Rubric editor** — criteria, weights, anchored 0–5 scales, JSON power mode, AI draft, version pills.
 13. **Audit log** — immutable, hash-chained; tampering breaks the chain visibly.
