@@ -52,8 +52,8 @@ const NEXT = [
 
 const LATER = [
   {
-    version: "v1.2 — Dec 2026",
-    text: "ATS integrations (Greenhouse, Lever, Ashby), scheduled audits, AI-content detection, rubric marketplace UI",
+    version: "v1.2 — mostly shipped",
+    text: "✅ skill-graph adjacency · ✅ org analytics dashboard · ✅ scheduled audits (cron snapshots + trend) · ✅ deterministic writing-style signals. Remaining: ATS integrations via our public API + webhooks (partner-by-API rather than one-off connectors), rubric marketplace UI",
   },
   { version: "v1.3 — Mar 2027", text: "i18n, SSO/SAML, advanced RBAC" },
   {
