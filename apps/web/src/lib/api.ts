@@ -342,6 +342,25 @@ export const getCandidate = (
     decisions: Array<{ stage: Stage; reason: string; decidedAt: string }>;
   }>(`/api/jobs/${jobId}/candidates/${candidateId}${opts.blind ? "?blind=1" : ""}`, opts);
 
+export interface SkillGraphResult {
+  skills: string[];
+  target: string[];
+  matched: string[];
+  adjacent: string[];
+  missing: string[];
+}
+
+/** Skill-graph adjacency for a candidate vs the job's target skills (v1.2). */
+export const getCandidateSkills = (
+  jobId: string,
+  candidateId: string,
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{ ok: true } & SkillGraphResult>(
+    `/api/jobs/${jobId}/candidates/${candidateId}/skills`,
+    init,
+  );
+
 export const importRubric = (
   jobId: string,
   rubric: unknown,

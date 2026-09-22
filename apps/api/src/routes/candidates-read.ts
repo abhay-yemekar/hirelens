@@ -1,3 +1,4 @@
+import { skillGraph, skillsInText } from "@hirelens/core";
 import { candidates, decisions, documents } from "@hirelens/db";
 import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 import { Hono } from "hono";
@@ -167,6 +168,46 @@ export function candidateReadRoutes(): Hono<AppEnv> {
         "Cache-Control": "private, no-store",
       },
     });
+  });
+
+  /**
+   * Skill-graph adjacency (v1.2): what the candidate demonstrably matches,
+   * what adjacent strengths they bring (family overlap with the target
+   * skills), and what is missing. Deterministic — zero LLM calls.
+   *
+   * Target skills come from the job description text unless a `skills`
+   * query parameter supplies them explicitly (comma-separated).
+   */
+  routes.get("/:candidateId/skills", async (c) => {
+    const db = c.get("db");
+    const auth = c.get("auth");
+    const job = await loadOrgJob(db, c.req.param("jobId"), auth.orgId);
+    if (!job) return c.json({ ok: false, error: "not_found" }, 404);
+
+    const candidateId = c.req.param("candidateId") ?? "";
+    const [candidate] = await db
+      .select({ id: candidates.id, jobId: candidates.jobId, parsed: candidates.parsed })
+      .from(candidates)
+      .where(eq(candidates.id, candidateId))
+      .limit(1);
+    if (!candidate || candidate.jobId !== job.id) {
+      return c.json({ ok: false, error: "not_found" }, 404);
+    }
+
+    const explicit = (c.req.query()["skills"] ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 40);
+    const target = explicit.length > 0 ? explicit : skillsInText(job.description);
+
+    // Blind mode only skips contact fields — skills come from parsed resume
+    // content, which blind review already shows.
+    const parsed = candidate.parsed ?? {};
+    const resumeSkills = Array.isArray(parsed["skills"]) ? parsed["skills"].map(String) : [];
+    const graph = skillGraph(resumeSkills, target);
+
+    return c.json({ ok: true, skills: resumeSkills, target, ...graph });
   });
 
   return routes;
