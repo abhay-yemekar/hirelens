@@ -13,6 +13,15 @@ const COLUMNS: Array<{ title: string; links: Array<{ label: string; href: string
     ],
   },
   {
+    title: "For candidates",
+    links: [
+      { label: "Score my resume — free", href: "/self-check" },
+      { label: "Why we show evidence", href: "/for-candidates" },
+      { label: "Your screening report", href: "/for-candidates#report" },
+      { label: "Your data rights", href: "/privacy" },
+    ],
+  },
+  {
     title: "Resources",
     links: [
       { label: "Documentation", href: "/docs" },

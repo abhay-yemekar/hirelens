@@ -36,21 +36,25 @@ const NEXT = [
       "Launch posts: Product Hunt and Show HN (drafted in docs/launch-kit.md)",
     ],
   },
+  {
+    title: "Shipped — v1.1: the candidate side, at equal level",
+    items: [
+      "Candidate report — recruiters share an evidence-backed, read-only score report with each candidate via a once-only token link (create → view → read-counted → revocable)",
+      "Score my resume — free public tool: candidates score their resume against any job description with the same rubric engine, evidence quotes included",
+      "For-candidates hub — what transparent screening means for you, and control over your demographics data",
+    ],
+  },
 ];
 
 const LATER = [
   {
-    version: "v1.1 — Nov 2026",
-    text: "Candidate report — recruiters share an evidence-backed, read-only score report with each candidate through the portal link (transparent screening nobody else offers), plus skill-graph adjacency and analytics dashboards",
-  },
-  {
-    version: "v1.2 — Jan 2027",
+    version: "v1.2 — Dec 2026",
     text: "ATS integrations (Greenhouse, Lever, Ashby), scheduled audits, AI-content detection, rubric marketplace UI",
   },
   { version: "v1.3 — Mar 2027", text: "i18n, SSO/SAML, advanced RBAC" },
   {
     version: "v1.5 — 2027",
-    text: "Candidate mode — score my resume against this JD, reusing the identical rubric engine",
+    text: "Candidate application tracker — candidates organize applications and see which of their skills matched each role",
   },
   {
     version: "v2.0",
