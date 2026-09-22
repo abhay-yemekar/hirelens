@@ -16,6 +16,7 @@
 
 import { randomBytes } from "node:crypto";
 import type { Criterion } from "@hirelens/core";
+import { skillGraph, skillsInText } from "@hirelens/core";
 import {
   candidateReportLinks,
   candidates,
@@ -52,11 +53,53 @@ function criteriaOf(payload: unknown): Criterion[] {
 }
 
 function rubricTitleOf(payload: unknown): string {
+  if (payload && typeof payload !== "object") return "Screening rubric";
   if (payload && typeof payload === "object") {
     const t = (payload as StoredRubric).title;
     if (typeof t === "string" && t.length > 0) return t;
   }
   return "Screening rubric";
+}
+
+interface ImprovementCriterion {
+  title: string;
+  score: number | null;
+  evidence: string[];
+}
+
+/**
+ * Build plain-language, actionable improvement steps for the candidate:
+ * weakest criteria first, then missing target skills, then the
+ * "mirror the wording" nudge — never a verdict, always something to do.
+ */
+function improvementSteps(criteria: ImprovementCriterion[], missingSkills: string[]): string[] {
+  const steps: string[] = [];
+  const weak = criteria
+    .filter((c) => c.score !== null && c.score <= 2)
+    .sort((a, b) => (a.score ?? 0) - (b.score ?? 0));
+  for (const w of weak.slice(0, 3)) {
+    steps.push(
+      `Strengthen “${w.title}” — scored ${w.score}/5. Add one concrete example with a measurable outcome.`,
+    );
+  }
+  if (missingSkills.length > 0) {
+    const list = missingSkills.slice(0, 4).join(", ");
+    steps.push(
+      `The role mentions ${list} but your resume doesn't reference ${missingSkills.length > 1 ? "them" : "it"} — if you have real experience, name it explicitly; otherwise treat it as a learning goal.`,
+    );
+  }
+  const unquoted = criteria.filter((c) => c.score !== null && c.evidence.length === 0).length;
+  if (unquoted > 0) {
+    steps.push(
+      "Some criteria had no direct quote in your resume — where the job's wording honestly matches your experience, use the same words.",
+    );
+  }
+  if (steps.length === 0) {
+    steps.push(
+      "Strong across the board — keep the specific, measurable examples front and center.",
+    );
+  }
+  return steps.slice(0, 5);
 }
 
 /** Score band wording — candidates get a band, not a raw leaderboard rank. */
@@ -219,7 +262,7 @@ export function publicCandidateReportRoutes() {
     if (link.revokedAt) return c.json({ ok: false, error: "revoked" }, 410);
 
     const [candidate] = await db
-      .select({ id: candidates.id, jobId: candidates.jobId })
+      .select({ id: candidates.id, jobId: candidates.jobId, parsed: candidates.parsed })
       .from(candidates)
       .where(eq(candidates.id, link.candidateId))
       .limit(1);
@@ -306,6 +349,14 @@ export function publicCandidateReportRoutes() {
           100
         : null;
 
+    // Skill-graph projection (v1.2): targets come from the job description,
+    // the candidate's skills from the parsed resume. Only the three buckets
+    // are exposed — no resume text, nothing the candidate doesn't already
+    // know about themselves.
+    const parsed = candidate.parsed ?? {};
+    const resumeSkills = Array.isArray(parsed["skills"]) ? parsed["skills"].map(String) : [];
+    const graph = skillGraph(resumeSkills, skillsInText(job.description));
+
     await db
       .update(candidateReportLinks)
       .set({ readCount: sql`coalesce(${candidateReportLinks.readCount}, 0) + 1` })
@@ -323,6 +374,8 @@ export function publicCandidateReportRoutes() {
         band: overall === null ? null : bandFor(overall),
         message: link.message,
         criteria: criterionScores,
+        skills: graph,
+        improve: improvementSteps(criterionScores, graph.missing),
       },
     });
   });

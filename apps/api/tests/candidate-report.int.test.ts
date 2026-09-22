@@ -107,7 +107,7 @@ afterAll(async () => {
 describe.skipIf(!available && allowSkip)("candidate report", () => {
   let jobId = "";
   let candidateId = "";
-  let otherId = "";
+  let _otherId = "";
   let token = "";
 
   it("sets up job, rubric, two candidates, and scores them", async () => {
@@ -140,7 +140,7 @@ describe.skipIf(!available && allowSkip)("candidate report", () => {
       expect(up.status).toBe(201);
       const id = ((await up.json()) as { candidateId: string }).candidateId;
       if (name === "jordan.txt") candidateId = id;
-      else otherId = id;
+      else _otherId = id;
     }
 
     const score = await app.request(`/api/jobs/${jobId}/score`, {
@@ -233,6 +233,23 @@ describe.skipIf(!available && allowSkip)("candidate report", () => {
     expect(text).not.toContain("Someone Else");
     // The candidate's own contact info stays private too.
     expect(text).not.toContain("jordan.avery@example.com");
+  });
+  it("report payload includes skill-graph buckets and improvement steps (v1.2)", async () => {
+    const res = await app.request(`/api/report/${token}`);
+    const body = (await res.json()) as {
+      report: {
+        skills?: { matched: string[]; adjacent: string[]; missing: string[] };
+        improve?: string[];
+      };
+    };
+
+    // Skill buckets computed from the JD against the parsed resume.
+    expect(Array.isArray(body.report.skills?.matched)).toBe(true);
+    expect(Array.isArray(body.report.skills?.adjacent)).toBe(true);
+    expect(Array.isArray(body.report.skills?.missing)).toBe(true);
+    // Guidance present and bounded (max 5 steps).
+    expect(body.report.improve?.length ?? 0).toBeGreaterThan(0);
+    expect((body.report.improve ?? []).length).toBeLessThanOrEqual(5);
   });
 
   it("counts reads, revokes via DELETE (→410), and 404s unknown tokens", async () => {

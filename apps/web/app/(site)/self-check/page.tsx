@@ -19,12 +19,77 @@ interface CriterionResult {
   evidence: { quotedText: string; start: number; end: number }[];
 }
 
+interface SkillBuckets {
+  matched: string[];
+  adjacent: string[];
+  missing: string[];
+}
+
 interface SelfCheckResult {
   overall: number;
   mode: "llm" | "approximate";
   derivedBy?: "llm" | "generic";
   criteria?: CriterionResult[];
   keywords?: { word: string; found: boolean }[];
+  skills?: SkillBuckets;
+  improve?: string[];
+}
+
+function SkillSection({
+  label,
+  items,
+  border,
+  bg,
+  fg,
+}: {
+  label: string;
+  items: string[];
+  border: string;
+  bg: string;
+  fg: string;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
+      <div className="mt-1.5 flex flex-wrap gap-1.5">
+        {items.map((skill) => (
+          <span
+            key={skill}
+            className="rounded-md border px-2 py-0.5 text-xs font-medium"
+            style={{ borderColor: border, background: bg, color: fg }}
+          >
+            {skill}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ImproveCard({ steps }: { steps: string[] }) {
+  return (
+    <Card className="mt-4">
+      <CardHeader>
+        <CardTitle className="text-base">How to strengthen your application</CardTitle>
+        <CardDescription>Actionable steps, weakest area first — never a verdict.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul className="flex flex-col gap-2 text-sm">
+          {steps.map((step, i) => (
+            <li key={i} className="flex gap-2 leading-6 text-muted-foreground">
+              <span aria-hidden className="text-orange-400">
+                →
+              </span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  );
 }
 
 const SAMPLE_JD = `We are hiring a Backend Engineer with 2+ years of experience.
@@ -220,6 +285,44 @@ export default function SelfCheckPage() {
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {result?.skills && (
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="text-base">Skill match for this job</CardTitle>
+            <CardDescription>Deterministic check — no AI judgment in this part.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <SkillSection
+              label="What the job asked for that your resume shows"
+              items={result.skills.matched}
+              border="rgba(16,185,129,0.45)"
+              bg="rgba(16,185,129,0.08)"
+              fg="rgb(52,211,153)"
+            />
+            <SkillSection
+              label="Related strengths you bring beyond the ask"
+              items={result.skills.adjacent}
+              border="border-border"
+              bg="rgba(148,163,184,0.08)"
+              fg="rgb(203,213,225)"
+            />
+            <SkillSection
+              label="What the job mentions that your resume doesn't"
+              items={result.skills.missing}
+              border="rgba(249,115,22,0.45)"
+              bg="rgba(249,115,22,0.08)"
+              fg="rgb(251,146,60)"
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {result?.improve && result.improve.length > 0 && (
+        <div className="mt-4">
+          <ImproveCard steps={result.improve} />
+        </div>
       )}
 
       {result && result.mode === "approximate" && (
