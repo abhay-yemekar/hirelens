@@ -38,6 +38,21 @@ const MENUS: Array<{ label: string; items: MenuItem[] }> = [
     ],
   },
   {
+    label: "Candidates",
+    items: [
+      {
+        href: "/self-check",
+        label: "Score my resume",
+        desc: "Free, instant, evidence-backed — no signup",
+      },
+      {
+        href: "/for-candidates",
+        label: "Why transparent screening",
+        desc: "Your report, your evidence, opt-in demographics",
+      },
+    ],
+  },
+  {
     label: "Resources",
     items: [
       { href: "/docs", label: "Documentation", desc: "Everything from setup to API" },

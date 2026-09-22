@@ -178,7 +178,8 @@ export default function LandingPage() {
             <p className="mt-5 max-w-xl text-base leading-7" style={{ color: "var(--hl-mist)" }}>
               HireLens scores candidates against a rubric you control, quotes the exact resume text
               behind every point, logs every decision to a tamper-evident chain, and audits itself
-              for adverse impact. No black box. No hidden weights.
+              for adverse impact. No black box. No hidden weights — for recruiters or the candidates
+              they screen.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <Link
@@ -189,14 +190,14 @@ export default function LandingPage() {
                   boxShadow: "0 12px 32px -12px rgba(255,107,87,0.55)",
                 }}
               >
-                Score a resume — no signup
+                Try the recruiter demo — no signup
               </Link>
               <Link
-                href="https://github.com/abhay-yemekar/hirelens"
+                href="/self-check"
                 className="rounded-xl border px-6 py-3.5 text-sm font-semibold transition-colors hover:border-[var(--hl-mist)]"
                 style={{ borderColor: "var(--hl-border)", color: "var(--hl-cream)" }}
               >
-                Star on GitHub
+                I'm a candidate — score my resume
               </Link>
             </div>
             <p className="mt-6 text-xs" style={{ color: "var(--hl-muted)" }}>
@@ -555,7 +556,7 @@ export default function LandingPage() {
             Try the live demo
           </Link>
           <p id="roadmap" className="mt-10 text-xs" style={{ color: "var(--hl-muted)" }}>
-            v1.0.0 targeted for 30 September 2026 — follow along on GitHub.
+            v1.1 is live — the candidate side, at equal level. See the roadmap.
           </p>
         </div>
       </section>
