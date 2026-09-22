@@ -26,6 +26,10 @@ const NOW = [
   "This premium site with a live no-signup demo running the real engine",
 ];
 
+const SHIPPED_V12 = [
+  "Skill-graph adjacency — every candidate page now shows matched / adjacent / missing skills computed deterministically from the parsed resume against skills extracted from the job description (no extra LLM cost)",
+];
+
 const NEXT = [
   {
     title: "In progress — launch window (Sept–Oct 2026)",
@@ -72,6 +76,9 @@ export default function RoadmapPage() {
       <h2>Shipped — on main today</h2>
       <ul>
         {NOW.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+        {SHIPPED_V12.map((item) => (
           <li key={item}>{item}</li>
         ))}
       </ul>

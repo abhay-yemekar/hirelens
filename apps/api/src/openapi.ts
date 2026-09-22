@@ -477,6 +477,31 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/jobs/{jobId}/candidates/{candidateId}/skills": {
+      get: {
+        tags: ["Candidates"],
+        summary: "Skill-graph adjacency for this candidate against the job's target skills.",
+        description:
+          "Deterministic (no LLM): matched / adjacent / missing skills computed from the parsed resume against skills extracted from the job description (or an explicit `skills` comma list). Adjacent = same skill family, the 'also strong at' signal.",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          {
+            name: "candidateId",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+          {
+            name: "skills",
+            in: "query",
+            required: false,
+            schema: { type: "string" },
+            description: "Comma-separated target skills; defaults to skills extracted from the JD.",
+          },
+        ],
+        responses: { 200: ok({ type: "object" }), 404: errorResponse },
+      },
+    },
     "/api/jobs/{jobId}/candidates/{candidateId}/demographics": {
       put: {
         tags: ["Bias audit"],

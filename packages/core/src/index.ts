@@ -99,6 +99,13 @@ export {
   type TextChunk,
 } from "./search/index.js";
 export {
+  candidateFamilies,
+  knownSkills,
+  type SkillNode,
+  skillGraph,
+  skillsInText,
+} from "./skills/graph.js";
+export {
   expandZip,
   MAX_ZIP_ENTRIES,
   MAX_ZIP_TOTAL_BYTES,

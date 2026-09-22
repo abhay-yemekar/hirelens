@@ -223,7 +223,7 @@ Most hiring AI is a black box: a number with no justification. That is a liabili
 - ✅ **v1.0.0 launch** — tagged release, GHCR images, [`hirelens` on npm](https://www.npmjs.com/package/hirelens).
 - ✅ **Post-launch waves 1–4** — recruiter essentials (resume viewer, contacts, job lifecycle, org settings), semantic search + rubric editor + compare view, teams/sharing (members, public report links, audit CSV), interview kits + candidate portal.
 - ✅ **v1.1 — the candidate side, at equal level** — [candidate reports](https://hirelens-rosy.vercel.app/for-candidates) (recruiters share an evidence-backed score report with each candidate via a once-only, revocable token link) and [Score my resume](https://hirelens-rosy.vercel.app/self-check) (candidates score their resume against any job description with the same rubric engine — free, no signup).
-- **Next (v1.2)** — skill-graph adjacency, richer analytics dashboards, scheduled audits, AI-content detection. See the [site roadmap](https://hirelens-rosy.vercel.app/roadmap).
+- **Next (v1.2)** — ✅ skill-graph adjacency (deterministic matched/adjacent/missing skills on every candidate, extracted from the JD — no extra LLM cost), then richer analytics dashboards, scheduled audits, AI-content detection. See the [site roadmap](https://hirelens-rosy.vercel.app/roadmap).
 
 Follow along in [Issues](https://github.com/abhay-yemekar/hirelens/issues).
 

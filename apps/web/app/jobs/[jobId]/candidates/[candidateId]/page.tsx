@@ -11,6 +11,7 @@ import { candidateLabel, cap } from "@/lib/format";
 
 import { PortalPanel } from "./portal-panel";
 import { ReportPanel } from "./report-panel";
+import { SkillsPanel } from "./skills-panel";
 
 interface DecisionRow {
   stage: Stage;
@@ -92,6 +93,7 @@ export default function CandidatePage() {
           </CardContent>
         </Card>
 
+        <SkillsPanel jobId={params.jobId} candidateId={params.candidateId} />
         <ReportPanel jobId={params.jobId} candidateId={params.candidateId} />
         <PortalPanel jobId={params.jobId} candidateId={params.candidateId} />
 
