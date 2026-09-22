@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, CardContent, CardHeader, CardTitle } from "@hirelens/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@hirelens/ui";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -40,6 +40,10 @@ interface ReportPayload {
   band: string | null;
   message: string | null;
   criteria: ReportCriterion[];
+  /** Skill-graph buckets (v1.2) — present when the resume was skill-parsed. */
+  skills?: { matched: string[]; adjacent: string[]; missing: string[] };
+  /** Plain-language improvement steps, weakest area first. */
+  improve?: string[];
 }
 
 function bandColor(band: string | null): string {
@@ -315,6 +319,100 @@ export default function CandidateReportPage() {
                 </Card>
               ))}
             </div>
+
+            {/* Skill match (v1.2) — deterministic buckets from the JD vs resume */}
+            {report.skills &&
+            (report.skills.matched.length > 0 ||
+              report.skills.adjacent.length > 0 ||
+              report.skills.missing.length > 0) ? (
+              <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
+                <CardHeader>
+                  <CardTitle className="text-base" style={{ color: "var(--hl-cream)" }}>
+                    Skill match for this role
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-4 text-sm">
+                  {(
+                    [
+                      [
+                        "What the role asked for that your resume shows",
+                        report.skills.matched,
+                        "rgba(74,222,128,0.45)",
+                        "rgba(74,222,128,0.08)",
+                        "rgb(134,239,172)",
+                      ],
+                      [
+                        "Related strengths you bring beyond the ask",
+                        report.skills.adjacent,
+                        "var(--hl-border)",
+                        "var(--hl-ink-3)",
+                        "var(--hl-cream)",
+                      ],
+                      [
+                        "What the role mentions that your resume doesn't",
+                        report.skills.missing,
+                        "rgba(255,107,87,0.35)",
+                        "rgba(255,107,87,0.07)",
+                        "var(--hl-accent)",
+                      ],
+                    ] as Array<[string, string[], string, string, string]>
+                  ).map(([label, items, border, bg, fg]) =>
+                    items.length > 0 ? (
+                      <div key={label}>
+                        <p
+                          className="text-xs font-semibold tracking-wider uppercase"
+                          style={{ color: "var(--hl-muted)" }}
+                        >
+                          {label}
+                        </p>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {items.map((skill) => (
+                            <span
+                              key={skill}
+                              className="rounded-md border px-2 py-0.5 text-xs font-medium"
+                              style={{ borderColor: border, background: bg, color: fg }}
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null,
+                  )}
+                  <p className="text-xs" style={{ color: "var(--hl-muted)" }}>
+                    Computed from the job description against your parsed resume — no AI judgment
+                    involved in this part.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {/* How to improve (v1.2) — actionable, never a verdict */}
+            {report.improve && report.improve.length > 0 ? (
+              <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
+                <CardHeader>
+                  <CardTitle className="text-base" style={{ color: "var(--hl-cream)" }}>
+                    How to strengthen your application
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="flex flex-col gap-2 text-sm">
+                    {report.improve.map((step, i) => (
+                      <li
+                        key={i}
+                        className="flex gap-2 leading-6"
+                        style={{ color: "var(--hl-mist)" }}
+                      >
+                        <span aria-hidden style={{ color: "var(--hl-accent)" }}>
+                          →
+                        </span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            ) : null}
 
             <p className="text-xs leading-6" style={{ color: "var(--hl-muted)" }}>
               Generated{" "}

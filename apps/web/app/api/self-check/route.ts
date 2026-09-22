@@ -21,8 +21,11 @@ import {
   isSupportedExtension,
   MAX_DOCUMENT_BYTES,
   type ProviderConfig,
+  parseCandidate,
   resolveLanguageModel,
   scoreResume,
+  skillGraph,
+  skillsInText,
   sniffKind,
 } from "@hirelens/core";
 import { type NextRequest, NextResponse } from "next/server";
@@ -58,6 +61,38 @@ function bucketFor(key: string, limit: number): { allowed: boolean; resetAt: num
 function clientIp(req: NextRequest): string {
   const forwarded = req.headers.get("x-forwarded-for");
   return forwarded ? (forwarded.split(",")[0] ?? "unknown").trim() : "unknown";
+}
+
+interface WeakCriterion {
+  title: string;
+  score: number;
+  evidence: string[];
+}
+
+/** Plain-language improvement steps, weakest criterion first (v1.2). */
+function improvementSteps(
+  criteria: Array<{ title: string; score: number | null; evidence: string[] }>,
+  missingSkills: string[],
+): string[] {
+  const steps: string[] = [];
+  const weak = criteria
+    .filter((c) => c.score !== null && c.score <= 2)
+    .sort((a, b) => (a.score ?? 0) - (b.score ?? 0));
+  for (const w of weak.slice(0, 3) as WeakCriterion[]) {
+    steps.push(
+      `Strengthen "${w.title}" — scored ${w.score}/5. Add one concrete example with a measurable outcome.`,
+    );
+  }
+  if (missingSkills.length > 0) {
+    const list = missingSkills.slice(0, 4).join(", ");
+    steps.push(
+      `The job mentions ${list} but your resume doesn't reference ${missingSkills.length > 1 ? "them" : "it"} — if you have real experience, name it explicitly; otherwise treat it as a learning goal.`,
+    );
+  }
+  if (steps.length === 0) {
+    steps.push("Solid across the board — keep the specific, measurable examples front and center.");
+  }
+  return steps.slice(0, 5);
 }
 
 function readLlmConfig(): ProviderConfig | null {
@@ -300,12 +335,38 @@ export async function POST(req: NextRequest) {
       );
     }
     const result = await scoreResume(model, rubric, resumeText);
+
+    // Skill-graph buckets + improvement guidance (v1.2) — same projection
+    // the recruiter-shared candidate report uses. Deterministic, free.
+    const skills = Array.isArray(
+      (() => {
+        try {
+          return parseCandidate(resumeText).skills;
+        } catch {
+          return [];
+        }
+      })(),
+    )
+      ? parseCandidate(resumeText).skills
+      : [];
+    const graph = skillGraph(skills, skillsInText(jd));
+    const improve = improvementSteps(
+      result.criteria.map((c) => ({
+        title: rubric.criteria.find((x) => x.key === c.key)?.title ?? c.key,
+        score: c.score,
+        evidence: c.evidence ? [c.evidence.quotedText] : [],
+      })),
+      graph.missing,
+    );
+
     return NextResponse.json({
       ok: true,
       mode: "llm" as const,
       derivedBy,
       overall: result.overall,
       modelId: result.modelId,
+      skills: graph,
+      improve,
       criteria: result.criteria.map((c) => {
         const crit = rubric.criteria.find((x) => x.key === c.key);
         return {
@@ -420,6 +481,18 @@ export async function POST(req: NextRequest) {
       "including",
       "etc",
     ]);
+    // Deterministic extras even in approximate mode (v1.2): skills the JD
+    // names that the resume doesn't — honest, useful, no LLM needed.
+    let skills: { matched: string[]; adjacent: string[]; missing: string[] } | undefined;
+    let improve: string[] | undefined;
+    try {
+      const parsedSkills = parseCandidate(resumeText).skills;
+      const graph = skillGraph(parsedSkills, skillsInText(jd));
+      skills = graph;
+      improve = improvementSteps([], graph.missing);
+    } catch {
+      // Parsing is best-effort; approximate mode still returns keywords.
+    }
     const jdWords = jd
       .toLowerCase()
       .split(/[^a-z0-9+#.]+/)
@@ -435,6 +508,8 @@ export async function POST(req: NextRequest) {
       mode: "approximate" as const,
       overall,
       keywords,
+      skills,
+      improve,
     });
   }
 }
