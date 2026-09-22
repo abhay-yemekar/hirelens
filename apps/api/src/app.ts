@@ -24,6 +24,7 @@ import { rubricsRoutes } from "./routes/rubrics.js";
 import { scoringRoutes } from "./routes/scoring.js";
 import { searchRoutes } from "./routes/search.js";
 import { auditExportRoutes, publicShareRoutes, sharingRoutes } from "./routes/sharing.js";
+import { auditSnapshotRoutes, cronSnapshotRoutes } from "./routes/snapshots.js";
 import { interviewKitRoutes, portalRoutes, publicPortalRoutes } from "./routes/wave4.js";
 import type { AppEnv } from "./types.js";
 
@@ -129,6 +130,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", publicShareRoutes());
   app.route("/api", publicPortalRoutes());
   app.route("/api", publicCandidateReportRoutes());
+  app.route("/api", cronSnapshotRoutes());
 
   // Authenticated, org-scoped API surface.
   const protectedApi = new Hono<AppEnv>();
@@ -145,6 +147,7 @@ export function createApp(deps: AppDeps) {
   protectedApi.route("/jobs/:jobId/candidates", candidateReportRoutes());
   protectedApi.route("/jobs/:jobId", interviewKitRoutes());
   protectedApi.route("/jobs/:jobId", auditExportRoutes());
+  protectedApi.route("/jobs/:jobId", auditSnapshotRoutes());
   protectedApi.route("/jobs", jobsRoutes());
   protectedApi.route("/analytics", analyticsRoutes());
   app.route("/api", protectedApi);

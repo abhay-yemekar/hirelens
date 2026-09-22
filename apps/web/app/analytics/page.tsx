@@ -24,6 +24,41 @@ interface Analytics {
   generatedAt: string;
 }
 
+interface SnapshotRow {
+  id: string;
+  dimension: string;
+  allPass: string;
+  trigger: string;
+  createdAt: string;
+}
+
+/** Scheduled audits (v1.2): latest snapshot trend across the org. */
+function useSnapshotTrend(enabled: boolean) {
+  const [trend, setTrend] = useState<Array<SnapshotRow & { jobTitle: string }> | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    (async () => {
+      try {
+        const jobsRes = await apiFetch<{ ok: true; jobs: Array<{ id: string; title: string }> }>(
+          "/api/jobs",
+        );
+        const rows: Array<SnapshotRow & { jobTitle: string }> = [];
+        for (const job of jobsRes.jobs.slice(0, 12)) {
+          const res = await apiFetch<{ ok: true; snapshots: SnapshotRow[] }>(
+            `/api/jobs/${job.id}/audit-snapshots`,
+          );
+          for (const s of res.snapshots.slice(0, 3)) rows.push({ ...s, jobTitle: job.title });
+        }
+        rows.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setTrend(rows.slice(0, 8));
+      } catch {
+        setTrend([]);
+      }
+    })();
+  }, [enabled]);
+  return trend;
+}
+
 const PIPELINE_ORDER = ["new", "shortlisted", "advanced", "rejected"] as const;
 
 function fmtHours(h: number | null): string {
@@ -36,6 +71,7 @@ function fmtHours(h: number | null): string {
 export default function AnalyticsPage() {
   const [data, setData] = useState<Analytics | null>(null);
   const [error, setError] = useState<unknown>(null);
+  const trend = useSnapshotTrend(true);
 
   useEffect(() => {
     (async () => {
@@ -213,6 +249,61 @@ export default function AnalyticsPage() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Scheduled audit trend (v1.2) */}
+            <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
+              <CardHeader>
+                <CardTitle className="text-base" style={{ color: "var(--hl-cream)" }}>
+                  Scheduled audit snapshots
+                </CardTitle>
+                <CardDescription style={{ color: "var(--color-fg-muted)" }}>
+                  Automatic four-fifths readings over time (weekly via cron). Every snapshot is
+                  hash-chained in the audit log.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {trend === null ? (
+                  <p className="text-sm" style={{ color: "var(--color-fg-muted)" }}>
+                    Loading…
+                  </p>
+                ) : trend.length === 0 ? (
+                  <p className="text-sm" style={{ color: "var(--color-fg-muted)" }}>
+                    No snapshots yet — set CRON_SECRET and point a weekly cron at POST
+                    /api/cron/audit-snapshots, or take one manually from a job page.
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {trend.map((s) => (
+                      <div
+                        key={s.id}
+                        className="flex flex-wrap items-center gap-2 border-t pt-2 text-sm first:border-t-0 first:pt-0"
+                        style={{ borderColor: "var(--hl-border)" }}
+                      >
+                        <span
+                          className="rounded-full px-2 py-0.5 text-xs font-semibold"
+                          style={{
+                            background:
+                              s.allPass === "true"
+                                ? "var(--hl-accent-soft)"
+                                : "rgba(255,107,87,0.15)",
+                            color: s.allPass === "true" ? "var(--hl-cream)" : "var(--hl-accent)",
+                          }}
+                        >
+                          {s.allPass === "true" ? "pass" : "flagged"}
+                        </span>
+                        <span className="font-medium" style={{ color: "var(--hl-cream)" }}>
+                          {s.jobTitle}
+                        </span>
+                        <span style={{ color: "var(--hl-muted)" }}>{s.dimension}</span>
+                        <span className="ml-auto text-xs" style={{ color: "var(--hl-muted)" }}>
+                          {new Date(s.createdAt).toLocaleDateString()} · {s.trigger}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             <p className="text-xs" style={{ color: "var(--hl-muted)" }}>
               Aggregates only — no candidate-level data on this page. Per-job deep dives live on
