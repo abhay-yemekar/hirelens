@@ -234,9 +234,9 @@ describe.skipIf(!available && allowSkip)("candidate report", () => {
     // The candidate's own contact info stays private too.
     expect(text).not.toContain("jordan.avery@example.com");
   });
-
   it("report payload includes skill-graph buckets and improvement steps (v1.2)", async () => {
-    const body = (await app.request(`/api/report/${token}`).then((r) => r.json())) as {
+    const res = await app.request(`/api/report/${token}`);
+    const body = (await res.json()) as {
       report: {
         skills?: { matched: string[]; adjacent: string[]; missing: string[] };
         improve?: string[];
