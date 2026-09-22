@@ -477,6 +477,15 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/analytics": {
+      get: {
+        tags: ["Analytics"],
+        summary: "Org-wide read-only aggregates for the recruiter dashboard.",
+        description:
+          "Jobs by status, pipeline stages (latest decision per candidate), criterion-score distribution, median upload-to-decision time, and bias-audit outcomes sourced from the hash-chained audit log. Viewer role is enough.",
+        responses: { 200: ok({ type: "object" }) },
+      },
+    },
     "/api/jobs/{jobId}/candidates/{candidateId}/skills": {
       get: {
         tags: ["Candidates"],
