@@ -477,6 +477,52 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/jobs/{jobId}/audit-snapshots": {
+      get: {
+        tags: ["Analytics"],
+        summary: "Bias-audit snapshot trend for this job (newest first).",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        responses: { 200: ok({ type: "object" }), 404: errorResponse },
+      },
+      post: {
+        tags: ["Analytics"],
+        summary: "Take a bias-audit snapshot now (manual trigger).",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        requestBody: {
+          required: false,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  dimension: {
+                    type: "string",
+                    enum: ["gender", "race_ethnicity", "age_band", "disability"],
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: { 201: ok({ type: "object" }), 404: errorResponse, 409: errorResponse },
+      },
+    },
+    "/api/cron/audit-snapshots": {
+      post: {
+        tags: ["Analytics"],
+        summary: "Scheduled snapshot of every org job (Bearer CRON_SECRET).",
+        description:
+          "For Vercel Cron / GitHub Actions schedules / plain cron. Fails closed when CRON_SECRET is unset. Every snapshot is appended to the hash-chained audit log.",
+        responses: {
+          200: ok({ type: "object" }),
+          401: errorResponse,
+        },
+      },
+    },
     "/api/analytics": {
       get: {
         tags: ["Analytics"],

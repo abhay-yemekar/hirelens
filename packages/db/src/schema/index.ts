@@ -1,5 +1,6 @@
 export * from "../../auth-schema.js";
 export * from "./audit.js";
+export * from "./audit-snapshots.js";
 export * from "./candidate-report.js";
 export * from "./candidates.js";
 export {
