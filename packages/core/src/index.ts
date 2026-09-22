@@ -50,6 +50,12 @@ export {
   SchemaViolationError,
   type StructuredResult,
 } from "./llm/index.js";
+export {
+  type AiContentReport,
+  type AiContentSignal,
+  type AiSuspicion,
+  detectAiContent,
+} from "./parse/ai-content.js";
 export { ParseError, parseCandidate } from "./parse/candidate.js";
 export {
   type Candidate,

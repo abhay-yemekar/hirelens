@@ -532,6 +532,27 @@ export const openApiDocument = {
         responses: { 200: ok({ type: "object" }) },
       },
     },
+    "/api/jobs/{jobId}/candidates/{candidateId}/ai-content": {
+      get: {
+        tags: ["Candidates"],
+        summary: "AI-content suspicion reading for this candidate's resume (deterministic).",
+        description:
+          "Heuristic, no LLM: flags AI-typical phrasing and structure as 'worth probing in the interview'. Levels: low / moderate / notable / insufficient_text. Never a verdict.",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          {
+            name: "candidateId",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        responses: {
+          200: ok({ type: "object" }),
+          404: errorResponse,
+        },
+      },
+    },
     "/api/jobs/{jobId}/candidates/{candidateId}/skills": {
       get: {
         tags: ["Candidates"],

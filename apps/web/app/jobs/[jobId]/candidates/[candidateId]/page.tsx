@@ -9,6 +9,7 @@ import { NoticeBanner } from "@/components/notice-banner";
 import { getCandidate, type Stage } from "@/lib/api";
 import { candidateLabel, cap } from "@/lib/format";
 
+import { AiContentCard } from "./ai-content-card";
 import { PortalPanel } from "./portal-panel";
 import { ReportPanel } from "./report-panel";
 import { SkillsPanel } from "./skills-panel";
@@ -94,6 +95,7 @@ export default function CandidatePage() {
         </Card>
 
         <SkillsPanel jobId={params.jobId} candidateId={params.candidateId} />
+        <AiContentCard jobId={params.jobId} candidateId={params.candidateId} />
         <ReportPanel jobId={params.jobId} candidateId={params.candidateId} />
         <PortalPanel jobId={params.jobId} candidateId={params.candidateId} />
 

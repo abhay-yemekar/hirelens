@@ -361,6 +361,20 @@ export const getCandidateSkills = (
     init,
   );
 
+export interface AiContentReport {
+  level: "low" | "moderate" | "notable" | "insufficient_text";
+  score: number | null;
+  signals: Array<{ text: string; signal: string }>;
+  summary: string;
+}
+
+/** Deterministic AI-content suspicion reading for a candidate (v1.2). */
+export const getAiContent = (jobId: string, candidateId: string, init?: RequestInit) =>
+  apiFetch<{ ok: true; aiContent: AiContentReport }>(
+    `/api/jobs/${jobId}/candidates/${candidateId}/ai-content`,
+    init,
+  );
+
 export const importRubric = (
   jobId: string,
   rubric: unknown,
