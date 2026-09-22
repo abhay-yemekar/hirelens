@@ -14,6 +14,7 @@ import type { HireLensIndexer } from "./indexing.js";
 import { requestLogging } from "./middleware.js";
 import { captureException } from "./observability.js";
 import { openApiDocument } from "./openapi.js";
+import { analyticsRoutes } from "./routes/analytics.js";
 import { biasAuditRoutes, demographicsRoutes } from "./routes/bias.js";
 import { candidateReportRoutes, publicCandidateReportRoutes } from "./routes/candidate-report.js";
 import { candidateReadRoutes } from "./routes/candidates-read.js";
@@ -145,6 +146,7 @@ export function createApp(deps: AppDeps) {
   protectedApi.route("/jobs/:jobId", interviewKitRoutes());
   protectedApi.route("/jobs/:jobId", auditExportRoutes());
   protectedApi.route("/jobs", jobsRoutes());
+  protectedApi.route("/analytics", analyticsRoutes());
   app.route("/api", protectedApi);
 
   app.onError((err, c) => {
