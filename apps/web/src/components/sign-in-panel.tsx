@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { AuthForm } from "@/components/auth-form";
 import { Logo, LogoMark } from "@/components/brand";
-import { useSession } from "@/lib/auth-client";
+import { userTrack, useSession } from "@/lib/auth-client";
 
 const PROOF = [
   {
@@ -29,14 +29,16 @@ const PROOF = [
 /**
  * Split-panel sign-in: brand proof on the left, form on the right.
  * The form itself is AuthForm (email + social providers). Already-
- * signed-in visitors are redirected to their jobs.
+ * signed-in visitors are redirected per their saved track (candidate →
+ * candidate hub, everyone else → workspace).
  */
 export function SignInPanel() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
 
   useEffect(() => {
-    if (!isPending && session) router.replace("/jobs");
+    const track = userTrack(session?.user);
+    if (!isPending && session) router.replace(track === "candidate" ? "/for-candidates" : "/jobs");
   }, [isPending, session, router]);
 
   return (

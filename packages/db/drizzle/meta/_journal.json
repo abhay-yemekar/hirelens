@@ -50,6 +50,13 @@
       "when": 1789976658568,
       "tag": "0006_simple_sumo",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790058405197,
+      "tag": "0007_keen_pyro",
+      "breakpoints": true
     }
   ]
 }
