@@ -33,6 +33,20 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  // `track` powers the one-time post-signup chooser ("I hire" /
+  // "I'm a candidate"). Nullable until the user picks; client-writable via
+  // updateUser so the chooser can record the choice without a server round
+  // trip of its own.
+  user: {
+    additionalFields: {
+      track: {
+        type: "string",
+        required: false,
+        defaultValue: null,
+        input: true,
+      },
+    },
+  },
   // Origins allowed to initiate auth flows and receive post-login
   // redirects (the web app may run on :3000, :3001 or :5173 in dev).
   // Mirrors the API's CORS_ORIGINS list.

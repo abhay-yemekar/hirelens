@@ -78,7 +78,9 @@ export function AuthForm() {
       // origin (a relative path would resolve against the API origin).
       await authClient.signIn.social({
         provider,
-        callbackURL: `${window.location.origin}/jobs`,
+        // New accounts see the one-time track chooser; established users
+        // skip straight to their workspace.
+        callbackURL: `${window.location.origin}/track`,
       });
       // OAuth redirects away; nothing to do on success.
     } catch {
@@ -101,7 +103,7 @@ export function AuthForm() {
           password,
         });
         if (res.error) throw new Error(res.error.message ?? "Sign-up failed");
-        router.push("/welcome");
+        router.push("/track");
       } else {
         const res = await authClient.signIn.email({ email, password });
         if (res.error) throw new Error(res.error.message ?? "Sign-in failed");
