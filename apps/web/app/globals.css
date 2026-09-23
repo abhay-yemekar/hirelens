@@ -32,16 +32,15 @@
   --hl-bad: #f87171;
   /* Form fields sit one step brighter than cards so they read as fields. */
   --hl-input: #1a2142;
-}
 
-/*
- * Product-app scope: bridges the shared UI kit's --color-* tokens onto the
- * marketing brand palette, so every Button, link, and focus ring in the
- * product app renders in HireLens coral/ink — one scope, not 30 call-site
- * patches. Score-ramp and feedback colors keep their dark-theme tuning
- * (data-theme=dark is set alongside this class by AppShell).
- */
-.hl-app {
+  /*
+   * UI-kit token bridge on :root (v1.2 polish fix): Card/Button read the
+   * --color-* namespace. These were scoped to .hl-app only, so shared
+   * components used on marketing-scope pages (self-check, track chooser)
+   * fell back to browser defaults — gray cards, Tailwind-blue buttons.
+   * Defining them globally keeps every surface on-brand; .hl-app keeps
+   * its scoped copy harmlessly (same values).
+   */
   --color-accent: var(--hl-accent);
   --color-accent-fg: var(--hl-ink);
   --color-accent-muted: var(--hl-accent-soft);
@@ -53,6 +52,16 @@
   --color-fg: var(--hl-cream);
   --color-fg-muted: var(--hl-mist);
   --color-fg-subtle: var(--hl-muted);
+}
+
+/*
+ * Product-app scope: bridges the shared UI kit's --color-* tokens onto the
+ * marketing brand palette, so every Button, link, and focus ring in the
+ * product app renders in HireLens coral/ink — one scope, not 30 call-site
+ * patches. Score-ramp and feedback colors keep their dark-theme tuning
+ * (data-theme=dark is set alongside this class by AppShell).
+ */
+.hl-app {
   background: var(--hl-ink);
   color: var(--hl-cream);
 }

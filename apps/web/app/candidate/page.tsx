@@ -13,14 +13,46 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
-import { userTrack, useSession } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
 
 /**
  * Candidate home (signed in) — the real destination for candidate-track
- * users. Honest about what a signed-in candidate can do: run the free
- * self-check, open a report a recruiter shared (token link), and switch
- * sides. No fake data, no empty dashboard shell.
+ * users. Composition (v1.2 polish): one hero line, TWO product cards
+ * (self-check + report lookup), then quiet utility links — never four
+ * equal tiles. The report center remembers reports you opened on THIS
+ * device only (localStorage), consistent with our privacy story.
  */
+
+interface SavedReport {
+  token: string;
+  label: string;
+  openedAt: string;
+}
+
+const REPORTS_KEY = "hirelens.recent-reports";
+
+function loadSavedReports(): SavedReport[] {
+  try {
+    const raw = window.localStorage.getItem(REPORTS_KEY);
+    const parsed = raw === null ? [] : (JSON.parse(raw) as unknown);
+    return Array.isArray(parsed) ? (parsed.slice(0, 8) as SavedReport[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveReport(token: string, label: string) {
+  try {
+    const rest = loadSavedReports().filter((r) => r.token !== token);
+    window.localStorage.setItem(
+      REPORTS_KEY,
+      JSON.stringify([{ token, label, openedAt: new Date().toISOString() }, ...rest].slice(0, 8)),
+    );
+  } catch {
+    // Storage unavailable (private mode) — the link still opens.
+  }
+}
+
 export default function CandidateHomePage() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
@@ -31,6 +63,11 @@ export default function CandidateHomePage() {
 
   const [reportUrl, setReportUrl] = useState("");
   const [reportError, setReportError] = useState<string | null>(null);
+  const [reports, setReports] = useState<SavedReport[]>([]);
+
+  useEffect(() => {
+    setReports(loadSavedReports());
+  }, []);
 
   function openReport(e: React.FormEvent) {
     e.preventDefault();
@@ -46,6 +83,7 @@ export default function CandidateHomePage() {
       );
       return;
     }
+    saveReport(token, `Report opened ${new Date().toLocaleDateString()}`);
     router.push(`/report/${token}`);
   }
 
@@ -68,24 +106,26 @@ export default function CandidateHomePage() {
             Welcome, {name}
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6" style={{ color: "var(--hl-mist)" }}>
-            You're on the candidate side. HireLens never scores you silently: every result comes
-            with the exact evidence behind it, and you see your own report before anyone acts on it.
+            HireLens never scores you silently: every result comes with the exact evidence behind
+            it, and you see your own report before anyone acts on it.
           </p>
         </FadeIn>
 
+        {/* The two things a candidate actually does here — equal weight,
+            aligned on one row. */}
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           <Card
             style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}
-            className="transition-transform duration-[var(--duration-fast)] hover:-translate-y-0.5"
+            className="flex flex-col"
           >
             <CardHeader>
               <CardTitle style={{ color: "var(--hl-cream)" }}>Score my resume — free</CardTitle>
               <CardDescription style={{ color: "var(--hl-mist)" }}>
                 Paste your resume (or upload PDF/DOCX) against any job description. Get the same
-                evidence-linked score recruiters see — free, no strings.
+                evidence-linked score recruiters see.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="mt-auto">
               <Link href="/self-check">
                 <Button
                   className="w-full"
@@ -97,15 +137,18 @@ export default function CandidateHomePage() {
             </CardContent>
           </Card>
 
-          <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
+          <Card
+            style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}
+            className="flex flex-col"
+          >
             <CardHeader>
               <CardTitle style={{ color: "var(--hl-cream)" }}>Open a report you received</CardTitle>
               <CardDescription style={{ color: "var(--hl-mist)" }}>
-                When a recruiter screens you with HireLens, they share a private link. Paste it here
-                to open your outcome — per-criterion scores and the exact evidence quotes.
+                A recruiter screened you and shared a private link. Paste it to see your outcome —
+                per-criterion scores and the exact evidence.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="mt-auto">
               <form onSubmit={openReport} className="flex flex-col gap-3">
                 <input
                   type="text"
@@ -121,7 +164,7 @@ export default function CandidateHomePage() {
                   }}
                 />
                 {reportError ? (
-                  <p className="text-xs" style={{ color: "var(--color-warning)" }} role="alert">
+                  <p className="text-xs" style={{ color: "var(--hl-warn)" }} role="alert">
                     {reportError}
                   </p>
                 ) : null}
@@ -135,51 +178,92 @@ export default function CandidateHomePage() {
               </form>
             </CardContent>
           </Card>
+        </div>
 
-          <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
+        {/* Report center — recent reports, remembered on this device only.
+            Nothing is stored server-side; clearing your browser clears it. */}
+        {reports.length > 0 ? (
+          <Card
+            className="mt-4"
+            style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}
+          >
             <CardHeader>
-              <CardTitle style={{ color: "var(--hl-cream)" }}>How your data is treated</CardTitle>
+              <CardTitle className="text-base" style={{ color: "var(--hl-cream)" }}>
+                Your recent reports
+              </CardTitle>
               <CardDescription style={{ color: "var(--hl-mist)" }}>
-                Self-checks are processed and never stored against your account. Demographics in
-                bias self-reports are always opt-in, every field skippable, and used only to detect
-                discrimination in aggregate.
+                Remembered on this device only — never on our servers. Clearing your browser data
+                clears this list.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Link
-                href="/privacy"
-                className="text-sm font-medium transition-colors hover:underline"
-                style={{ color: "var(--hl-accent)" }}
-              >
-                Read the privacy policy →
-              </Link>
-            </CardContent>
-          </Card>
-
-          <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
-            <CardHeader>
-              <CardTitle style={{ color: "var(--hl-cream)" }}>On the hiring side too?</CardTitle>
-              <CardDescription style={{ color: "var(--hl-mist)" }}>
-                Many of our users both hire and apply. Switch sides any time — your account carries
-                over, nothing is lost.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-3">
-              <Link href="/settings">
-                <Button
-                  variant="outline"
-                  style={{ borderColor: "var(--hl-border)", color: "var(--hl-cream)" }}
+            <CardContent className="flex flex-col gap-1">
+              {reports.map((r) => (
+                <Link
+                  key={r.token}
+                  href={`/report/${r.token}`}
+                  className="flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/[0.05]"
+                  style={{ color: "var(--hl-cream)" }}
                 >
-                  Change my side in Settings
-                </Button>
-              </Link>
-              <Link href="/jobs">
-                <Button variant="ghost" style={{ color: "var(--hl-mist)" }}>
-                  Peek at the recruiter workspace
-                </Button>
-              </Link>
+                  <span className="font-mono text-xs" style={{ color: "var(--hl-mist)" }}>
+                    …{r.token.slice(-8)}
+                  </span>
+                  <span className="text-xs" style={{ color: "var(--hl-muted)" }}>
+                    {r.label} →
+                  </span>
+                </Link>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    window.localStorage.removeItem(REPORTS_KEY);
+                  } catch {
+                    // ignore
+                  }
+                  setReports([]);
+                }}
+                className="mt-1 self-start text-xs underline"
+                style={{ color: "var(--hl-muted)" }}
+              >
+                Clear this list
+              </button>
             </CardContent>
           </Card>
+        ) : null}
+
+        {/* Utility row — quiet links, not tiles. */}
+        <div
+          className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-t pt-5 text-sm"
+          style={{ borderColor: "var(--hl-border)" }}
+        >
+          <Link
+            href="/privacy"
+            className="transition-colors hover:underline"
+            style={{ color: "var(--hl-mist)" }}
+          >
+            How your data is treated
+          </Link>
+          <Link
+            href="/settings"
+            className="transition-colors hover:underline"
+            style={{ color: "var(--hl-mist)" }}
+          >
+            Switch sides (Settings)
+          </Link>
+          <Link
+            href="/jobs"
+            className="transition-colors hover:underline"
+            style={{ color: "var(--hl-mist)" }}
+          >
+            Peek at the recruiter workspace
+          </Link>
+          <Link
+            href="/"
+            className="transition-colors hover:underline"
+            style={{ color: "var(--hl-mist)" }}
+          >
+            ← HireLens site
+          </Link>
         </div>
       </div>
     </AppShell>
