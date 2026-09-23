@@ -51,7 +51,7 @@ function SkillSection({
   if (items.length === 0) return null;
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--hl-mist)]">
         {label}
       </p>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -69,7 +69,7 @@ function SkillSection({
   );
 }
 
-function ImproveCard({ steps }: { steps: string[] }) {
+function ImproveCard({ steps, onDownload }: { steps: string[]; onDownload: () => void }) {
   return (
     <Card className="mt-4">
       <CardHeader>
@@ -79,14 +79,22 @@ function ImproveCard({ steps }: { steps: string[] }) {
       <CardContent>
         <ul className="flex flex-col gap-2 text-sm">
           {steps.map((step, i) => (
-            <li key={i} className="flex gap-2 leading-6 text-muted-foreground">
-              <span aria-hidden className="text-orange-400">
+            <li key={i} className="flex gap-2 leading-6 text-[var(--hl-mist)]">
+              <span aria-hidden className="text-[var(--hl-warn)]">
                 →
               </span>
               <span>{step}</span>
             </li>
           ))}
         </ul>
+        <button
+          type="button"
+          onClick={onDownload}
+          className="mt-4 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-white/[0.06]"
+          style={{ borderColor: "var(--hl-border)", color: "var(--hl-cream)" }}
+        >
+          ↓ Download my plan (.md)
+        </button>
       </CardContent>
     </Card>
   );
@@ -102,7 +110,7 @@ function band(overall: number): { label: string; tone: string } {
   if (overall >= 75) return { label: "Strong match — interview-ready", tone: "text-emerald-500" };
   if (overall >= 50)
     return { label: "Promising match — sharpen a few areas", tone: "text-amber-500" };
-  return { label: "Emerging match — focus on the flagged criteria", tone: "text-orange-400" };
+  return { label: "Emerging match — focus on the flagged criteria", tone: "text-[var(--hl-warn)]" };
 }
 
 export default function SelfCheckPage() {
@@ -150,11 +158,11 @@ export default function SelfCheckPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
       <header className="mb-8 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-400">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--hl-warn)]">
           Free · No signup
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Score my resume</h1>
-        <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+        <p className="mx-auto mt-3 max-w-xl text-[var(--hl-mist)]">
           Get an instant, evidence-backed score against the job you're targeting — from the same
           screening engine recruiters use. Your resume never leaves this request: nothing is stored,
           no account needed.
@@ -173,7 +181,7 @@ export default function SelfCheckPage() {
             ref={fileRef}
             type="file"
             accept=".pdf,.docx,.txt,.md"
-            className="block w-full cursor-pointer rounded-lg border border-dashed border-border bg-card px-3 py-6 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-orange-500 file:px-3 file:py-1.5 file:text-white"
+            className="block w-full cursor-pointer rounded-lg border border-dashed border-[var(--hl-border)] bg-[var(--hl-card)] px-3 py-6 text-sm text-[var(--hl-cream)] file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-[var(--hl-accent)] file:px-3 file:py-1.5 file:font-medium file:text-[var(--hl-ink)]"
             onChange={(e) => {
               const f = e.target.files?.[0];
               setFileName(f ? f.name : null);
@@ -189,7 +197,7 @@ export default function SelfCheckPage() {
             }
             rows={6}
             disabled={!!fileName}
-            className="w-full rounded-lg border border-border bg-background p-3 text-sm"
+            className="w-full rounded-lg border border-[var(--hl-border)] bg-[var(--hl-input)] p-3 text-sm text-[var(--hl-cream)] placeholder:text-[var(--hl-muted)] focus:border-[var(--hl-accent)] focus:outline-none"
           />
         </CardContent>
       </Card>
@@ -209,11 +217,11 @@ export default function SelfCheckPage() {
             onChange={(e) => setJd(e.target.value)}
             placeholder="Paste the job description here…"
             rows={6}
-            className="w-full rounded-lg border border-border bg-background p-3 text-sm"
+            className="w-full rounded-lg border border-[var(--hl-border)] bg-[var(--hl-input)] p-3 text-sm text-[var(--hl-cream)] placeholder:text-[var(--hl-muted)] focus:border-[var(--hl-accent)] focus:outline-none"
           />
           <button
             type="button"
-            className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            className="text-xs text-[var(--hl-mist)] underline underline-offset-2 hover:text-foreground"
             onClick={() => setJd(SAMPLE_JD)}
           >
             Use a sample job description
@@ -234,7 +242,7 @@ export default function SelfCheckPage() {
       {error && (
         <p
           role="alert"
-          className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-center text-sm text-red-400"
+          className="mt-4 rounded-lg border border-[var(--hl-bad)]/40 bg-[var(--hl-bad)]/10 p-3 text-center text-sm text-[var(--hl-bad)]"
         >
           {error}
         </p>
@@ -245,14 +253,14 @@ export default function SelfCheckPage() {
           <CardHeader className="items-center text-center">
             <CardDescription>Your score against this job</CardDescription>
             <div className="flex items-baseline justify-center gap-1">
-              <span className="text-5xl font-bold tracking-tight text-orange-400">
+              <span className="text-5xl font-bold tracking-tight text-[var(--hl-warn)]">
                 {result.overall}
               </span>
-              <span className="text-lg text-muted-foreground">/100</span>
+              <span className="text-lg text-[var(--hl-mist)]">/100</span>
             </div>
             <p className={`text-sm font-medium ${b.tone}`}>{b.label}</p>
             {result.derivedBy === "generic" && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-[var(--hl-mist)]">
                 Scored with a generic rubric (the server's AI rubric-derivation wasn't available
                 right now).
               </p>
@@ -260,26 +268,26 @@ export default function SelfCheckPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {result.criteria.map((c) => (
-              <div key={c.key} className="rounded-lg border border-border p-4">
+              <div key={c.key} className="rounded-lg border border-[var(--hl-border)] p-4">
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-medium">{c.title}</p>
-                  <span className="text-sm text-muted-foreground">{c.score} / 5</span>
+                  <span className="text-sm text-[var(--hl-mist)]">{c.score} / 5</span>
                 </div>
-                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-border">
+                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[var(--hl-border)]">
                   <div
-                    className="h-full rounded-full bg-orange-500"
+                    className="h-full rounded-full bg-[var(--hl-accent)]"
                     style={{ width: `${(c.score / 5) * 100}%` }}
                   />
                 </div>
-                <p className="mt-2 text-sm text-muted-foreground">{c.rationale}</p>
+                <p className="mt-2 text-sm text-[var(--hl-mist)]">{c.rationale}</p>
                 {c.evidence[0] && (
-                  <p className="mt-2 border-l-2 border-orange-500/60 pl-3 text-sm italic text-muted-foreground">
+                  <p className="mt-2 border-l-2 border-[var(--hl-accent)]/60 pl-3 text-sm italic text-[var(--hl-mist)]">
                     “{c.evidence[0].quotedText}”
                   </p>
                 )}
               </div>
             ))}
-            <p className="text-center text-xs text-muted-foreground">
+            <p className="text-center text-xs text-[var(--hl-mist)]">
               One score per criterion on an anchored 0–5 scale, combined into the overall. This is a
               signal to improve your resume — not a verdict.
             </p>
@@ -304,7 +312,7 @@ export default function SelfCheckPage() {
             <SkillSection
               label="Related strengths you bring beyond the ask"
               items={result.skills.adjacent}
-              border="border-border"
+              border="border-[var(--hl-border)]"
               bg="rgba(148,163,184,0.08)"
               fg="rgb(203,213,225)"
             />
@@ -321,9 +329,55 @@ export default function SelfCheckPage() {
 
       {result?.improve && result.improve.length > 0 && (
         <div className="mt-4">
-          <ImproveCard steps={result.improve} />
+          <ImproveCard
+            steps={result.improve}
+            onDownload={() => {
+              const planSteps = result.improve ?? [];
+              // A portable copy of the plan — plain Markdown, generated
+              // client-side, nothing sent anywhere.
+              const lines = [
+                "# My HireLens improvement plan",
+                "",
+                `Generated ${new Date().toLocaleDateString()} via hirelens-rosy.vercel.app/self-check`,
+                "",
+                "## Steps, weakest area first",
+                ...planSteps.map((s, i) => `${i + 1}. ${s}`),
+                "",
+                result?.skills
+                  ? `## Skills vs this job\n\n- Matched: ${result.skills.matched.join(", ") || "—"}\n- Also strong at: ${result.skills.adjacent.join(", ") || "—"}\n- Missing (learn or name explicitly): ${result.skills.missing.join(", ") || "—"}`
+                  : "",
+              ].filter(Boolean);
+              const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "hirelens-improvement-plan.md";
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          />
         </div>
       )}
+
+      {/* Score against another job — compare 2–3 target roles in one
+          session without losing your resume. */}
+      {result ? (
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={() => {
+              setJd("");
+              setResult(null);
+              setError(null);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="text-sm underline underline-offset-2"
+            style={{ color: "var(--hl-mist)" }}
+          >
+            Score against another job →
+          </button>
+        </div>
+      ) : null}
 
       {result && result.mode === "approximate" && (
         <Card className="mt-8">
@@ -333,11 +387,11 @@ export default function SelfCheckPage() {
               for the full evidence-linked score.
             </CardDescription>
             <div className="flex items-baseline justify-center gap-1">
-              <span className="text-5xl font-bold tracking-tight text-orange-400">
+              <span className="text-5xl font-bold tracking-tight text-[var(--hl-warn)]">
                 {result.overall}%
               </span>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-[var(--hl-mist)]">
               of the job description's key terms appear in your resume
             </p>
           </CardHeader>
@@ -349,7 +403,7 @@ export default function SelfCheckPage() {
                   className={`rounded-full border px-2.5 py-0.5 text-xs ${
                     k.found
                       ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-500"
-                      : "border-red-500/40 bg-red-500/10 text-red-400"
+                      : "border-[var(--hl-bad)]/40 bg-[var(--hl-bad)]/10 text-[var(--hl-bad)]"
                   }`}
                 >
                   {k.found ? "✓ " : "✗ "}
@@ -357,7 +411,7 @@ export default function SelfCheckPage() {
                 </span>
               ))}
             </div>
-            <p className="mt-4 text-center text-xs text-muted-foreground">
+            <p className="mt-4 text-center text-xs text-[var(--hl-mist)]">
               Recruiters' screening systems check exactly these terms — mirror the job's vocabulary
               and re-check.
             </p>
@@ -365,9 +419,9 @@ export default function SelfCheckPage() {
         </Card>
       )}
 
-      <p className="mt-8 text-center text-sm text-muted-foreground">
+      <p className="mt-8 text-center text-sm text-[var(--hl-mist)]">
         Hiring instead of applying?{" "}
-        <Link href="/demo" className="text-orange-400 underline underline-offset-2">
+        <Link href="/demo" className="text-[var(--hl-warn)] underline underline-offset-2">
           See how recruiters screen with HireLens
         </Link>
       </p>
