@@ -1,0 +1,2 @@
+-- Superseded: 0009 now creates org_id as text directly (CI caught the
+-- uuid→text mismatch; local databases already applied this fix).

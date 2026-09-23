@@ -523,6 +523,38 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/tokens": {
+      get: {
+        tags: ["Tokens"],
+        summary: "List this org's API tokens (metadata only).",
+        description: "Owner-only. Never returns raw secrets.",
+        responses: { 200: ok({ type: "object" }) },
+      },
+      post: {
+        tags: ["Tokens"],
+        summary: "Create an API token for ATS integrations.",
+        description:
+          "Owner-only. The raw token (hl_…) is returned exactly once; only its SHA-256 hash is stored. Body: { label }.",
+        responses: { 201: ok({ type: "object" }) },
+      },
+    },
+    "/api/tokens/{tokenId}": {
+      delete: {
+        tags: ["Tokens"],
+        summary: "Revoke an API token instantly.",
+        description: "Owner-only; audited. Existing integrations fail closed on next use.",
+        responses: { 200: ok({ type: "object" }) },
+      },
+    },
+    "/api/webhooks/ats": {
+      post: {
+        tags: ["Integrations"],
+        summary: "Inbound ATS webhook: screen one candidate from an ATS event.",
+        description:
+          "Bearer token (API token, org-scoped). Body: { jobId, candidate: { resumeUrl, name?, email? } }. HireLens fetches the HTTPS resume, ingests it into the job (idempotent per text hash — safe to retry), and the review queue fills in. Read results back via the API or CLI.",
+        responses: { 200: ok({ type: "object" }), 201: ok({ type: "object" }) },
+      },
+    },
     "/api/analytics": {
       get: {
         tags: ["Analytics"],

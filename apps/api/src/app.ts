@@ -16,6 +16,7 @@ import { captureException } from "./observability.js";
 import { openApiDocument } from "./openapi.js";
 import { aiContentRoutes } from "./routes/ai-content.js";
 import { analyticsRoutes } from "./routes/analytics.js";
+import { atsWebhookRoutes } from "./routes/ats-webhook.js";
 import { biasAuditRoutes, demographicsRoutes } from "./routes/bias.js";
 import { candidateReportRoutes, publicCandidateReportRoutes } from "./routes/candidate-report.js";
 import { candidateReadRoutes } from "./routes/candidates-read.js";
@@ -26,6 +27,7 @@ import { scoringRoutes } from "./routes/scoring.js";
 import { searchRoutes } from "./routes/search.js";
 import { auditExportRoutes, publicShareRoutes, sharingRoutes } from "./routes/sharing.js";
 import { auditSnapshotRoutes, cronSnapshotRoutes } from "./routes/snapshots.js";
+import { tokenRoutes } from "./routes/tokens.js";
 import { interviewKitRoutes, portalRoutes, publicPortalRoutes } from "./routes/wave4.js";
 import type { AppEnv } from "./types.js";
 
@@ -132,6 +134,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", publicPortalRoutes());
   app.route("/api", publicCandidateReportRoutes());
   app.route("/api", cronSnapshotRoutes());
+  app.route("/api", atsWebhookRoutes());
 
   // Authenticated, org-scoped API surface.
   const protectedApi = new Hono<AppEnv>();
@@ -152,6 +155,7 @@ export function createApp(deps: AppDeps) {
   protectedApi.route("/jobs/:jobId", auditSnapshotRoutes());
   protectedApi.route("/jobs", jobsRoutes());
   protectedApi.route("/analytics", analyticsRoutes());
+  protectedApi.route("/tokens", tokenRoutes());
   app.route("/api", protectedApi);
 
   app.onError((err, c) => {

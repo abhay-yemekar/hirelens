@@ -27,7 +27,7 @@ export default function TrackPage() {
   useEffect(() => {
     const track = userTrack(session?.user);
     if (!isPending && track) {
-      router.replace(track === "candidate" ? "/for-candidates" : "/jobs");
+      router.replace(track === "candidate" ? "/candidate" : "/jobs");
     }
   }, [isPending, session, router]);
 
@@ -40,7 +40,7 @@ export default function TrackPage() {
       // still route and the user can be asked again next signup-session.
     }
     if (track === "candidate") {
-      router.push("/for-candidates");
+      router.push("/candidate");
     } else {
       router.push("/welcome");
     }

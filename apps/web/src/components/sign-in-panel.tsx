@@ -38,7 +38,7 @@ export function SignInPanel() {
 
   useEffect(() => {
     const track = userTrack(session?.user);
-    if (!isPending && session) router.replace(track === "candidate" ? "/for-candidates" : "/jobs");
+    if (!isPending && session) router.replace(track === "candidate" ? "/candidate" : "/jobs");
   }, [isPending, session, router]);
 
   return (
