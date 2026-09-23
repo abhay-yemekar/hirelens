@@ -1,6 +1,6 @@
 CREATE TABLE "api_tokens" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"org_id" uuid NOT NULL,
+	"org_id" text NOT NULL,
 	"token_hash" text NOT NULL,
 	"last4" text NOT NULL,
 	"label" text NOT NULL,

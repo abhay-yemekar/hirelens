@@ -1,1 +1,2 @@
-ALTER TABLE "api_tokens" ALTER COLUMN "org_id" SET DATA TYPE text;
+-- Superseded: 0009 now creates org_id as text directly (CI caught the
+-- uuid→text mismatch; local databases already applied this fix).
