@@ -64,6 +64,20 @@
       "when": 1790063658664,
       "tag": "0008_flimsy_black_widow",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790143400340,
+      "tag": "0009_lovely_captain_flint",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790143856128,
+      "tag": "0010_demonic_jamie_braddock",
+      "breakpoints": true
     }
   ]
 }

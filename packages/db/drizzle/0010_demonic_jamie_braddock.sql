@@ -1,0 +1,1 @@
+ALTER TABLE "api_tokens" ALTER COLUMN "org_id" SET DATA TYPE text;

@@ -1,11 +1,12 @@
 "use client";
 
 import { Button, CardContent } from "@hirelens/ui";
-import { Plus, Save, Sparkles, Trash2 } from "lucide-react";
+import { ChevronDown, Plus, Save, Sparkles, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { NoticeBanner } from "@/components/notice-banner";
 import { trackEvent } from "@/lib/analytics";
 import { deriveRubric, importRubric, type RubricVersion } from "@/lib/api";
+import { presetToRubric, RUBRIC_LIBRARY } from "./rubric-library";
 
 /** The demo rubric imported by "Use demo rubric" (valid RubricSchema shape). */
 export function demoRubric() {
@@ -133,6 +134,7 @@ export function RubricEditor({
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loadedFrom, setLoadedFrom] = useState<number | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   // Seed the editor from the active version once rubrics arrive.
   useEffect(() => {
@@ -271,6 +273,68 @@ export function RubricEditor({
             : "Paste full rubric JSON — validated against the rubric schema"}
         </span>
         <div className="ml-auto flex items-center gap-2">
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy !== null}
+              aria-expanded={libraryOpen}
+              aria-haspopup="listbox"
+              onClick={() => setLibraryOpen((v) => !v)}
+              title="Import a curated rubric for a common role — then tune it"
+            >
+              <ChevronDown aria-hidden className="mr-1.5 h-3.5 w-3.5" />
+              Rubric library
+            </Button>
+            {libraryOpen ? (
+              <div
+                role="listbox"
+                aria-label="Rubric library presets"
+                className="absolute right-0 z-20 mt-2 w-80 rounded-[var(--radius-card)] border p-1 shadow-xl"
+                style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}
+              >
+                {RUBRIC_LIBRARY.map((preset) => (
+                  <button
+                    key={preset.key}
+                    role="option"
+                    aria-selected={false}
+                    type="button"
+                    disabled={busy !== null}
+                    onClick={() =>
+                      void (async () => {
+                        setBusy(preset.key);
+                        setError(null);
+                        try {
+                          await importRubric(jobId, presetToRubric(preset));
+                          trackEvent("rubric.library_imported", {
+                            jobId,
+                            preset: preset.key,
+                          });
+                          setLibraryOpen(false);
+                          await onSaved();
+                        } catch (err) {
+                          setError(err);
+                        } finally {
+                          setBusy(null);
+                        }
+                      })()
+                    }
+                    className="block w-full rounded-[calc(var(--radius-card)-2px)] px-3 py-2 text-left transition-colors hover:bg-white/[0.06] disabled:opacity-50"
+                  >
+                    <span
+                      className="block text-sm font-medium"
+                      style={{ color: "var(--hl-cream)" }}
+                    >
+                      {preset.title}
+                    </span>
+                    <span className="block text-xs" style={{ color: "var(--hl-mist)" }}>
+                      {preset.blurb}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
           <Button
             variant="outline"
             size="sm"
