@@ -4,7 +4,60 @@ All notable changes to HireLens are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning is
 [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [1.2.0] — 2026-09-24
+
+The candidate-side release: HireLens now serves both sides of hiring at
+equal level, plus the recruiter depth that matches it.
+
+### Added — candidate side
+
+- **Self-check (free, no account)** — paste a resume + any job description,
+  get evidence-backed scores against a real rubric in seconds; heuristic
+  fallback keeps it honest without an LLM key.
+- **Candidate reports** — a recruiter generates a per-candidate link; the
+  candidate sees their own outcome (per-criterion scores, exact evidence
+  quotes, anchored scale) and never anyone else's data. Token = credential,
+  shown once, revocable, read-counted, hash-chain audited.
+- **Candidate report center** — reports you open are remembered on your
+  device only (clearable, nothing server-side), matching the privacy pitch.
+- **Dual-side product** — one-time track chooser after signup (recruiter or
+  candidate), sign-in routes to your side, and Settings → Account switches
+  sides anytime.
+
+### Added — recruiter side
+
+- **Skill-graph adjacency** — matched / adjacent / missing skills computed
+  from the parsed resume against JD-derived targets, with an explicit query
+  override for custom searches.
+- **Semantic Search & Ask** — pgvector KNN over a job's resumes with keyword
+  fallback, plus cited LLM answers verified server-side against the
+  retrieved chunk set.
+- **Analytics dashboard** — read-only org aggregates: pipeline stages, score
+  distributions, decision speed, bias snapshot trends.
+- **Scheduled bias audits** — cron snapshots per job (four-fifths ratio,
+  selection rates, parity difference) with org-level trend charts.
+- **AI-content detection** — deterministic (no LLM) suspicion scoring with
+  per-signal reasons, so recruiters can probe authenticity in interview.
+- **ATS integration** — `POST /api/webhooks/ats` with SHA-256-hashed bearer
+  API tokens (Settings → Integrations), HTTPS-only, replay-safe; the
+  integration guide documents a real endpoint.
+- **Rubric library** — 8 curated role presets with one-click import into any
+  job's rubric editor.
+- **Candidate ops** — contact extraction (email/phone columns), original
+  resume viewing, pagination + search, org/job editing and archiving,
+  members/roles/invites, audit CSV export.
+- **Public share links** — once-only read-only run reports with title,
+  read counts, and instant revocation.
+
+### Changed
+
+- Design-token bridge hoisted to `:root` — marketing-layout pages
+  (self-check, track chooser) render true brand colors.
+- Account chip in the product nav: side-aware "My hub / Open workspace",
+  explicit path back to the website.
+- Demo GIF regenerated against production (real `gemini-2.5-flash` badge).
+
+## [1.1.0] — 2026-09-20
 
 ### Added
 
@@ -19,12 +72,6 @@ All notable changes to HireLens are documented here. Format follows
   hash-chain audited; links revoke instantly and never replay after submit.
 - **API surface** — four new endpoints documented in the live OpenAPI 3.1
   contract (kit JSON/HTML export, portal create/revoke, public invite/submit).
-
-### Changed
-
-- Roadmap and README updated: the four post-launch waves (recruiter
-  essentials, semantic search + rubric editor + compare view, teams &
-  sharing, interview kits + portal) are shipped and documented.
 
 ## [1.0.0] — 2026-09-18
 
