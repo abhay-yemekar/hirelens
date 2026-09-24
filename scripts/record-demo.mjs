@@ -228,14 +228,28 @@ try {
   await shot(600);
   await shot(600);
 
-  // Beat 3 — press score; heuristic mode answers in a beat, so hold on
-  // the pressed state ("Scoring…") then the arriving scorecard.
+  // Beat 3 — press score. On production this is a real LLM call (several
+  // seconds); on dev it's the instant heuristic. Either way: capture the
+  // pressed state, then poll for the scorecard, taking a shot mid-wait so
+  // the anticipation reads in the GIF.
   log("beat 3: score");
   await clickButton("Score");
   await sleep(250);
-  await shot(400); // Scoring… state
-  await sleep(1100);
-  await shot(500); // scorecard arriving
+  await shot(500); // "Scoring…" state
+  let scored = false;
+  let midShot = false;
+  const t0 = Date.now();
+  while (Date.now() - t0 < 60_000) {
+    scored = await evaluate(`document.body.innerText.includes("/5")`);
+    if (scored) break;
+    if (!midShot && Date.now() - t0 > 2000) {
+      await shot(500); // still scoring — show the wait
+      midShot = true;
+    }
+    await sleep(800);
+  }
+  if (!scored) log("WARN: scorecard never appeared within 60s");
+  await sleep(400);
 
   // Beat 4 — the full scorecard: overall score + five criteria rows.
   log("beat 4: scorecard hold");
