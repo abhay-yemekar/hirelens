@@ -552,6 +552,15 @@ export default function SelfCheckPage() {
       )}
 
       <p className="mt-8 text-center text-sm text-[var(--hl-mist)]">
+        Preparing for the interview too?{" "}
+        <Link
+          href="/interview-practice"
+          className="text-[var(--hl-warn)] underline underline-offset-2"
+        >
+          Practice with questions from this job →
+        </Link>
+      </p>
+      <p className="mt-2 text-center text-sm text-[var(--hl-mist)]">
         Hiring instead of applying?{" "}
         <Link href="/demo" className="text-[var(--hl-warn)] underline underline-offset-2">
           See how recruiters screen with HireLens
