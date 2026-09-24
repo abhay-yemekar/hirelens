@@ -121,7 +121,42 @@ export default function SelfCheckPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SelfCheckResult | null>(null);
+  const [letter, setLetter] = useState<{
+    letter: string;
+    mode: "llm" | "template";
+    note: string;
+  } | null>(null);
+  const [letterBusy, setLetterBusy] = useState(false);
+  const [letterError, setLetterError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  async function draftLetter() {
+    setLetterBusy(true);
+    setLetterError(null);
+    try {
+      const res = await fetch("/api/cover-letter", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ resumeText, jd }),
+      });
+      const body = (await res.json()) as {
+        ok: boolean;
+        error?: string;
+        letter?: string;
+        mode?: "llm" | "template";
+        note?: string;
+      };
+      if (!res.ok || !body.ok || !body.letter) {
+        setLetterError(body.error ?? "Couldn't draft the letter — please try again.");
+      } else {
+        setLetter({ letter: body.letter, mode: body.mode ?? "template", note: body.note ?? "" });
+      }
+    } catch {
+      setLetterError("Network hiccup — please try again.");
+    } finally {
+      setLetterBusy(false);
+    }
+  }
 
   async function submit() {
     setBusy(true);
@@ -373,6 +408,87 @@ export default function SelfCheckPage() {
             }}
           />
         </div>
+      )}
+
+      {/* Cover letter draft (v1.3) — generated from the same resume + JD,
+          nothing stored. Shown after a score so the flow reads: score →
+          strengthen → apply. */}
+      {result && (
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="text-base">Draft a cover letter for this job</CardTitle>
+            <CardDescription>
+              From the same resume and job description — generated, never stored.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!letter ? (
+              <button
+                type="button"
+                onClick={draftLetter}
+                disabled={letterBusy || resumeText.trim().length < 80 || jd.trim().length < 40}
+                className="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-white/[0.06] disabled:opacity-40"
+                style={{ borderColor: "var(--hl-border)", color: "var(--hl-cream)" }}
+              >
+                {letterBusy ? "Drafting…" : "✎ Draft my cover letter"}
+              </button>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <textarea
+                  value={letter.letter}
+                  onChange={(e) => setLetter({ ...letter, letter: e.target.value })}
+                  rows={14}
+                  className="w-full rounded-lg border p-4 font-mono text-[13px] leading-6"
+                  style={{
+                    borderColor: "var(--hl-border)",
+                    background: "var(--hl-card)",
+                    color: "var(--hl-cream)",
+                  }}
+                />
+                <p
+                  className="text-xs"
+                  style={{
+                    color: letter.mode === "template" ? "var(--hl-warn)" : "var(--hl-mist)",
+                  }}
+                >
+                  {letter.note}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const blob = new Blob([letter.letter], { type: "text/plain" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = "cover-letter.txt";
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-white/[0.06]"
+                    style={{ borderColor: "var(--hl-border)", color: "var(--hl-cream)" }}
+                  >
+                    ↓ Download (.txt)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={draftLetter}
+                    disabled={letterBusy}
+                    className="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-white/[0.06] disabled:opacity-40"
+                    style={{ borderColor: "var(--hl-border)", color: "var(--hl-cream)" }}
+                  >
+                    {letterBusy ? "Redrafting…" : "↻ Redraft"}
+                  </button>
+                </div>
+              </div>
+            )}
+            {letterError && (
+              <p className="mt-2 text-xs" style={{ color: "var(--hl-warn)" }}>
+                {letterError}
+              </p>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Score against another job — compare 2–3 target roles in one
