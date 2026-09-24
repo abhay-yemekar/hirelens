@@ -237,6 +237,20 @@ export default function CandidateHomePage() {
           style={{ borderColor: "var(--hl-border)" }}
         >
           <Link
+            href="/tracker"
+            className="transition-colors hover:underline"
+            style={{ color: "var(--hl-mist)" }}
+          >
+            Application tracker
+          </Link>
+          <Link
+            href="/interview-practice"
+            className="transition-colors hover:underline"
+            style={{ color: "var(--hl-mist)" }}
+          >
+            Interview practice
+          </Link>
+          <Link
             href="/privacy"
             className="transition-colors hover:underline"
             style={{ color: "var(--hl-mist)" }}
