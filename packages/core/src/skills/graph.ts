@@ -499,6 +499,26 @@ export function candidateFamilies(skills: readonly string[]): string[] {
   return [...families].sort();
 }
 
+/**
+ * One deterministic headline number for the self-check (v1.3):
+ * matched targets weigh 1, adjacent (same skill family) weigh 0.5,
+ * missing weigh 0 — over every target the JD names. Not an AI
+ * judgment: a coverage estimate that always traces back to the chips
+ * shown underneath it.
+ */
+export function matchPct(graph: {
+  matched: readonly string[];
+  adjacent: readonly string[];
+  missing: readonly string[];
+}): number {
+  const matched = graph.matched.length;
+  const adjacent = graph.adjacent.length;
+  const missing = graph.missing.length;
+  const targets = matched + missing;
+  if (targets === 0) return adjacent > 0 ? 50 : 0;
+  return Math.round(((matched + adjacent * 0.5) / targets) * 100);
+}
+
 /** Common JD spellings that should resolve to a taxonomy skill. */
 const ALIASES: ReadonlyArray<readonly [string, string]> = [
   ["Postgres", "PostgreSQL"],
