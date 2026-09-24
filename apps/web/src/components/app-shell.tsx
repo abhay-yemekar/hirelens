@@ -1,11 +1,10 @@
 "use client";
 
-import { Button } from "@hirelens/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Logo } from "@/components/brand";
-import { organization, signOut, useSession } from "@/lib/auth-client";
+import { organization, signOut, userTrack, useSession } from "@/lib/auth-client";
 
 interface OrgRow {
   id: string;
@@ -22,10 +21,14 @@ interface OrgRow {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { data: session, isPending } = useSession();
+  const track = userTrack(session?.user);
+  const homeHref = track === "candidate" ? "/candidate" : "/jobs";
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const popRef = useRef<HTMLDivElement>(null);
+  const accountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -45,17 +48,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     })();
   }, [session]);
 
-  // Close the switcher on outside click.
+  // Close either dropdown on outside click or Escape.
   useEffect(() => {
-    if (!switcherOpen) return;
+    if (!switcherOpen && !accountOpen) return;
     const onDoc = (e: MouseEvent) => {
-      if (popRef.current && !popRef.current.contains(e.target as Node)) {
+      if (popRef.current && !popRef.current.contains(e.target as Node)) setSwitcherOpen(false);
+      if (accountRef.current && !accountRef.current.contains(e.target as Node))
+        setAccountOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
         setSwitcherOpen(false);
+        setAccountOpen(false);
       }
     };
     document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [switcherOpen]);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [switcherOpen, accountOpen]);
 
   async function switchOrg(id: string) {
     setSwitcherOpen(false);
@@ -68,6 +81,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   const active = orgs.find((o) => o.id === activeId) ?? null;
+  const displayName = isPending
+    ? ""
+    : (session?.user?.name ?? session?.user?.email?.split("@")[0] ?? "");
+  const initial = displayName.slice(0, 1).toUpperCase() || "?";
 
   return (
     <div className="hl-app flex min-h-screen flex-col" data-theme="dark">
@@ -79,7 +96,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         }}
       >
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-4">
-          <Link href="/jobs" className="text-[var(--hl-cream)]" aria-label="HireLens home">
+          <Link href={homeHref} className="text-[var(--hl-cream)]" aria-label="HireLens home">
             <Logo compact />
           </Link>
           <span aria-hidden className="h-5 w-px" style={{ background: "var(--hl-border)" }} />
@@ -147,45 +164,112 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </div>
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-1 sm:gap-2">
+            {/* Utility links — visually quieter than the account chip. */}
             <Link
               href="/analytics"
-              className="text-sm transition-colors hover:text-[var(--hl-cream)]"
+              className="hidden rounded-lg px-2.5 py-1.5 text-sm transition-colors hover:text-[var(--hl-cream)] sm:inline-block"
               style={{ color: "var(--hl-mist)" }}
               title="Org-wide hiring analytics"
             >
               Analytics
             </Link>
             <Link
-              href="/settings"
-              className="text-sm transition-colors hover:text-[var(--hl-cream)]"
-              style={{ color: "var(--hl-mist)" }}
-              title="Organization settings"
-            >
-              Settings
-            </Link>
-            <Link
               href="/docs"
-              className="hidden text-sm transition-colors hover:text-[var(--hl-cream)] sm:inline-block"
+              className="hidden rounded-lg px-2.5 py-1.5 text-sm transition-colors hover:text-[var(--hl-cream)] sm:inline-block"
               style={{ color: "var(--hl-mist)" }}
             >
               Docs
             </Link>
-            <span
-              className="hidden max-w-[220px] truncate text-sm sm:inline-block"
-              style={{ color: "var(--hl-mist)" }}
-              title={session?.user?.email ?? ""}
-            >
-              {isPending ? "" : (session?.user?.name ?? session?.user?.email?.split("@")[0] ?? "")}
-            </span>
-            <Button
-              variant="outline"
-              className="h-8 px-3 text-xs"
-              style={{ borderColor: "var(--hl-border)", color: "var(--hl-mist)" }}
-              onClick={() => signOut().then(() => (window.location.href = "/signin"))}
-            >
-              Sign out
-            </Button>
+
+            {/* Account chip: identity + grouped menu. Sign out lives here
+                (destructive row), so the header never shows five equal
+                text links (v1.2 polish fix). */}
+            <div className="relative" ref={accountRef}>
+              <button
+                type="button"
+                onClick={() => setAccountOpen((v) => !v)}
+                aria-expanded={accountOpen}
+                aria-haspopup="menu"
+                className="flex items-center gap-2 rounded-full border py-1 pl-1 pr-2.5 transition-colors hover:bg-white/[0.04]"
+                style={{ borderColor: "var(--hl-border)" }}
+              >
+                <span
+                  aria-hidden
+                  className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold"
+                  style={{ background: "var(--hl-accent-soft)", color: "var(--hl-accent)" }}
+                >
+                  {initial}
+                </span>
+                <span
+                  className="hidden max-w-[160px] truncate text-sm sm:inline-block"
+                  style={{ color: "var(--hl-cream)" }}
+                  title={session?.user?.email ?? ""}
+                >
+                  {displayName}
+                </span>
+                <span aria-hidden className="text-[10px] opacity-60">
+                  ▾
+                </span>
+              </button>
+              {accountOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full z-50 mt-2 w-64 rounded-xl border p-1.5 shadow-xl"
+                  style={{ borderColor: "var(--hl-border)", background: "var(--hl-card)" }}
+                >
+                  <div className="px-3 py-2">
+                    <p
+                      className="truncate text-sm font-medium"
+                      style={{ color: "var(--hl-cream)" }}
+                    >
+                      {displayName}
+                    </p>
+                    <p className="truncate text-xs" style={{ color: "var(--hl-muted)" }}>
+                      {session?.user?.email ?? ""}
+                    </p>
+                  </div>
+                  <div className="my-1 h-px" style={{ background: "var(--hl-border)" }} />
+                  <Link
+                    href={homeHref}
+                    role="menuitem"
+                    onClick={() => setAccountOpen(false)}
+                    className="block rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/[0.05]"
+                    style={{ color: "var(--hl-cream)" }}
+                  >
+                    {track === "candidate" ? "My hub" : "Open workspace"}
+                  </Link>
+                  <Link
+                    href="/settings"
+                    role="menuitem"
+                    onClick={() => setAccountOpen(false)}
+                    className="block rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/[0.05]"
+                    style={{ color: "var(--hl-cream)" }}
+                  >
+                    Settings
+                  </Link>
+                  <Link
+                    href="/"
+                    role="menuitem"
+                    onClick={() => setAccountOpen(false)}
+                    className="block rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/[0.05]"
+                    style={{ color: "var(--hl-cream)" }}
+                  >
+                    ← Back to HireLens site
+                  </Link>
+                  <div className="my-1 h-px" style={{ background: "var(--hl-border)" }} />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => signOut().then(() => (window.location.href = "/signin"))}
+                    className="block w-full rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-white/[0.05]"
+                    style={{ color: "var(--hl-bad)" }}
+                  >
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>

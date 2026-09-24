@@ -6,6 +6,10 @@ The open-source, glass-box hiring intelligence platform. Rank candidates against
 
 **[▶ Try the live demo — no signup](https://hirelens-rosy.vercel.app/demo)** · [📖 Documentation](#documentation) · [⚡ Self-host in one command](#quickstart)
 
+![HireLens demo — score a resume and open the evidence](docs/demo.gif)
+
+<p align="center"><sub>Pick a synthetic resume → score it → open any criterion to see the exact quoted evidence. The real engine, no signup.</sub></p>
+
 [![CI](https://github.com/abhay-yemekar/hirelens/actions/workflows/ci.yml/badge.svg)](https://github.com/abhay-yemekar/hirelens/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%E2%89%A520-brightgreen)](package.json)

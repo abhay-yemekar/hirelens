@@ -162,15 +162,23 @@ export function cronSnapshotRoutes(): Hono<AppEnv> {
     const taken = [] as Array<{ jobId: string; dimension: string; allPass: boolean }>;
     for (const job of orgJobs) {
       for (const dimension of SNAPSHOT_DIMENSIONS) {
-        const result = await takeSnapshot(db, job.orgId, job.id, dimension, "scheduled");
-        if (result) {
-          taken.push({ jobId: job.id, dimension, allPass: result.allPass });
-          await appendAudit(db, {
-            orgId: job.orgId,
-            actorId: undefined,
-            action: "bias_audit.scheduled",
-            payload: { jobId: job.id, dimension, trigger: "scheduled", allPass: result.allPass },
-          });
+        // A snapshot writes (job → org) rows; a concurrent org/job delete
+        // (test cleanup or user action) can orphan the FK mid-sweep. One
+        // vanished job must not 500 the whole cron run — skip it.
+        try {
+          const result = await takeSnapshot(db, job.orgId, job.id, dimension, "scheduled");
+          if (result) {
+            taken.push({ jobId: job.id, dimension, allPass: result.allPass });
+            await appendAudit(db, {
+              orgId: job.orgId,
+              actorId: undefined,
+              action: "bias_audit.scheduled",
+              payload: { jobId: job.id, dimension, trigger: "scheduled", allPass: result.allPass },
+            });
+          }
+        } catch (err) {
+          if (err instanceof Error && "code" in err && err.code === "23503") continue; // FK violation
+          throw err;
         }
       }
     }

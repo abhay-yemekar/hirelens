@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Logo } from "@/components/brand";
+import { userTrack, useSession } from "@/lib/auth-client";
 
 /** One dropdown entry: a page plus the one-line promise it keeps. */
 interface MenuItem {
@@ -83,6 +84,11 @@ export function SiteNav() {
   /** Which dropdown is expanded (desktop); null = none. */
   const [menu, setMenu] = useState<string | null>(null);
   const headerRef = useRef<HTMLElement | null>(null);
+  // Signed-in visitors get their side's home instead of "Sign in".
+  const { data: session, isPending } = useSession();
+  const track = userTrack(session?.user);
+  const workspaceHref = track === "candidate" ? "/candidate" : "/jobs";
+  const workspaceLabel = track === "candidate" ? "My hub" : "Open workspace";
 
   // Close the dropdown on outside click or Escape — standard disclosure-menu
   // behavior so keyboard and pointer users both get a reliable exit.
@@ -192,13 +198,24 @@ export function SiteNav() {
         <div
           className={`flex items-center gap-2 ${menu === null ? "ml-auto" : "ml-auto"} md:ml-0 md:gap-3`}
         >
-          <Link
-            href="/signin"
-            className="rounded-lg border px-3 py-2 text-sm font-semibold text-[var(--hl-cream)] transition-colors hover:border-[var(--hl-mist)]"
-            style={{ borderColor: "var(--hl-border)" }}
-          >
-            Sign in
-          </Link>
+          {isPending ? null : session ? (
+            <Link
+              href={workspaceHref}
+              className="rounded-lg border px-3 py-2 text-sm font-semibold text-[var(--hl-cream)] transition-colors hover:border-[var(--hl-mist)]"
+              style={{ borderColor: "var(--hl-accent)", color: "var(--hl-accent)" }}
+              title="You are signed in — change your side any time in Settings → Account"
+            >
+              {workspaceLabel}
+            </Link>
+          ) : (
+            <Link
+              href="/signin"
+              className="rounded-lg border px-3 py-2 text-sm font-semibold text-[var(--hl-cream)] transition-colors hover:border-[var(--hl-mist)]"
+              style={{ borderColor: "var(--hl-border)" }}
+            >
+              Sign in
+            </Link>
+          )}
           <Link
             href="/demo"
             className="hidden rounded-lg px-4 py-2 text-sm font-semibold text-[var(--hl-cream)] transition-colors md:inline-block"
