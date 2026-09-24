@@ -145,6 +145,20 @@ export function auditSnapshotRoutes(): Hono<AppEnv> {
   return routes;
 }
 
+/**
+ * Drizzle wraps driver errors (DrizzleQueryError with the pg error in
+ * `cause`), so a bare `err.code` check never sees the FK code. Walk the
+ * cause chain looking for Postgres 23503 (foreign_key_violation).
+ */
+function isFkViolation(err: unknown): boolean {
+  let cur: unknown = err;
+  for (let depth = 0; depth < 5 && cur instanceof Error; depth++) {
+    if ((cur as Error & { code?: string }).code === "23503") return true;
+    cur = (cur as Error & { cause?: unknown }).cause;
+  }
+  return false;
+}
+
 /** Cron route — mounted on the bare app; the secret is the credential. */
 export function cronSnapshotRoutes(): Hono<AppEnv> {
   const routes = new Hono<AppEnv>();
@@ -177,7 +191,7 @@ export function cronSnapshotRoutes(): Hono<AppEnv> {
             });
           }
         } catch (err) {
-          if (err instanceof Error && "code" in err && err.code === "23503") continue; // FK violation
+          if (isFkViolation(err)) continue; // FK violation (23503)
           throw err;
         }
       }
