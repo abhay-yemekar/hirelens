@@ -32,6 +32,7 @@ interface SelfCheckResult {
   criteria?: CriterionResult[];
   keywords?: { word: string; found: boolean }[];
   skills?: SkillBuckets;
+  matchPct?: number;
   improve?: string[];
 }
 
@@ -302,6 +303,21 @@ export default function SelfCheckPage() {
             <CardDescription>Deterministic check — no AI judgment in this part.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
+            {typeof result.matchPct === "number" && (
+              <div className="flex items-center gap-4">
+                <p
+                  className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 text-lg font-bold"
+                  style={{ borderColor: "var(--hl-accent)", color: "var(--hl-accent)" }}
+                >
+                  <span className="sr-only">Skill match: </span>
+                  {result.matchPct}%
+                </p>
+                <p className="text-sm" style={{ color: "var(--hl-mist)" }}>
+                  of the skills this job names are covered — matched count fully, related strengths
+                  count half. Every point traces to the chips below.
+                </p>
+              </div>
+            )}
             <SkillSection
               label="What the job asked for that your resume shows"
               items={result.skills.matched}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { candidateFamilies, knownSkills, skillGraph, skillsInText } from "./graph.js";
+import { candidateFamilies, knownSkills, matchPct, skillGraph, skillsInText } from "./graph.js";
 
 describe("skill graph", () => {
   it("matches known skills and normalizes aliases", () => {
@@ -25,6 +25,24 @@ describe("skill graph", () => {
   it("ignores unknown skills entirely (no hallucinated adjacency)", () => {
     const { adjacent } = skillGraph(["Whispernet Weaving", "Quantum Loom"], ["Kubernetes"]);
     expect(adjacent).toEqual([]);
+  });
+
+  it("matchPct: matched=1, adjacent=0.5, missing=0 over JD targets", () => {
+    expect(matchPct({ matched: ["a", "b"], adjacent: [], missing: [] })).toBe(100);
+    expect(matchPct({ matched: ["a"], adjacent: ["x"], missing: ["c"] })).toBe(75);
+    expect(matchPct({ matched: [], adjacent: ["x", "y"], missing: ["c", "d"] })).toBe(50);
+    expect(matchPct({ matched: [], adjacent: [], missing: ["c"] })).toBe(0);
+    // No named targets at all: adjacent-only shows as a neutral 50.
+    expect(matchPct({ matched: [], adjacent: ["x"], missing: [] })).toBe(50);
+    expect(matchPct({ matched: [], adjacent: [], missing: [] })).toBe(0);
+  });
+
+  it("matchPct agrees with the real skill graph output", () => {
+    const graph = skillGraph(
+      ["Postgres", "TypeScript"],
+      ["PostgreSQL", "TypeScript", "Kubernetes", "GraphQL"],
+    );
+    expect(matchPct(graph)).toBe(50); // 2 matched of 4 targets
   });
 
   it("handles empty inputs", () => {

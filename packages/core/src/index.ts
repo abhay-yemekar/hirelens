@@ -107,6 +107,7 @@ export {
 export {
   candidateFamilies,
   knownSkills,
+  matchPct,
   type SkillNode,
   skillGraph,
   skillsInText,

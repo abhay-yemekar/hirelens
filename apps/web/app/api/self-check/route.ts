@@ -20,6 +20,7 @@ import {
   extractDocument,
   isSupportedExtension,
   MAX_DOCUMENT_BYTES,
+  matchPct,
   type ProviderConfig,
   parseCandidate,
   resolveLanguageModel,
@@ -350,6 +351,7 @@ export async function POST(req: NextRequest) {
       ? parseCandidate(resumeText).skills
       : [];
     const graph = skillGraph(skills, skillsInText(jd));
+    const match = matchPct(graph);
     const improve = improvementSteps(
       result.criteria.map((c) => ({
         title: rubric.criteria.find((x) => x.key === c.key)?.title ?? c.key,
@@ -366,6 +368,7 @@ export async function POST(req: NextRequest) {
       overall: result.overall,
       modelId: result.modelId,
       skills: graph,
+      matchPct: match,
       improve,
       criteria: result.criteria.map((c) => {
         const crit = rubric.criteria.find((x) => x.key === c.key);
@@ -485,10 +488,12 @@ export async function POST(req: NextRequest) {
     // names that the resume doesn't — honest, useful, no LLM needed.
     let skills: { matched: string[]; adjacent: string[]; missing: string[] } | undefined;
     let improve: string[] | undefined;
+    let match = 0;
     try {
       const parsedSkills = parseCandidate(resumeText).skills;
       const graph = skillGraph(parsedSkills, skillsInText(jd));
       skills = graph;
+      match = matchPct(graph);
       improve = improvementSteps([], graph.missing);
     } catch {
       // Parsing is best-effort; approximate mode still returns keywords.
@@ -509,6 +514,7 @@ export async function POST(req: NextRequest) {
       overall,
       keywords,
       skills,
+      matchPct: match,
       improve,
     });
   }
