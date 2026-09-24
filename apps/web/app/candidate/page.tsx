@@ -111,18 +111,27 @@ export default function CandidateHomePage() {
           </p>
         </FadeIn>
 
-        {/* The two things a candidate actually does here — equal weight,
-            aligned on one row. */}
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
+        {/* Features are features — three equal cards, not link-row
+            footnotes. Score → rehearse → track: the whole candidate arc. */}
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
           <Card
             style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}
             className="flex flex-col"
           >
             <CardHeader>
-              <CardTitle style={{ color: "var(--hl-cream)" }}>Score my resume — free</CardTitle>
+              <span
+                aria-hidden
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-base"
+                style={{ background: "var(--hl-accent-soft)", color: "var(--hl-accent)" }}
+              >
+                🎯
+              </span>
+              <CardTitle className="mt-3" style={{ color: "var(--hl-cream)" }}>
+                Score my resume
+              </CardTitle>
               <CardDescription style={{ color: "var(--hl-mist)" }}>
-                Paste your resume (or upload PDF/DOCX) against any job description. Get the same
-                evidence-linked score recruiters see.
+                Paste your resume (or upload PDF/DOCX) against any job description — get the same
+                evidence-linked score recruiters see, plus a match percentage.
               </CardDescription>
             </CardHeader>
             <CardContent className="mt-auto">
@@ -142,43 +151,116 @@ export default function CandidateHomePage() {
             className="flex flex-col"
           >
             <CardHeader>
-              <CardTitle style={{ color: "var(--hl-cream)" }}>Open a report you received</CardTitle>
+              <span
+                aria-hidden
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-base"
+                style={{ background: "rgba(251,191,36,0.14)", color: "var(--hl-warn)" }}
+              >
+                🎤
+              </span>
+              <CardTitle className="mt-3" style={{ color: "var(--hl-cream)" }}>
+                Interview practice
+              </CardTitle>
               <CardDescription style={{ color: "var(--hl-mist)" }}>
-                A recruiter screened you and shared a private link. Paste it to see your outcome —
-                per-criterion scores and the exact evidence.
+                Questions generated from the job you're targeting, then per-answer coaching: what
+                landed, what to add, a stronger version using your facts.
               </CardDescription>
             </CardHeader>
             <CardContent className="mt-auto">
-              <form onSubmit={openReport} className="flex flex-col gap-3">
-                <input
-                  type="text"
-                  value={reportUrl}
-                  onChange={(e) => setReportUrl(e.target.value)}
-                  placeholder="https://…/report/your-token"
-                  aria-label="Report link or token"
-                  className="w-full rounded-lg border px-3 py-2.5 text-sm placeholder:text-[var(--hl-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--hl-accent-soft)]"
-                  style={{
-                    borderColor: "var(--hl-border)",
-                    background: "var(--hl-input)",
-                    color: "var(--hl-cream)",
-                  }}
-                />
-                {reportError ? (
-                  <p className="text-xs" style={{ color: "var(--hl-warn)" }} role="alert">
-                    {reportError}
-                  </p>
-                ) : null}
+              <Link href="/interview-practice">
                 <Button
-                  type="submit"
                   variant="outline"
+                  className="w-full"
                   style={{ borderColor: "var(--hl-border)", color: "var(--hl-cream)" }}
                 >
-                  Open my report
+                  Practice interviews
                 </Button>
-              </form>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card
+            style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}
+            className="flex flex-col"
+          >
+            <CardHeader>
+              <span
+                aria-hidden
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-base"
+                style={{ background: "rgba(52,211,153,0.14)", color: "rgb(52,211,153)" }}
+              >
+                🗂
+              </span>
+              <CardTitle className="mt-3" style={{ color: "var(--hl-cream)" }}>
+                Application tracker
+              </CardTitle>
+              <CardDescription style={{ color: "var(--hl-mist)" }}>
+                Every application in one private pipeline — role, status, notes, your score. Stored
+                on this device only, exportable as CSV.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="mt-auto">
+              <Link href="/tracker">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  style={{ borderColor: "var(--hl-border)", color: "var(--hl-cream)" }}
+                >
+                  Open my tracker
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>
+
+        {/* Report lookup — a distinct task (a recruiter shared a link),
+            deliberately quieter than the three features. */}
+        <Card
+          className="mt-4"
+          style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}
+        >
+          <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold" style={{ color: "var(--hl-cream)" }}>
+                Open a report you received
+              </p>
+              <p className="text-xs" style={{ color: "var(--hl-mist)" }}>
+                A recruiter screened you and shared a private link — paste it to see your outcome
+                with the exact evidence.
+              </p>
+            </div>
+            <form
+              onSubmit={openReport}
+              className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center"
+            >
+              <input
+                type="text"
+                value={reportUrl}
+                onChange={(e) => setReportUrl(e.target.value)}
+                placeholder="https://…/report/your-token"
+                aria-label="Report link or token"
+                className="w-full rounded-lg border px-3 py-2 text-sm placeholder:text-[var(--hl-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--hl-accent-soft)]"
+                style={{
+                  borderColor: "var(--hl-border)",
+                  background: "var(--hl-input)",
+                  color: "var(--hl-cream)",
+                }}
+              />
+              <Button
+                type="submit"
+                variant="outline"
+                style={{ borderColor: "var(--hl-border)", color: "var(--hl-cream)" }}
+              >
+                Open
+              </Button>
+            </form>
+          </CardContent>
+          {reportError ? (
+            <p className="px-6 pb-4 text-xs" style={{ color: "var(--hl-warn)" }} role="alert">
+              {reportError}
+            </p>
+          ) : null}
+        </Card>
 
         {/* Report center — recent reports, remembered on this device only.
             Nothing is stored server-side; clearing your browser clears it. */}
@@ -237,20 +319,6 @@ export default function CandidateHomePage() {
           style={{ borderColor: "var(--hl-border)" }}
         >
           <Link
-            href="/tracker"
-            className="transition-colors hover:underline"
-            style={{ color: "var(--hl-mist)" }}
-          >
-            Application tracker
-          </Link>
-          <Link
-            href="/interview-practice"
-            className="transition-colors hover:underline"
-            style={{ color: "var(--hl-mist)" }}
-          >
-            Interview practice
-          </Link>
-          <Link
             href="/privacy"
             className="transition-colors hover:underline"
             style={{ color: "var(--hl-mist)" }}
@@ -258,25 +326,11 @@ export default function CandidateHomePage() {
             How your data is treated
           </Link>
           <Link
-            href="/settings"
-            className="transition-colors hover:underline"
-            style={{ color: "var(--hl-mist)" }}
-          >
-            Switch sides (Settings)
-          </Link>
-          <Link
             href="/jobs"
             className="transition-colors hover:underline"
             style={{ color: "var(--hl-mist)" }}
           >
             Peek at the recruiter workspace
-          </Link>
-          <Link
-            href="/"
-            className="transition-colors hover:underline"
-            style={{ color: "var(--hl-mist)" }}
-          >
-            ← HireLens site
           </Link>
         </div>
       </div>
