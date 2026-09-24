@@ -218,15 +218,15 @@ const clickButton = (match) =>
 try {
   // Beat 1 — landing view: hero, JD card, six resume cards.
   log("beat 1: landing");
-  await shot(800);
-  await shot(800);
+  await shot(1200);
+  await shot(900);
 
   // Beat 2 — pick a candidate (border highlights, score button enables).
   log("beat 2: select candidate");
   if (!(await clickButton("Jordan Avery"))) log("WARN: Jordan Avery button not found");
-  await sleep(400);
-  await shot(600);
-  await shot(600);
+  await sleep(500);
+  await shot(900);
+  await shot(800);
 
   // Beat 3 — press score. On production this is a real LLM call (several
   // seconds); on dev it's the instant heuristic. Either way: capture the
@@ -234,26 +234,27 @@ try {
   // the anticipation reads in the GIF.
   log("beat 3: score");
   await clickButton("Score");
-  await sleep(250);
-  await shot(500); // "Scoring…" state
+  await sleep(300);
+  await shot(800); // "Scoring…" state
   let scored = false;
   let midShot = false;
   const t0 = Date.now();
   while (Date.now() - t0 < 60_000) {
     scored = await evaluate(`document.body.innerText.includes("/5")`);
     if (scored) break;
-    if (!midShot && Date.now() - t0 > 2000) {
-      await shot(500); // still scoring — show the wait
+    if (!midShot && Date.now() - t0 > 2500) {
+      await shot(900); // still scoring — show the wait (reads as anticipation)
       midShot = true;
     }
-    await sleep(800);
+    await sleep(700);
   }
   if (!scored) log("WARN: scorecard never appeared within 60s");
-  await sleep(400);
+  await sleep(300);
+  await shot(800); // scorecard arriving
 
   // Beat 4 — the full scorecard: overall score + five criteria rows.
   log("beat 4: scorecard hold");
-  for (let i = 0; i < 5; i++) await shot(550);
+  for (let i = 0; i < 4; i++) await shot(800);
 
   // Beat 5 — open a criterion: the row highlights and the resume shows
   // the quoted evidence highlighted. This is the product's whole pitch.
@@ -266,7 +267,7 @@ try {
   })()`);
   if (!opened) log("WARN: criterion row not found");
   await sleep(500);
-  for (let i = 0; i < 4; i++) await shot(600);
+  for (let i = 0; i < 3; i++) await shot(900);
 
   // Beat 6 — scroll the highlighted quote into view, then back to top.
   log("beat 6: quote in context");
@@ -276,11 +277,11 @@ try {
     return marks.length;
   })()`);
   await sleep(500);
-  for (let i = 0; i < 3; i++) await shot(600);
+  for (let i = 0; i < 2; i++) await shot(900);
 
   await evaluate(`window.scrollTo({ top: 0 })`);
   await sleep(400);
-  await shot(800);
+  await shot(1200);
 
   log(`captured ${shots.length} shots`);
 } finally {
