@@ -3,7 +3,6 @@
 import { Button } from "@hirelens/ui";
 import { Briefcase, UserRound } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/brand";
 import { setUserTrack, userTrack, useSession } from "@/lib/auth-client";
@@ -19,17 +18,18 @@ import { setUserTrack, userTrack, useSession } from "@/lib/auth-client";
  */
 
 export default function TrackPage() {
-  const router = useRouter();
   const { data: session, isPending } = useSession();
   const [busy, setBusy] = useState<"recruiter" | "candidate" | null>(null);
 
   // Already answered, or arriving here as a returning user: skip onward.
+  // Hard navigation — soft replaces raced the session refetch and left
+  // users on the wrong side's page.
   useEffect(() => {
     const track = userTrack(session?.user);
     if (!isPending && track) {
-      router.replace(track === "candidate" ? "/candidate" : "/jobs");
+      window.location.assign(track === "candidate" ? "/candidate" : "/jobs");
     }
-  }, [isPending, session, router]);
+  }, [isPending, session]);
 
   async function choose(track: "recruiter" | "candidate") {
     setBusy(track);
@@ -39,12 +39,9 @@ export default function TrackPage() {
       // Non-fatal: the choice also drives routing below; if saving fails we
       // still route and the user can be asked again next signup-session.
     }
-    if (track === "candidate") {
-      router.push("/candidate");
-    } else {
-      router.push("/welcome");
-    }
-    router.refresh();
+    // Hard navigation: the fresh load re-reads the session so the header,
+    // guards, and pages all render under the chosen side immediately.
+    window.location.assign(track === "candidate" ? "/candidate" : "/welcome");
   }
 
   const firstName = session?.user?.name?.split(" ")[0] ?? "there";

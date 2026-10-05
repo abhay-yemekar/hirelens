@@ -8,6 +8,7 @@ import { Logo } from "@/components/brand";
 import { NoticeBanner } from "@/components/notice-banner";
 import { organization, useSession } from "@/lib/auth-client";
 import { timeAgo } from "@/lib/format";
+import { useSideGuard } from "@/lib/use-side-guard";
 
 interface OrgRow {
   id: string;
@@ -49,6 +50,7 @@ function slugify(name: string): string {
  */
 export default function WelcomePage() {
   const router = useRouter();
+  const { guarding } = useSideGuard("recruiter");
   const { data: session, isPending } = useSession();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -76,8 +78,9 @@ export default function WelcomePage() {
     try {
       const res = await organization.create({ name: name.trim(), slug: slug.trim() });
       if (res?.error) throw new Error(res.error.message ?? "Could not create organization");
-      router.push("/jobs");
-      router.refresh();
+      // Hard navigation: data is org-scoped, so a fresh load guarantees the
+      // session (active org) is re-read everywhere.
+      window.location.assign("/jobs");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setBusy(false);
@@ -91,9 +94,11 @@ export default function WelcomePage() {
       setError(res.error.message ?? "Could not activate organization");
       return;
     }
-    router.push("/jobs");
-    router.refresh();
+    window.location.assign("/jobs");
   }
+
+  // Wrong-side session: the guard is navigating — render nothing.
+  if (guarding) return null;
 
   if (!isPending && !session) {
     router.replace("/signin");

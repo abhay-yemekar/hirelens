@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { NoticeBanner } from "@/components/notice-banner";
 import { apiFetch } from "@/lib/api";
+import { useSideGuard } from "@/lib/use-side-guard";
 
 /**
  * Org analytics dashboard (v1.2) — the recruiter-side counterpart to the
@@ -69,6 +70,7 @@ function fmtHours(h: number | null): string {
 }
 
 export default function AnalyticsPage() {
+  const { guarding } = useSideGuard("recruiter");
   const [data, setData] = useState<Analytics | null>(null);
   const [error, setError] = useState<unknown>(null);
   const trend = useSnapshotTrend(true);
@@ -87,6 +89,9 @@ export default function AnalyticsPage() {
 
   const maxPipeline = data ? Math.max(1, ...Object.values(data.pipeline)) : 1;
   const maxBand = data ? Math.max(1, ...data.scores.distribution.map((d) => d.count)) : 1;
+
+  // Wrong-side session: the guard is navigating — render nothing.
+  if (guarding) return null;
 
   return (
     <AppShell>

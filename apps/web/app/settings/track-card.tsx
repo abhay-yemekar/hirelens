@@ -24,9 +24,9 @@ export function TrackCard() {
     try {
       await setUserTrack(next);
       setDone(true);
-      // Route to the newly chosen side so the switch is visible.
-      router.push(next === "candidate" ? "/candidate" : "/jobs");
-      router.refresh();
+      // Hard navigation to the new side's home — a soft push leaves the
+      // cached session showing the old side until a refresh.
+      window.location.assign(next === "candidate" ? "/candidate" : "/jobs");
     } catch {
       setBusy(false);
     }
