@@ -1,9 +1,30 @@
 "use client";
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hirelens/ui";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { authClient } from "@/lib/auth-client";
+import { authClient, userTrack } from "@/lib/auth-client";
+
+/**
+ * After sign-in, land on the session side's home. The track is re-read
+ * from a fresh session fetch (not the client cache) and the landing is a
+ * hard navigation — this was the production bug where candidates signed
+ * in and landed on the recruiter Jobs page (or vice versa).
+ */
+async function landOnSideHome(): Promise<void> {
+  let side: "candidate" | "recruiter" | null = null;
+  try {
+    const res = await fetch("/api/auth/get-session", { credentials: "include" });
+    if (res.ok) {
+      const data = (await res.json()) as { user?: Record<string, unknown> } | null;
+      side = userTrack(data?.user);
+    }
+  } catch {
+    // Fall through to the default landing below.
+  }
+  window.location.assign(
+    side === "candidate" ? "/candidate" : side === "recruiter" ? "/jobs" : "/track",
+  );
+}
 
 type Mode = "signin" | "signup";
 
@@ -61,7 +82,6 @@ const inputStyle = {
 } as const;
 
 export function AuthForm() {
-  const router = useRouter();
   const [mode, setMode] = useState<Mode>("signin");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -103,13 +123,17 @@ export function AuthForm() {
           password,
         });
         if (res.error) throw new Error(res.error.message ?? "Sign-up failed");
-        router.push("/track");
+        // Hard navigation, already reading the fresh session cookie.
+        // track is unset for new users, so this lands on the chooser.
+        await landOnSideHome();
+        return;
       } else {
         const res = await authClient.signIn.email({ email, password });
         if (res.error) throw new Error(res.error.message ?? "Sign-in failed");
-        router.push("/jobs");
+        // Hard navigation, already reading the fresh session cookie.
+        await landOnSideHome();
+        return;
       }
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

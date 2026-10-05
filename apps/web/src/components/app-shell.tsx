@@ -91,14 +91,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setSwitching(true);
     try {
       await setUserTrack(next);
-      router.push(next === "candidate" ? "/candidate" : "/jobs");
-      router.refresh();
-      // Session data (track) lives in a cached reactor; a clean reload
-      // guarantees every surface re-renders under the new side.
-      window.location.reload();
     } catch {
       setSwitching(false);
+      return;
     }
+    // Hard navigation, not router.push + reload: the reload races the
+    // navigation and re-renders the OLD URL with the NEW side — leaving
+    // the user on the wrong side's page (seen in production). assign()
+    // always lands on the new side's home, and the fresh load re-reads
+    // the session so every surface renders under the new side.
+    // Recruiters without an active organization skip the /jobs flash:
+    // /jobs immediately redirects there anyway (org-scoped data).
+    const recruiterTarget = session?.session?.activeOrganizationId ? "/jobs" : "/welcome";
+    window.location.assign(next === "candidate" ? "/candidate" : recruiterTarget);
   }
 
   const active = orgs.find((o) => o.id === activeId) ?? null;
@@ -293,7 +298,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     className="block rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/[0.05]"
                     style={{ color: "var(--hl-cream)" }}
                   >
-                    Your hub
+                    {track === "candidate" ? "Candidate hub" : "Recruiter workspace"}
                   </Link>
                   <Link
                     href="/settings"

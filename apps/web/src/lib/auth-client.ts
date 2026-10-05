@@ -30,9 +30,7 @@ export const authClient = createAuthClient({
 export const { signIn, signUp, signOut, useSession, organization, updateUser } = authClient;
 
 /** Read the track off a session user (client types don't infer it). */
-export function userTrack(
-  user: ({ id: string } & Record<string, unknown>) | null | undefined,
-): UserTrack | null {
+export function userTrack(user: Record<string, unknown> | null | undefined): UserTrack | null {
   const value = user && typeof user === "object" ? user["track"] : null;
   return value === "recruiter" || value === "candidate" ? value : null;
 }

@@ -325,13 +325,6 @@ export default function CandidateHomePage() {
           >
             How your data is treated
           </Link>
-          <Link
-            href="/jobs"
-            className="transition-colors hover:underline"
-            style={{ color: "var(--hl-mist)" }}
-          >
-            Peek at the recruiter workspace
-          </Link>
         </div>
       </div>
     </AppShell>
