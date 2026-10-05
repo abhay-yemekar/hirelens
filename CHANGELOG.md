@@ -4,6 +4,23 @@ All notable changes to HireLens are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning is
 [SemVer](https://semver.org/).
 
+## [1.4.0] — Unreleased
+
+### Added
+
+- **Talent-pool rediscovery (recruiter side)** — one search across every
+  candidate in every job in your workspace. Filter by identity (filename,
+  email, phone), skills (facet chips with counts, from the parsed resume —
+  falling back to full-text extraction), latest decision stage, and a
+  minimum rubric-weighted overall score (0-100, same formula the run pages
+  use). **Shortlist** records a regular, required-reason decision on the
+  candidate's own job, so rediscovered people land in review, analytics,
+  and bias audits with the rest of the pipeline. Blind review is honored:
+  `?blind=1` masks identity cues and drops the identity filter. The API
+  surface is `GET /api/talent-pool` + `POST /api/talent-pool/shortlist`,
+  fully specified in the OpenAPI document. Reached from the header
+  ("Talent pool") or the quiet link on the Jobs page; recruiter side only.
+
 ## [1.2.0] — 2026-09-24
 
 The candidate-side release: HireLens now serves both sides of hiring at

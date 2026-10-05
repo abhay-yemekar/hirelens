@@ -85,6 +85,15 @@ export default function JobsPage() {
           <p className="mt-1 text-sm text-[var(--hl-mist)]">
             Create a role, upload resumes, and run evidence-linked scoring.
           </p>
+          <p className="mt-1 text-sm">
+            <Link
+              href="/talent-pool"
+              className="transition-colors hover:underline"
+              style={{ color: "var(--hl-accent)" }}
+            >
+              Looking for someone you screened before? Search the talent pool →
+            </Link>
+          </p>
         </header>
 
         {error ? <NoticeBanner error={error} /> : null}

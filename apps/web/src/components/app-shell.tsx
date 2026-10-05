@@ -236,6 +236,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 Analytics
               </Link>
             )}
+            {/* Talent pool — recruiter-only (org-wide candidate rediscovery). */}
+            {isRecruiter && (
+              <Link
+                href="/talent-pool"
+                className="hidden rounded-lg px-2.5 py-1.5 text-sm transition-colors hover:text-[var(--hl-cream)] sm:inline-block"
+                style={{ color: "var(--hl-mist)" }}
+                title="Search every candidate across every job"
+              >
+                Talent pool
+              </Link>
+            )}
             <Link
               href="/docs"
               className="hidden rounded-lg px-2.5 py-1.5 text-sm transition-colors hover:text-[var(--hl-cream)] sm:inline-block"
