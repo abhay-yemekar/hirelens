@@ -546,6 +546,39 @@ export const openApiDocument = {
         responses: { 200: ok({ type: "object" }) },
       },
     },
+    "/api/public/parse": {
+      post: {
+        tags: ["Integrations"],
+        summary: "Public parser: resume text or file → JSON-Resume-compatible profile. Stateless.",
+        description:
+          "Bearer token (org API token, same credentials as the ATS webhook). Send multipart/form-data with a `file` part (txt/md/pdf/docx) or application/json with a `text` field. Returns the parsed profile, content hash (SHA-256 of extracted text, for caller-side dedupe), language, page count, and layout warnings. Nothing is stored server-side; rate limited per token (default 60 requests/minute, 429 + Retry-After).",
+        responses: {
+          200: ok({
+            type: "object",
+            properties: {
+              parsed: {
+                type: "object",
+                description:
+                  "JSON-Resume-compatible profile: name, email, phone, profiles, summary, work, education, skills, certifications, language.",
+              },
+              contentHash: {
+                type: "string",
+                description: "SHA-256 of the extracted text — dedupe key used across the product.",
+              },
+              kind: { type: "string", description: "Sniffed document kind (txt/md/pdf/docx)." },
+              pageCount: { type: "integer" },
+              extractedChars: { type: "integer" },
+              warnings: { type: "array", items: { type: "string" } },
+            },
+          }),
+          401: errorResponse,
+          413: errorResponse,
+          415: errorResponse,
+          422: errorResponse,
+          429: errorResponse,
+        },
+      },
+    },
     "/api/webhooks/ats": {
       post: {
         tags: ["Integrations"],

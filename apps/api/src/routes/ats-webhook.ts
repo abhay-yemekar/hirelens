@@ -13,13 +13,13 @@
  */
 
 import type { Database } from "@hirelens/db";
-import { apiTokens, candidates, jobs } from "@hirelens/db";
-import { and, eq, isNull } from "drizzle-orm";
+import { candidates, jobs } from "@hirelens/db";
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { ingestBytes } from "../ingest.js";
+import { authenticateToken } from "../token-auth.js";
 import type { AppEnv } from "../types.js";
-import { hashToken } from "./tokens.js";
 
 const MAX_FETCH_BYTES = 10 * 1024 * 1024;
 
@@ -41,33 +41,6 @@ class ResponseError extends Error {
   ) {
     super(message);
   }
-}
-
-interface TokenAuth {
-  orgId: string;
-  tokenId: string;
-}
-
-async function authenticateToken(
-  db: Database,
-  header: string | undefined,
-): Promise<TokenAuth | null> {
-  if (header === undefined || !header.startsWith("Bearer ")) return null;
-  const raw = header.slice("Bearer ".length).trim();
-  if (raw.length < 8) return null;
-  const [row] = await db
-    .select({ orgId: apiTokens.orgId, tokenId: apiTokens.id })
-    .from(apiTokens)
-    .where(and(eq(apiTokens.tokenHash, hashToken(raw)), isNull(apiTokens.revokedAt)))
-    .limit(1);
-  if (row === undefined) return null;
-  // Rotation hygiene: touch lastUsedAt, never block the response on it.
-  void db
-    .update(apiTokens)
-    .set({ lastUsedAt: new Date() })
-    .where(eq(apiTokens.id, row.tokenId))
-    .catch(() => undefined);
-  return row;
 }
 
 async function fetchResumeBytes(url: string): Promise<{ bytes: Uint8Array; filename: string }> {
