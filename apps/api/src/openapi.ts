@@ -564,6 +564,140 @@ export const openApiDocument = {
         responses: { 200: ok({ type: "object" }) },
       },
     },
+    "/api/talent-pool": {
+      get: {
+        tags: ["Talent pool"],
+        summary:
+          "Org-wide candidate rediscovery across every job: identity search, skill filter, stage filter, and rubric-weighted minimum score, with facet counts.",
+        parameters: [
+          {
+            name: "q",
+            in: "query",
+            required: false,
+            schema: { type: "string", maxLength: 200 },
+            description:
+              "Identity search across uploaded filename, email, and phone. Ignored in blind mode.",
+          },
+          {
+            name: "skills",
+            in: "query",
+            required: false,
+            schema: { type: "string" },
+            description:
+              "Comma-separated skill names; matches the parsed resume skills (falls back to full-text extraction).",
+          },
+          {
+            name: "stage",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["new", "shortlisted", "advanced", "rejected"] },
+            description: "Filter to candidates whose latest decision is this stage.",
+          },
+          {
+            name: "minScore",
+            in: "query",
+            required: false,
+            schema: { type: "number", minimum: 1, maximum: 100 },
+            description:
+              "Minimum rubric-weighted overall (0-100) on the candidate's most recent completed run.",
+          },
+          { name: "page", in: "query", required: false, schema: { type: "integer", minimum: 1 } },
+          {
+            name: "pageSize",
+            in: "query",
+            required: false,
+            schema: { type: "integer", minimum: 1, maximum: 100 },
+          },
+          {
+            name: "blind",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["1", "true"] },
+            description:
+              "Mask identity cues; the q filter is ignored (a match would confirm existence).",
+          },
+        ],
+        responses: {
+          200: ok({
+            type: "object",
+            properties: {
+              candidates: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string", format: "uuid" },
+                    jobId: { type: "string", format: "uuid" },
+                    jobTitle: { type: "string" },
+                    label: { type: "string", nullable: true },
+                    stage: {
+                      type: "string",
+                      nullable: true,
+                      enum: ["new", "shortlisted", "advanced", "rejected", null],
+                    },
+                    skills: { type: "array", items: { type: "string" } },
+                    overall: {
+                      type: "number",
+                      nullable: true,
+                      description:
+                        "Rubric-weighted overall 0-100 from the latest completed run; null when never scored.",
+                    },
+                    rubricVersion: { type: "integer", nullable: true },
+                    runId: { type: "string", nullable: true },
+                  },
+                },
+              },
+              total: { type: "integer" },
+              page: { type: "integer" },
+              pageSize: { type: "integer" },
+              facets: {
+                type: "object",
+                properties: {
+                  stages: { type: "object", additionalProperties: { type: "integer" } },
+                  skills: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: { skill: { type: "string" }, count: { type: "integer" } },
+                    },
+                  },
+                },
+              },
+            },
+          }),
+        },
+      },
+    },
+    "/api/talent-pool/shortlist": {
+      post: {
+        tags: ["Talent pool"],
+        summary:
+          "Shortlist a rediscovered candidate. Recorded as a regular decision on the candidate's own job (required-reason, hash-chain audited), so it appears in review, analytics, and bias audits.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["candidateId"],
+                properties: {
+                  candidateId: { type: "string", format: "uuid" },
+                  reason: {
+                    type: "string",
+                    maxLength: 500,
+                    description: "Defaults to a rediscovery note when omitted.",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: ok({ type: "object" }),
+          404: errorResponse,
+        },
+      },
+    },
     "/api/jobs/{jobId}/candidates/{candidateId}/ai-content": {
       get: {
         tags: ["Candidates"],

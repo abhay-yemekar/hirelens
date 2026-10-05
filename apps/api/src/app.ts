@@ -27,6 +27,7 @@ import { scoringRoutes } from "./routes/scoring.js";
 import { searchRoutes } from "./routes/search.js";
 import { auditExportRoutes, publicShareRoutes, sharingRoutes } from "./routes/sharing.js";
 import { auditSnapshotRoutes, cronSnapshotRoutes } from "./routes/snapshots.js";
+import { talentPoolRoutes } from "./routes/talent-pool.js";
 import { tokenRoutes } from "./routes/tokens.js";
 import { interviewKitRoutes, portalRoutes, publicPortalRoutes } from "./routes/wave4.js";
 import type { AppEnv } from "./types.js";
@@ -155,6 +156,7 @@ export function createApp(deps: AppDeps) {
   protectedApi.route("/jobs/:jobId", auditSnapshotRoutes());
   protectedApi.route("/jobs", jobsRoutes());
   protectedApi.route("/analytics", analyticsRoutes());
+  protectedApi.route("/", talentPoolRoutes());
   protectedApi.route("/tokens", tokenRoutes());
   app.route("/api", protectedApi);
 
