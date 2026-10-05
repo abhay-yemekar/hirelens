@@ -8,6 +8,14 @@ All notable changes to HireLens are documented here. Format follows
 
 ### Added
 
+- **Public parser API** — `POST /api/public/parse`: stateless resume parsing
+  for integrations. Send a multipart file (txt/md/pdf/docx) or raw text with
+  an org API token (same `hl_…` credentials as the ATS webhook — create them
+  in Settings → Integrations) and get back the JSON-Resume-compatible
+  profile, a SHA-256 content hash for dedupe, language, page count, and
+  layout warnings. Nothing is stored server-side. Rate limited per token
+  (default 60 requests/minute, `429` + `Retry-After`); rate limit is
+  tunable via `HIRELENS_PARSE_RATE_LIMIT`.
 - **Talent-pool rediscovery (recruiter side)** — one search across every
   candidate in every job in your workspace. Filter by identity (filename,
   email, phone), skills (facet chips with counts, from the parsed resume —

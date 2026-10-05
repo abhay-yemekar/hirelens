@@ -113,8 +113,9 @@ export function ApiTokensCard() {
       <CardHeader>
         <CardTitle style={{ color: "var(--hl-cream)" }}>Integrations — API tokens</CardTitle>
         <CardDescription style={{ color: "var(--hl-mist)" }}>
-          Machine credentials for ATS webhooks (Greenhouse, Lever, Zapier, …). A token acts as your
-          organization — scope it per vendor and revoke instantly.{" "}
+          Machine credentials for ATS webhooks (Greenhouse, Lever, Zapier, …) and the public parser
+          API (`POST /api/public/parse` — stateless resume → structured profile). A token acts as
+          your organization — scope it per vendor and revoke instantly.{" "}
           <a
             href="/docs/ats-integration"
             className="underline"
@@ -192,7 +193,7 @@ export function ApiTokensCard() {
         ) : tokens.length === 0 ? (
           <p className="text-sm" style={{ color: "var(--hl-mist)" }}>
             No tokens yet. Create one, then point your ATS webhook at <code>/api/webhooks/ats</code>{" "}
-            — see the guide above.
+            or call the parser at <code>/api/public/parse</code> — see the guide above.
           </p>
         ) : (
           <div className="overflow-x-auto">
