@@ -153,7 +153,7 @@ export default function TalentPoolPage() {
           }}
         >
           <CardContent className="flex flex-col gap-3">
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <form
                 className="flex flex-1 gap-2"
                 onSubmit={(e) => {
@@ -167,7 +167,7 @@ export default function TalentPoolPage() {
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Search name-file, email, or phone…"
                   aria-label="Search candidates"
-                  className="w-full rounded-lg border px-3 py-2 text-sm placeholder:text-[var(--hl-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--hl-accent-soft)]"
+                  className="h-10 w-full rounded-lg border px-3 text-sm placeholder:text-[var(--hl-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--hl-accent-soft)]"
                   style={{
                     borderColor: "var(--hl-border)",
                     background: "var(--hl-input)",
@@ -188,7 +188,7 @@ export default function TalentPoolPage() {
                   <select
                     value={stage}
                     onChange={(e) => resetToFirstPage({ stage: e.target.value })}
-                    className="rounded-lg border px-2 py-2 text-sm"
+                    className="h-10 rounded-lg border px-2 text-sm"
                     style={{
                       borderColor: "var(--hl-border)",
                       background: "var(--hl-input)",
@@ -214,7 +214,7 @@ export default function TalentPoolPage() {
                     onChange={(e) => setMinScore(e.target.value)}
                     onBlur={() => resetToFirstPage({})}
                     placeholder="—"
-                    className="w-20 rounded-lg border px-2 py-2 text-sm"
+                    className="h-10 w-20 rounded-lg border px-2 text-sm"
                     style={{
                       borderColor: "var(--hl-border)",
                       background: "var(--hl-input)",
