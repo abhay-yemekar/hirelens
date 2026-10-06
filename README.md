@@ -16,7 +16,7 @@ The open-source, glass-box hiring intelligence platform. Rank candidates against
 [![pnpm](https://img.shields.io/badge/pnpm-11-FC6D26)](https://pnpm.io)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-> **Status: live in private beta.** Production runs at **[hirelens-rosy.vercel.app](https://hirelens-rosy.vercel.app)** — hardening is complete (a11y, SEO gate, API caps, load-tested 200-resume batches); v1.0.0 launch polish (30 September 2026) remains — see the [roadmap](#roadmap-to-v100--30-september-2026). Every feature in this README exists on `main` today, verified by tests.
+> **Status: v1.4.0 shipped (6 October 2026).** Production runs at **[hirelens-rosy.vercel.app](https://hirelens-rosy.vercel.app)** — the v1.4 line (talent-pool rediscovery, public parser API, ATS format check) is released; see the [changelog](CHANGELOG.md) and the [roadmap](#roadmap). Every feature in this README exists on `main` today, verified by tests.
 
 ---
 
@@ -43,6 +43,9 @@ A pnpm + Turborepo monorepo shipping the full product:
 16. **Self-host** — `docker compose up --build -d` brings up web + API + Postgres with migrations applied automatically.
 17. **Observability** — structured logging always on; Sentry, Langfuse LLM tracing, and privacy-first PostHog behind env flags.
 18. **Eval harness** — seeded benchmark measuring direction accuracy, self-consistency, position bias, and name-swap bias, wired into CI ([numbers below](#evaluation-harness--an-unevaluated-ranker-is-a-liability)).
+19. **Talent-pool rediscovery (v1.4)** — one org-wide search across every candidate from every job: identity search, skill facet chips, latest-stage filter, and a rubric-weighted minimum-score filter; shortlisting writes a regular, audited decision so rediscovered people re-enter the pipeline. Blind review honored.
+20. **Public parser API (v1.4)** — `POST /api/public/parse`: stateless resume → JSON-Resume-compatible profile with a Bearer org API token (multipart file or raw text), SHA-256 content hash for dedupe, per-token rate limiting, and nothing stored server-side.
+21. **ATS format check (v1.4)** — a deterministic parse simulation (`pass | warn | fail` + 0–100 score + actionable findings) run on every upload: catches scanned pages, table/multi-column layouts, mojibake encoding, and missing sections *before* a scoring run is spent on a mangled resume. Also returned by the public parser API as `formatCheck`.
 
 Everything is model-agnostic: bring your own key (**Google, Anthropic, Groq, OpenRouter**) or run fully local via **Ollama** — resumes never have to leave your machine. Providers that reject complex JSON schemas (e.g. Gemini's nested-array limits) are handled automatically by a validated JSON-text fallback.
 
@@ -109,7 +112,7 @@ Prefer prebuilt images? Per-release images live on GHCR —
 [`ghcr.io/abhay-yemekar/hirelens-web`](https://ghcr.io/abhay-yemekar/hirelens-web)
 and
 [`ghcr.io/abhay-yemekar/hirelens-api`](https://ghcr.io/abhay-yemekar/hirelens-api)
-(`v1.0.0`, `1.0`, `latest` tags).
+(`v1.4.0`, `1.4`, `latest` tags).
 
 Migrations apply on first boot. Open [localhost:3000](http://localhost:3000), create an account and organization, add an LLM key in `.env` for scoring.
 
@@ -227,7 +230,9 @@ Most hiring AI is a black box: a number with no justification. That is a liabili
 - ✅ **v1.0.0 launch** — tagged release, GHCR images, [`hirelens` on npm](https://www.npmjs.com/package/hirelens).
 - ✅ **Post-launch waves 1–4** — recruiter essentials (resume viewer, contacts, job lifecycle, org settings), semantic search + rubric editor + compare view, teams/sharing (members, public report links, audit CSV), interview kits + candidate portal.
 - ✅ **v1.1 — the candidate side, at equal level** — [candidate reports](https://hirelens-rosy.vercel.app/for-candidates) (recruiters share an evidence-backed score report with each candidate via a once-only, revocable token link) and [Score my resume](https://hirelens-rosy.vercel.app/self-check) (candidates score their resume against any job description with the same rubric engine — free, no signup).
-- **Next (v1.2 — nearly done)** — ✅ [skill-graph adjacency](https://hirelens-rosy.vercel.app/roadmap) (deterministic matched/adjacent/missing skills per candidate), ✅ org analytics dashboard (pipeline, score distribution, decision speed, bias trends), ✅ scheduled audits (cron-driven four-fifths snapshots, hash-chained), ✅ deterministic writing-style signals (interview-prep, never a verdict). Remaining: ATS integrations via the public API + webhooks, rubric marketplace UI.
+- ✅ **v1.2** — skill-graph adjacency (matched/adjacent/missing skills per candidate), org analytics dashboard, scheduled four-fifths audit snapshots, deterministic writing-style signals.
+- ✅ **v1.4.0 — shipped 6 October 2026** — [talent-pool rediscovery](https://hirelens-rosy.vercel.app/talent-pool) (org-wide candidate search + audited shortlist), the [public parser API](https://hirelens-rosy.vercel.app/docs/api-reference) (`POST /api/public/parse`, token-gated, stateless, rate-limited), and the ATS format check (deterministic parse simulation surfaced on every candidate + as `formatCheck` on the parser API). Full notes in the [changelog](CHANGELOG.md).
+- **Next** — parser heuristic hardening (compact resumes), talent-pool "add to job", then v1.3 (i18n, SSO/SAML, advanced RBAC) per the [roadmap](https://hirelens-rosy.vercel.app/roadmap).
 
 Follow along in [Issues](https://github.com/abhay-yemekar/hirelens/issues).
 
