@@ -9,7 +9,7 @@ The complete public contract is an **OpenAPI 3.1** document served by the API it
 GET /api/openapi.json
 ```
 
-A CI test asserts every mounted route appears in that document, so it cannot silently rot. All endpoints are organization-scoped and cookie-authenticated.
+A CI test asserts every mounted route appears in that document, so it cannot silently rot. Endpoints are organization-scoped: the product API is cookie-authenticated (Better Auth session), while the integration surfaces — the ATS webhook and the public parser API `POST /api/public/parse` — use `Authorization: Bearer hl_…` org API tokens (create them in Settings → Integrations; audited, revocable, per-token rate limits).
 
 ## Auth flow
 
@@ -19,6 +19,21 @@ A CI test asserts every mounted route appears in that document, so it cannot sil
 4. `POST /api/auth/organization/set-active` — `{ "organizationId" }`; every subsequent call is scoped to it.
 
 Better-auth also supports Google/GitHub OAuth when configured.
+
+## Integrations
+
+```bash
+# stateless parse — no data stored, JSON text or multipart file
+curl -X POST https://your-host/api/public/parse \
+  -H "Authorization: Bearer hl_…" \
+  -F file=@resume.pdf
+# → parsed JSON-Resume profile + contentHash + formatCheck (ATS parse simulation)
+
+# org-wide candidate rediscovery across every job
+curl -b jar "https://your-host/api/talent-pool?skills=Kafka&minScore=80"
+```
+
+The parse response's `formatCheck` is a deterministic ATS parse simulation (`pass | warn | fail`, 0–100 score, actionable findings) so integrations can drop or fix mangled resumes before ingesting.
 
 ## The scoring loop
 

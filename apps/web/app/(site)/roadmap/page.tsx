@@ -3,8 +3,7 @@ import { ProsePage } from "@/components/prose-page";
 
 export const metadata: Metadata = {
   title: "Roadmap — HireLens",
-  description:
-    "What's shipped, what's between here and v1.0.0 (30 September 2026), and the post-launch version plan.",
+  description: "What's shipped through v1.4.0 (6 October 2026), and the post-1.4 version plan.",
 };
 
 const NOW = [
@@ -30,6 +29,12 @@ const SHIPPED_V12 = [
   "Skill-graph adjacency — every candidate page now shows matched / adjacent / missing skills computed deterministically from the parsed resume against skills extracted from the job description (no extra LLM cost)",
 ];
 
+const SHIPPED_V14 = [
+  "Talent-pool rediscovery — one org-wide search across every candidate from every job: identity search, skill facet chips, stage filter, rubric-weighted minimum score; shortlisting records a regular, audited decision. Blind review honored",
+  "Public parser API — POST /api/public/parse: stateless resume → JSON-Resume-compatible profile with a Bearer org API token (file or text), SHA-256 content hash, per-token rate limiting; nothing stored",
+  "ATS format check — deterministic parse simulation (pass/warn/fail, 0–100, actionable findings) on every upload: scanned pages, table/multi-column layouts, mojibake, missing sections — before a scoring run is spent on a mangled resume",
+];
+
 const NEXT = [
   {
     title: "In progress — launch window (Sept–Oct 2026)",
@@ -52,8 +57,8 @@ const NEXT = [
 
 const LATER = [
   {
-    version: "v1.2 — mostly shipped",
-    text: "✅ skill-graph adjacency · ✅ org analytics dashboard · ✅ scheduled audits (cron snapshots + trend) · ✅ deterministic writing-style signals. Remaining: ATS integrations via our public API + webhooks (partner-by-API rather than one-off connectors), rubric marketplace UI",
+    version: "v1.4.0 — shipped 6 Oct 2026",
+    text: "✅ talent-pool rediscovery · ✅ public parser API (token-gated, stateless) · ✅ ATS format check. Post-1.4: parser heuristic hardening (compact resumes), talent-pool “add to job”",
   },
   { version: "v1.3 — Mar 2027", text: "i18n, SSO/SAML, advanced RBAC" },
   {
@@ -79,6 +84,9 @@ export default function RoadmapPage() {
           <li key={item}>{item}</li>
         ))}
         {SHIPPED_V12.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+        {SHIPPED_V14.map((item) => (
           <li key={item}>{item}</li>
         ))}
       </ul>
