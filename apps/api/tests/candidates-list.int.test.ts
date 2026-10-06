@@ -182,4 +182,30 @@ describe.skipIf(!available && allowSkip)("candidates list pagination + search", 
       expect(row.contactPhone).toBeNull();
     }
   });
+
+  it("stores an ATS format check on the uploaded document (v1.4)", async () => {
+    // Grab any candidate id from the list, then open the detail endpoint.
+    const list = await app.request(`/api/jobs/${jobId}/candidates`, { headers: authHeaders });
+    const listBody = (await list.json()) as { candidates: Array<{ id: string }> };
+    const candidateId = listBody.candidates[0]?.id;
+    expect(candidateId).toBeTruthy();
+
+    const detail = await app.request(`/api/jobs/${jobId}/candidates/${candidateId}`, {
+      headers: authHeaders,
+    });
+    expect(detail.status).toBe(200);
+    const body = (await detail.json()) as {
+      documents: Array<{
+        layoutMeta: {
+          atsFormat?: { verdict: string; score: number; findings: Array<{ code: string }> };
+        } | null;
+      }>;
+    };
+    const meta = body.documents[0]?.layoutMeta;
+    // The suite's resumes have contact + experience but no skills section:
+    // verdict warn, only the no-skills finding, score 95.
+    expect(meta?.atsFormat?.verdict).toBe("warn");
+    expect(meta?.atsFormat?.score).toBe(95);
+    expect(meta?.atsFormat?.findings.map((f) => f.code)).toEqual(["no-skills"]);
+  });
 });

@@ -8,6 +8,18 @@ All notable changes to HireLens are documented here. Format follows
 
 ### Added
 
+- **ATS format check (v1.4 milestone 3)** — a deterministic parse simulation
+  that asks "what will an ATS/parser make of this resume?" before anyone
+  spends a scoring run. The checker (pure function in core, same text the
+  scoring pipeline reads) reports a `pass | warn | fail` verdict, a 0–100
+  score, and actionable findings across four groups: text layer (scanned
+  pages, near-empty pages), layout (table/pipe rows, multi-column
+  fragments, low text density), encoding (mojibake), and structure (no
+  email/phone/experience/skills detected, nothing parseable). Stored at
+  ingest on the document, surfaced on the candidate page as the **ATS
+  format check** card, and returned by `POST /api/public/parse` as
+  `formatCheck` so integrations can drop or fix mangled resumes before
+  ingesting.
 - **Public parser API** — `POST /api/public/parse`: stateless resume parsing
   for integrations. Send a multipart file (txt/md/pdf/docx) or raw text with
   an org API token (same `hl_…` credentials as the ATS webhook — create them

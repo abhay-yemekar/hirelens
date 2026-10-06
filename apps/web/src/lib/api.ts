@@ -338,7 +338,22 @@ export const getCandidate = (
   apiFetch<{
     ok: true;
     candidate: { id: string; sourceFileKey: string | null };
-    documents: Array<{ id: string; kind: string; rawText: string; pageCount: number | null }>;
+    documents: Array<{
+      id: string;
+      kind: string;
+      rawText: string;
+      pageCount: number | null;
+      layoutMeta: {
+        kind?: string;
+        charCount?: number;
+        lowTextDensity?: boolean;
+        atsFormat?: {
+          verdict: "pass" | "warn" | "fail";
+          score: number;
+          findings: Array<{ code: string; label: string; detail: string }>;
+        };
+      } | null;
+    }>;
     decisions: Array<{ stage: Stage; reason: string; decidedAt: string }>;
   }>(`/api/jobs/${jobId}/candidates/${candidateId}${opts.blind ? "?blind=1" : ""}`, opts);
 

@@ -8,6 +8,7 @@
 
 import {
   type Candidate,
+  checkFormat,
   extractDocument,
   MAX_DOCUMENT_BYTES,
   parseCandidate,
@@ -58,6 +59,11 @@ export async function ingestBytes(
   // Dedupe key: SHA-256 of the extracted text, unique per job.
   const textSha = textHash(rawText);
 
+  // ATS format check (v1.4): deterministic parse simulation on the same
+  // text the scoring pipeline will read. Stored on the document so the
+  // candidate page can warn before a run is wasted on a mangled resume.
+  const atsFormat = checkFormat(rawText, extracted);
+
   const [dupe] = await db
     .select({ id: candidates.id })
     .from(candidates)
@@ -98,6 +104,7 @@ export async function ingestBytes(
         kind: extracted.kind,
         charCount: extracted.charCount,
         lowTextDensity: extracted.layoutHints.lowTextDensity,
+        atsFormat,
       },
     })
     .returning({ id: documents.id });

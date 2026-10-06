@@ -19,6 +19,7 @@
 
 import {
   type Candidate,
+  checkFormat,
   type ExtractedDocument,
   ExtractionError,
   extractDocument,
@@ -251,6 +252,9 @@ export function publicParseRoutes(): Hono<AppEnv> {
       pageCount,
       extractedChars: charCount,
       warnings: extracted ? warningsFor(extracted, parsed) : [],
+      // ATS format check (v1.4): verdict + parse-simulation score so
+      // integrations can drop or fix mangled resumes before ingesting.
+      formatCheck: checkFormat(rawText, extracted ?? undefined),
       // Attribution only — no candidate data is stored anywhere.
       organizationId: auth.orgId,
     });
