@@ -4,7 +4,7 @@ All notable changes to HireLens are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning is
 [SemVer](https://semver.org/).
 
-## [1.4.0] — Unreleased
+## [1.4.0] — 2026-10-06
 
 ### Added
 
