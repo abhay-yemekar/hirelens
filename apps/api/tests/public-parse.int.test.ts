@@ -122,6 +122,7 @@ describe.skipIf(!available && allowSkip)("public parser API", () => {
       kind: string;
       pageCount: number;
       warnings: string[];
+      formatCheck: { verdict: string; score: number; findings: Array<{ code: string }> };
     };
     expect(body.ok).toBe(true);
     expect(body.parsed.name?.toLowerCase()).toContain("priya");
@@ -130,6 +131,64 @@ describe.skipIf(!available && allowSkip)("public parser API", () => {
     expect(body.contentHash).toMatch(/^[0-9a-f]{64}$/);
     expect(body.kind).toBe("txt");
     expect(body.pageCount).toBe(1);
+    // ATS format check (v1.4): clean resume parses as pass with full score.
+    expect(body.formatCheck.verdict).toBe("pass");
+    expect(body.formatCheck.score).toBe(100);
+    expect(body.formatCheck.findings).toEqual([]);
+  });
+
+  it("returns a warning formatCheck for a resume missing skills and phone", async () => {
+    const res = await parse(token, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        text: [
+          "Priya Sharma",
+          "Email: priya.sharma@example.com",
+          "",
+          "EXPERIENCE",
+          "Backend Engineer - Example Corp - 2022 - Present",
+          "- Built streaming pipelines in Go.",
+          "- Owned ingestion and processing layers.",
+          "- Tuned streaming throughput end to end.",
+        ].join("\n"),
+      }),
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      formatCheck: { verdict: string; score: number; findings: Array<{ code: string }> };
+    };
+    expect(body.formatCheck.verdict).toBe("warn");
+    expect(body.formatCheck.findings.some((f) => f.code === "no-skills")).toBe(true);
+    expect(body.formatCheck.findings.some((f) => f.code === "no-phone")).toBe(true);
+  });
+
+  it("keeps table-layout findings in formatCheck for pipe-delimited resumes", async () => {
+    const res = await parse(token, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        text: [
+          "Jordan Avery",
+          "jordan@example.com | 555-0142",
+          "",
+          "EXPERIENCE",
+          "Engineer | Acme | 2020 | 2024",
+          "Engineer | Globex | 2018 | 2020",
+          "Manager | Initech | 2016 | 2018",
+          "Associate | Umbrella | 2014 | 2016",
+          "Intern | Cyberdyne | 2013 | 2014",
+          "",
+          "SKILLS",
+          "TypeScript, Docker, Kubernetes, SQL, React, Git, CI/CD, Jest",
+        ].join("\n"),
+      }),
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      formatCheck: { verdict: string; findings: Array<{ code: string }> };
+    };
+    expect(body.formatCheck.findings.some((f) => f.code === "table-layout")).toBe(true);
   });
 
   it("parses a multipart upload and hashes identical content identically", async () => {

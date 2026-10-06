@@ -569,6 +569,26 @@ export const openApiDocument = {
               pageCount: { type: "integer" },
               extractedChars: { type: "integer" },
               warnings: { type: "array", items: { type: "string" } },
+              formatCheck: {
+                type: "object",
+                description:
+                  "ATS format check (v1.4): deterministic parse simulation. verdict pass|warn|fail, score 0-100, and actionable findings (text layer, layout, encoding, structure).",
+                properties: {
+                  verdict: { type: "string", enum: ["pass", "warn", "fail"] },
+                  score: { type: "integer" },
+                  findings: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        code: { type: "string" },
+                        label: { type: "string" },
+                        detail: { type: "string" },
+                      },
+                    },
+                  },
+                },
+              },
             },
           }),
           401: errorResponse,

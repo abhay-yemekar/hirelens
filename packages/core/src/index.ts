@@ -56,6 +56,11 @@ export {
   type AiSuspicion,
   detectAiContent,
 } from "./parse/ai-content.js";
+export {
+  checkFormat,
+  type FormatCheck,
+  type FormatFinding,
+} from "./parse/ats-format.js";
 export { ParseError, parseCandidate } from "./parse/candidate.js";
 export {
   type Candidate,

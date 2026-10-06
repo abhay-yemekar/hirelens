@@ -10,6 +10,7 @@ import { getCandidate, type Stage } from "@/lib/api";
 import { candidateLabel, cap } from "@/lib/format";
 
 import { AiContentCard } from "./ai-content-card";
+import { AtsFormatCard } from "./ats-format-card";
 import { PortalPanel } from "./portal-panel";
 import { ReportPanel } from "./report-panel";
 import { SkillsPanel } from "./skills-panel";
@@ -29,6 +30,15 @@ export default function CandidatePage() {
   const [rawText, setRawText] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
   const [decisions, setDecisions] = useState<DecisionRow[]>([]);
+  const [atsFormat, setAtsFormat] = useState<
+    | {
+        verdict: "pass" | "warn" | "fail";
+        score: number;
+        findings: Array<{ code: string; label: string; detail: string }>;
+      }
+    | null
+    | undefined
+  >(undefined);
   const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
@@ -41,6 +51,7 @@ export default function CandidatePage() {
         setRawText(res.documents[0]?.rawText ?? "");
         setName(candidateLabel(res.candidate.id, res.candidate.sourceFileKey ?? null));
         setDecisions(res.decisions);
+        setAtsFormat(res.documents[0]?.layoutMeta?.atsFormat ?? null);
       } catch (err) {
         setError(err);
       }
@@ -93,6 +104,8 @@ export default function CandidatePage() {
             )}
           </CardContent>
         </Card>
+
+        {atsFormat ? <AtsFormatCard atsFormat={atsFormat} /> : null}
 
         <SkillsPanel jobId={params.jobId} candidateId={params.candidateId} />
         <AiContentCard jobId={params.jobId} candidateId={params.candidateId} />
