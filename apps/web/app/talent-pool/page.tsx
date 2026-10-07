@@ -14,6 +14,9 @@ import { useSideGuard } from "@/lib/use-side-guard";
  * find the strong Kafka engineer from a closed req six months ago
  * without remembering which job they applied to. Filters mirror the API:
  * identity search, skills, stage, and a rubric-weighted minimum score.
+ * "Add to job" (v1.4 post-release) re-ingests the stored original file
+ * into the chosen job via the real pipeline — parse, dedupe, format
+ * check, index — so the copy is a first-class candidate there.
  */
 
 interface PoolRow {
@@ -35,6 +38,13 @@ interface PoolResponse {
   page: number;
   pageSize: number;
   facets: { stages: Record<string, number>; skills: Array<{ skill: string; count: number }> };
+}
+
+interface AddToJobResult {
+  ok: boolean;
+  status?: "created" | "duplicate";
+  candidateId?: string;
+  message?: string;
 }
 
 const STAGES = ["new", "shortlisted", "advanced", "rejected"] as const;
@@ -67,6 +77,14 @@ export default function TalentPoolPage() {
   const [loading, setLoading] = useState(true);
   const [shortlisting, setShortlisting] = useState<string | null>(null);
 
+  // Add-to-job state: one add in flight at a time per row, plus the picker
+  // target while a choice is being made.
+  const [addingToJob, setAddingToJob] = useState<string | null>(null);
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
+  const [targetJobId, setTargetJobId] = useState("");
+  const [jobs, setJobs] = useState<Array<{ id: string; title: string; status: string }>>([]);
+  const [notice, setNotice] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -89,6 +107,29 @@ export default function TalentPoolPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Jobs for the add-to-job picker: fetched once, filtered to open/draft
+  // (the API rejects closed jobs), and the source job is excluded inline
+  // per row.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await apiFetch<{
+          ok: boolean;
+          jobs: Array<{ id: string; title: string; status: string }>;
+        }>("/api/jobs?limit=100");
+        if (!cancelled) {
+          setJobs(res.jobs.filter((j) => j.status !== "closed"));
+        }
+      } catch {
+        // Picker silently degrades: the Shortlist button still works.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function resetToFirstPage(next: {
     q?: string;
@@ -119,6 +160,43 @@ export default function TalentPoolPage() {
     }
   }
 
+  function togglePicker(candidateId: string, sourceJobId: string) {
+    if (pickerFor === candidateId) {
+      setPickerFor(null);
+      setTargetJobId("");
+      return;
+    }
+    setPickerFor(candidateId);
+    // Pre-select the first open job that isn't the source job — one less
+    // click for the common case.
+    setTargetJobId(jobs.find((j) => j.id !== sourceJobId && j.status !== "closed")?.id ?? "");
+  }
+
+  async function addToJob(candidateId: string) {
+    if (!targetJobId) return;
+    setAddingToJob(candidateId);
+    setError(null);
+    try {
+      const res = await apiFetch<AddToJobResult>("/api/talent-pool/add-to-job", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ candidateId, jobId: targetJobId }),
+      });
+      if (res.status === "duplicate") {
+        setNotice(res.message ?? "Already a candidate on that job.");
+      } else {
+        const jobTitle = jobs.find((j) => j.id === targetJobId)?.title ?? "the job";
+        setNotice(`Added to ${jobTitle}.`);
+      }
+      setPickerFor(null);
+      setTargetJobId("");
+    } catch (err) {
+      setError(err);
+    } finally {
+      setAddingToJob(null);
+    }
+  }
+
   if (guarding) {
     return (
       <AppShell>
@@ -144,6 +222,29 @@ export default function TalentPoolPage() {
             closed reqs by skill, score, or outcome.
           </p>
         </header>
+
+        {notice ? (
+          <div
+            role="status"
+            className="flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm"
+            style={{
+              borderColor: "var(--hl-border)",
+              background: "var(--hl-card)",
+              color: "var(--hl-cream)",
+            }}
+          >
+            <span>{notice}</span>
+            <button
+              type="button"
+              onClick={() => setNotice(null)}
+              className="text-xs underline"
+              style={{ color: "var(--hl-muted)" }}
+            >
+              Dismiss
+              <span className="sr-only"> the notice</span>
+            </button>
+          </div>
+        ) : null}
 
         {/* Filters: identity search, stage, minimum score, skill chips. */}
         <Card
@@ -353,6 +454,60 @@ export default function TalentPoolPage() {
                   ) : null}
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-center">
+                  {pickerFor === r.id ? (
+                    <div className="flex items-center gap-2">
+                      <label className="sr-only" htmlFor={`target-job-${r.id}`}>
+                        Choose a job to add {r.label ?? "this candidate"} to
+                      </label>
+                      <select
+                        id={`target-job-${r.id}`}
+                        value={targetJobId}
+                        onChange={(e) => setTargetJobId(e.target.value)}
+                        className="h-9 max-w-[220px] rounded-lg border px-2 text-sm"
+                        style={{
+                          borderColor: "var(--hl-border)",
+                          background: "var(--hl-input)",
+                          color: "var(--hl-cream)",
+                        }}
+                      >
+                        <option value="">Choose a job…</option>
+                        {jobs
+                          .filter((j) => j.id !== r.jobId)
+                          .map((j) => (
+                            <option key={j.id} value={j.id}>
+                              {j.title}
+                              {j.status === "draft" ? " (draft)" : ""}
+                            </option>
+                          ))}
+                      </select>
+                      <Button
+                        size="sm"
+                        disabled={addingToJob === r.id || !targetJobId}
+                        onClick={() => void addToJob(r.id)}
+                        title="Re-ingest this candidate's resume into the chosen job"
+                      >
+                        {addingToJob === r.id ? "Adding…" : "Add"}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => togglePicker(r.id, r.jobId)}
+                        aria-label="Cancel add to job"
+                      >
+                        ✕
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      disabled={addingToJob === r.id || jobs.length === 0}
+                      onClick={() => togglePicker(r.id, r.jobId)}
+                      style={{ borderColor: "var(--hl-border)", color: "var(--hl-cream)" }}
+                      title="Add this candidate to another open job in the workspace"
+                    >
+                      Add to job
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     disabled={shortlisting === r.id}
@@ -405,6 +560,9 @@ export default function TalentPoolPage() {
               Scores come from each candidate's most recent completed run, weighted by that job's
               rubric — the same number their report shows. Shortlisting writes a regular, audited
               decision on the candidate's job, so it shows up in review, analytics, and bias audits.
+              "Add to job" re-runs the full ingest pipeline into the chosen job — parse, dedupe, ATS
+              format check, search index — so the copy is a first-class candidate there, and the
+              move itself lands in the hash-chained audit trail.
             </CardDescription>
           </CardHeader>
         </Card>
