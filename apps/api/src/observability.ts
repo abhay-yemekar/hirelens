@@ -30,7 +30,24 @@ export function initSentry(): void {
     dsn,
     environment: process.env["NODE_ENV"] ?? "development",
     ...(process.env["RELEASE"] ? { release: process.env["RELEASE"] } : {}),
-    sendDefaultPii: false,
+    // Sentry v11 replaced `sendDefaultPii` with granular `dataCollection`, and
+    // its new default is far more permissive (cookies, HTTP bodies, DB query
+    // data, GenAI I/O). This resumes handle candidate PII, so keep v10's
+    // restrictive posture by setting the baseline explicitly — do not remove.
+    dataCollection: {
+      userInfo: false,
+      cookies: false,
+      httpHeaders: {
+        request: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+        response: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+      },
+      httpBodies: [],
+      urlQueryParams: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+      genAI: { inputs: false, outputs: false },
+      databaseQueryData: false,
+      queues: false,
+      graphQL: { document: false, variables: false },
+    },
     tracesSampleRate: 0.1,
   });
   logger.info("sentry.initialized");
