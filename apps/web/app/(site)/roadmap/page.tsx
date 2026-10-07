@@ -58,7 +58,7 @@ const NEXT = [
 const LATER = [
   {
     version: "v1.4.0 — shipped 6 Oct 2026",
-    text: "✅ talent-pool rediscovery · ✅ public parser API (token-gated, stateless) · ✅ ATS format check. Post-1.4: parser heuristic hardening (compact resumes), talent-pool “add to job”",
+    text: "✅ talent-pool rediscovery · ✅ public parser API (token-gated, stateless) · ✅ ATS format check · ✅ parser heuristic hardening (compact resumes) · ✅ talent-pool “add to job”",
   },
   { version: "v1.3 — Mar 2027", text: "i18n, SSO/SAML, advanced RBAC" },
   {
