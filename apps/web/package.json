@@ -17,7 +17,7 @@
     "@hirelens/api": "workspace:*",
     "@hirelens/core": "workspace:*",
     "@hirelens/ui": "workspace:*",
-    "@sentry/node": "^10.74.0",
+    "@sentry/node": "^11.4.0",
     "@tailwindcss/postcss": "^4.3.3",
     "ai": "^7.0.127",
     "better-auth": "1.7.7",
