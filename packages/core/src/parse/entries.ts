@@ -60,10 +60,10 @@ export function extractSkills(lines: string[], section: Section): string[] {
   for (let i = section.start + 1; i < section.end; i++) {
     const line = lines[i];
     if (!line) continue;
-    if (/^(technologies|tools|languages|frameworks|other)\b\s*:/i.test(line)) {
+    if (/^(technologies|tools|languages|frameworks|other)\b\s*:?/i.test(line)) {
       continue;
     }
-    const parts = line.split(/[,;|\u2022\u00b7]|\s{3,}/);
+    const parts = line.split(/[,;|/\u2022\u00b7]|\s{2,}/);
     for (const raw of parts) {
       const s = raw
         .trim()
@@ -95,7 +95,11 @@ export function extractEducation(lines: string[], section: Section): CandidateEd
   return entries;
 }
 
-/** Match a role header line: "Title - Company - dates" variants. */
+/** Match a role header line: "Title - Company - dates" variants.
+ * Compact single-line form "Title at Company, 2021 - Present" (no dash
+ * separator) is handled too: when the line carries a date range but no
+ * dash/pipe split, " at " or " @ " separates title from company, and a
+ * trailing date range is stripped from the company part. */
 export function matchRoleLine(line: string): CandidateWork | null {
   const trimmed = line.trim();
   if (trimmed.length < 5 || trimmed.length > 120) return null;
@@ -107,6 +111,26 @@ export function matchRoleLine(line: string): CandidateWork | null {
     .split(/\s+[-|\u2022]\s+|\s*\u2022\s*/)
     .map((p) => p.trim().replace(/\s*[-|\u2022]\s*$/, ""))
     .filter((p) => p.length > 0 && !DATE_RANGE_RE.test(p));
+
+  if (parts.length < 2 && dates) {
+    const at = /\s+(?:@|at)\s+/i.exec(trimmed);
+    if (at?.index) {
+      const title = trimmed.slice(0, at.index).trim();
+      const company = trimmed
+        .slice(at.index + at[0].length)
+        .replace(DATE_RANGE_RE, "")
+        .trim()
+        .replace(/[,;]+$/, "")
+        .trim();
+      if (title && company) {
+        const entry: CandidateWork = { name: company, position: title };
+        entry.startDate = dates.start;
+        entry.endDate = dates.end;
+        if (dates.current) entry.current = true;
+        return entry;
+      }
+    }
+  }
 
   if (!dates && parts.length < 2) return null;
   const position = parts[0] ?? "";

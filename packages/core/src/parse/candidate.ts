@@ -11,7 +11,7 @@ import {
 } from "./contact.js";
 import { extractEducation, extractSkills, extractWork } from "./entries.js";
 import { type Candidate, ParseError } from "./schema.js";
-import { segmentSections } from "./sections.js";
+import { segmentSections, splitInlineHeaders } from "./sections.js";
 
 export { ParseError };
 
@@ -23,7 +23,9 @@ export { ParseError };
  * same Zod schema.
  */
 export function parseCandidate(text: string): Candidate {
-  const lines = requireLines(text);
+  // Normalize once: inline "HEADER: content" lines become two lines so
+  // section indexes and extractor input always describe the same array.
+  const lines = splitInlineHeaders(requireLines(text));
 
   const email = findEmail(lines);
   const phone = findPhone(lines);
