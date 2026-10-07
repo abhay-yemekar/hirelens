@@ -58,6 +58,21 @@ const FEATURES = [
     text: "score <jobId> ./resumes — the full pipeline from a terminal, with ranked output and JSON for automation. Zero runtime dependencies.",
     span: "",
   },
+  {
+    title: "Talent-pool rediscovery (v1.4)",
+    text: "One org-wide search across every candidate from every job — by skill, stage, or rubric-weighted score. Shortlisting a rediscovered person records a regular, audited decision, not a sticky note.",
+    span: "",
+  },
+  {
+    title: "Public parser API (v1.4)",
+    text: "POST /api/public/parse turns a resume into a JSON-Resume-compatible profile: Bearer-token gated, stateless, rate-limited — and nothing stored anywhere.",
+    span: "",
+  },
+  {
+    title: "ATS format check (v1.4)",
+    text: "Every upload gets a deterministic parse simulation — scanned pages, multi-column layouts, mojibake — surfaced as pass/warn/fail with findings, before a scoring run is spent on a mangled resume.",
+    span: "",
+  },
 ];
 
 const PIPELINE = [
@@ -74,7 +89,7 @@ const PIPELINE = [
   {
     step: "03",
     title: "Drop in resumes",
-    text: "PDF, DOCX, TXT, or a ZIP. Parsed, hashed, deduped — locally.",
+    text: "PDF, DOCX, TXT, or a ZIP. Parsed, hashed, deduped, and format-checked — locally.",
   },
   {
     step: "04",
@@ -137,6 +152,10 @@ const FAQ = [
   {
     q: "Can I self-host it?",
     a: "Yes — one command: docker compose up --build -d brings up the web app, API, and Postgres with migrations applied automatically. Point it at Ollama and nothing leaves your network.",
+  },
+  {
+    q: "Can it fit into the tools I already use?",
+    a: "Three doors: a public parser API (POST /api/public/parse — Bearer-token, stateless, rate-limited), an inbound ATS webhook that screens a candidate on an event, and the zero-dependency CLI. Whatever your stack looks like, the evidence trail stays in HireLens.",
   },
   {
     q: "What's the license?",
@@ -556,7 +575,8 @@ export default function LandingPage() {
             Try the live demo
           </Link>
           <p id="roadmap" className="mt-10 text-xs" style={{ color: "var(--hl-muted)" }}>
-            v1.1 is live — the candidate side, at equal level. See the roadmap.
+            v1.4.0 is live — talent-pool rediscovery, a public parser API, and the ATS format check.
+            See the roadmap.
           </p>
         </div>
       </section>
