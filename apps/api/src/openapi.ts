@@ -751,6 +751,39 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/talent-pool/add-to-job": {
+      post: {
+        tags: ["Talent pool"],
+        summary:
+          "Add a rediscovered candidate to another open job. Re-ingests the stored original file through the real pipeline (parse, per-job dedupe, ATS format check, search index), so the copy is a first-class candidate on the target job. Audited with a link back to the source.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["candidateId", "jobId"],
+                properties: {
+                  candidateId: { type: "string", format: "uuid" },
+                  jobId: { type: "string", format: "uuid" },
+                  reason: {
+                    type: "string",
+                    maxLength: 500,
+                    description: "Defaults to a rediscovery note when omitted.",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: ok({ type: "object" }),
+          200: ok({ type: "object" }),
+          404: errorResponse,
+          409: errorResponse,
+        },
+      },
+    },
     "/api/jobs/{jobId}/candidates/{candidateId}/ai-content": {
       get: {
         tags: ["Candidates"],

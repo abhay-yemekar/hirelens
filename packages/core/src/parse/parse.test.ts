@@ -77,6 +77,97 @@ describe("parseCandidate", () => {
     expect(c.certifications).toContain("AWS Solutions Architect Associate (2020)");
   });
 
+  describe("compact resume forms", () => {
+    it('parses inline section headers ("SKILLS: TypeScript, Postgres")', () => {
+      const c = parseCandidate(`MAYA LIN
+maya@example.com - (555) 010-4821
+
+EXPERIENCE: Backend Engineer at Northwind, 2021 to present
+
+SKILLS: Go, PostgreSQL, Redis, Docker
+
+EDUCATION: BSc Computer Science - University of Toronto - 2020`);
+      expect(c.skills).toContain("Go");
+      expect(c.skills).toContain("PostgreSQL");
+      expect(c.skills).toContain("Redis");
+      expect(c.skills).toContain("Docker");
+      expect(c.work[0]).toMatchObject({ position: "Backend Engineer", name: "Northwind" });
+      expect(c.education[0]).toMatchObject({ institution: "University of Toronto" });
+    });
+
+    it("does not treat prose that starts with a section word as a header", () => {
+      const c = parseCandidate(`ALEX RIVERA
+alex@example.com
+
+Skills improve the match when they appear in context.
+
+EXPERIENCE
+
+Roofer - Acme Roofing - 2019 - 2021`);
+      expect(c.skills).toEqual([]);
+      expect(c.work[0]).toMatchObject({ position: "Roofer", name: "Acme Roofing" });
+    });
+
+    it('parses slash-separated skill lists ("TypeScript/React/Node")', () => {
+      const c = parseCandidate(`SAM ORTIZ
+sam@example.com
+
+EXPERIENCE
+
+Full-Stack Developer - Hills Inc - 2020 - Present
+
+SKILLS
+
+TypeScript/React/Node.js/GraphQL`);
+      expect(c.skills).toContain("TypeScript");
+      expect(c.skills).toContain("React");
+      expect(c.skills).toContain("Node.js");
+      expect(c.skills).toContain("GraphQL");
+    });
+
+    it("parses two-space-separated skill tokens", () => {
+      const c = parseCandidate(`KIM DIAZ
+kim@example.com
+
+EXPERIENCE
+
+Data Engineer - FlowCo - 2020 - Present
+
+SKILLS
+
+Python  SQL  Spark  Airflow`);
+      expect(c.skills).toContain("Python");
+      expect(c.skills).toContain("SQL");
+      expect(c.skills).toContain("Spark");
+      expect(c.skills).toContain("Airflow");
+    });
+
+    it("parses work roles densely stacked on consecutive lines", () => {
+      const c = parseCandidate(`IVA NOVA
+iva@example.com
+
+EXPERIENCE
+
+Senior Engineer - Acme - 2022 - Present
+Engineer - Globex - 2019 - 2022
+Junior Engineer - Initech - 2017 - 2019`);
+      expect(c.work).toHaveLength(3);
+      expect(c.work[0]).toMatchObject({ name: "Acme", position: "Senior Engineer" });
+      expect(c.work[1]).toMatchObject({ name: "Globex", position: "Engineer" });
+      expect(c.work[2]).toMatchObject({ name: "Initech", position: "Junior Engineer" });
+    });
+
+    it("parses skills-only compact resumes (no experience section)", () => {
+      const c = parseCandidate(`NOOR KHAN
+noor@example.com
+
+SKILLS: Kubernetes, Terraform, AWS`);
+      expect(c.skills).toContain("Kubernetes");
+      expect(c.skills).toContain("Terraform");
+      expect(c.skills).toContain("AWS");
+    });
+  });
+
   it("rejects content-free text with a typed error", () => {
     expect(() => parseCandidate("...")).toThrow(ParseError);
     expect(() => parseCandidate("a b c")).toThrow(/too little text/i);

@@ -6,8 +6,8 @@
  */
 
 import { createMockModel } from "@hirelens/core";
-import { auth, createDb, organization } from "@hirelens/db";
-import { eq } from "drizzle-orm";
+import { auditLog, auth, createDb, organization } from "@hirelens/db";
+import { desc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 
@@ -338,4 +338,212 @@ describe.skipIf(!available && allowSkip)("talent pool", () => {
     const body = (await res.json()) as { total: number };
     expect(body.total).toBe(0);
   });
+
+  describe("add to job", () => {
+    it("re-ingests the stored file into the target job as a new candidate", async () => {
+      const listRes = await app.request("/api/talent-pool", { headers: authHeaders });
+      const listBody = (await listRes.json()) as {
+        candidates: Array<{
+          id: string;
+          contactEmail: string | null;
+          jobId: string;
+          jobTitle: string;
+        }>;
+      };
+      const carla = listBody.candidates.find((r) => r.contactEmail === "carla.tp@example.com");
+      expect(carla).toBeDefined();
+
+      // Target job: fresh one so the count assertions are self-contained.
+      const jobRes = await app.request("/api/jobs", {
+        method: "POST",
+        headers: { ...authHeaders, "content-type": "application/json" },
+        body: JSON.stringify({ title: `AddTarget ${STAMP}`, description: "Platform role." }),
+      });
+      expect(jobRes.status).toBe(201);
+      const targetJobId = ((await jobRes.json()) as { job: { id: string } }).job.id;
+
+      const res = await app.request("/api/talent-pool/add-to-job", {
+        method: "POST",
+        headers: { ...authHeaders, "content-type": "application/json" },
+        body: JSON.stringify({ candidateId: carla?.id, jobId: targetJobId }),
+      });
+      expect(res.status).toBe(201);
+      const addBody = (await res.json()) as {
+        ok: boolean;
+        status: string;
+        candidateId: string;
+        jobId: string;
+      };
+      expect(addBody.ok).toBe(true);
+      expect(addBody.status).toBe("created");
+      expect(addBody.jobId).toBe(targetJobId);
+      expect(addBody.candidateId).not.toBe(carla?.id);
+
+      // The copy lives on the target job with the parsed profile intact.
+      const targetRes = await app.request(`/api/jobs/${targetJobId}/candidates`, {
+        headers: authHeaders,
+      });
+      const targetBody = (await targetRes.json()) as {
+        candidates: Array<{ id: string; contactEmail: string | null }>;
+      };
+      expect(targetBody.candidates.map((r) => r.contactEmail)).toContain("carla.tp@example.com");
+      expect(targetBody.candidates).toHaveLength(1);
+    });
+
+    it("treats a second add as duplicate (per-job text-hash dedupe)", async () => {
+      const listRes = await app.request("/api/talent-pool", { headers: authHeaders });
+      const listBody = (await listRes.json()) as {
+        candidates: Array<{
+          id: string;
+          contactEmail: string | null;
+          jobTitle: string;
+          jobId: string;
+        }>;
+      };
+      const carla = listBody.candidates.find(
+        (r) => r.contactEmail === "carla.tp@example.com" && r.jobTitle === `AddTarget ${STAMP}`,
+      );
+      expect(carla).toBeDefined();
+
+      // The job Carla now belongs to (AddTarget) is where she lives; add
+      // her from there again → the job's own hash-dedupe no-ops.
+      const res = await app.request("/api/talent-pool/add-to-job", {
+        method: "POST",
+        headers: { ...authHeaders, "content-type": "application/json" },
+        body: JSON.stringify({ candidateId: carla?.id, jobId: carla?.jobId }),
+      });
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { ok: boolean; status: string };
+      expect(body.ok).toBe(true);
+      expect(body.status).toBe("duplicate");
+    });
+
+    it("rejects adding to a closed job", async () => {
+      // Close the target job, then attempt an add.
+      const jobsRes = await app.request("/api/jobs?limit=100", { headers: authHeaders });
+      const jobsBody = (await jobsRes.json()) as {
+        jobs: Array<{ id: string; title: string; status: string }>;
+      };
+      const jobs = jobsBody.jobs;
+      const target = jobs.find((j) => j.title === `AddTarget ${STAMP}`);
+      expect(target).toBeDefined();
+      const closeRes = await app.request(`/api/jobs/${target?.id}`, {
+        method: "PATCH",
+        headers: { ...authHeaders, "content-type": "application/json" },
+        body: JSON.stringify({ status: "closed" }),
+      });
+      expect(closeRes.status).toBe(200);
+
+      const listRes = await app.request("/api/talent-pool", { headers: authHeaders });
+      const listBody = (await listRes.json()) as {
+        candidates: Array<{ id: string; contactEmail: string | null; jobTitle: string }>;
+      };
+      const alice = listBody.candidates.find((r) => r.contactEmail === ALICE.email);
+      expect(alice).toBeDefined();
+
+      const res = await app.request("/api/talent-pool/add-to-job", {
+        method: "POST",
+        headers: { ...authHeaders, "content-type": "application/json" },
+        body: JSON.stringify({ candidateId: alice?.id, jobId: target?.id }),
+      });
+      expect(res.status).toBe(409);
+      const body = (await res.json()) as { ok: boolean; error: string };
+      expect(body.error).toBe("job_closed");
+    });
+
+    it("never leaks candidates across organizations", async () => {
+      // A candidate from the other org + a job in our org.
+      const otherSignIn = await app.request("/api/talent-pool?blind=1", {
+        headers: { cookie: "x=none" },
+      });
+      expect(otherSignIn.status).toBeGreaterThanOrEqual(400);
+
+      // Get the other org's candidate id via its own session instead —
+      // rebuild the other org's cookie the same way beforeAll did.
+      const signUp2 = await auth.api.signUpEmail({
+        body: {
+          name: "Other Tester 2",
+          email: `pool-other2-${STAMP}@example.com`,
+          password: "Str0ng-Passw0rd!123",
+        },
+        returnHeaders: true,
+      });
+      const cookie2 = signUp2.headers.get("set-cookie")?.split(";")[0] ?? "";
+      const org2 = await auth.api.createOrganization({
+        body: { name: `Pool Other Org 2 ${STAMP}`, slug: `pool-other2-${STAMP}` },
+        headers: new Headers({ cookie: cookie2 }),
+      });
+      await auth.api.setActiveOrganization({
+        body: { organizationId: org2.id },
+        headers: new Headers({ cookie: cookie2 }),
+      });
+      const oJobRes = await app.request("/api/jobs", {
+        method: "POST",
+        headers: { cookie: cookie2, "content-type": "application/json" },
+        body: JSON.stringify({ title: `Other2 Job ${STAMP}`, description: "Secret role." }),
+      });
+      const oJobId = ((await oJobRes.json()) as { job: { id: string } }).job.id;
+      const oForm = new FormData();
+      oForm.append(
+        "file",
+        new File([resume("yara other2", "yara.other2@example.com", "Kafka")], "yara-tp.txt", {
+          type: "text/plain",
+        }),
+      );
+      await app.request(`/api/jobs/${oJobId}/candidates`, {
+        method: "POST",
+        headers: { cookie: cookie2 },
+        body: oForm,
+      });
+      const oList = await app.request(`/api/jobs/${oJobId}/candidates`, {
+        headers: { cookie: cookie2 },
+      });
+      const oListBody = (await oList.json()) as {
+        candidates: Array<{ id: string; contactEmail: string | null }>;
+      };
+      const yara = oListBody.candidates.find((r) => r.contactEmail === "yara.other2@example.com");
+      expect(yara).toBeDefined();
+
+      // Our org's session tries to add the other org's candidate to OUR job.
+      const jobsRes = await app.request("/api/jobs?limit=100", { headers: authHeaders });
+      const jobsBody = (await jobsRes.json()) as { jobs: Array<{ id: string; status: string }> };
+      const jobs = jobsBody.jobs;
+      const ourOpenJob = jobs.find((j) => j.status === "open" || j.status === "draft");
+      expect(ourOpenJob).toBeDefined();
+      const res = await app.request("/api/talent-pool/add-to-job", {
+        method: "POST",
+        headers: { ...authHeaders, "content-type": "application/json" },
+        body: JSON.stringify({ candidateId: yara?.id, jobId: ourOpenJob?.id }),
+      });
+      expect(res.status).toBe(404); // not visible, never a leak
+      await dbCleanupOrg(org2.id);
+    });
+
+    it("writes an audited candidate.added_to_job trail entry", async () => {
+      // Verify the hash-chained trail recorded the earlier add (the
+      // happy-path test) with a link back to the target job.
+      const jobsRes = await app.request("/api/jobs?limit=100", { headers: authHeaders });
+      const jobsBody = (await jobsRes.json()) as { jobs: Array<{ id: string; title: string }> };
+      const jobs = jobsBody.jobs;
+      const target = jobs.find((j) => j.title === `AddTarget ${STAMP}`);
+      expect(target).toBeDefined();
+
+      const db = createDb(DATABASE_URL);
+      const rows = await db
+        .select({ action: auditLog.action, payload: auditLog.payload })
+        .from(auditLog)
+        .where(eq(auditLog.orgId, orgId))
+        .orderBy(desc(auditLog.seq));
+      const added = rows.find((r) => r.action === "candidate.added_to_job");
+      expect(added).toBeDefined();
+      const addedPayload = (added?.payload ?? {}) as Record<string, unknown>;
+      expect(addedPayload["jobId"]).toBe(target?.id);
+      expect(addedPayload["sourceCandidateId"]).toBeDefined();
+    });
+  });
 });
+
+async function dbCleanupOrg(orgId: string) {
+  const db = createDb(DATABASE_URL);
+  await db.delete(organization).where(eq(organization.id, orgId));
+}

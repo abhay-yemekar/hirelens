@@ -35,9 +35,11 @@ import {
   scoringRuns,
   stageEnum,
 } from "@hirelens/db";
+import { appendAudit } from "@hirelens/orchestrator";
 import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { ROLE_MIN, requireAuth } from "../auth.js";
+import { ingestBytes } from "../ingest.js";
 import { labelFromFileKey } from "../labels.js";
 import type { AppEnv } from "../types.js";
 
@@ -335,6 +337,134 @@ export function talentPoolRoutes(): Hono<AppEnv> {
     });
 
     return c.json({ ok: true }, 201);
+  });
+
+  /**
+   * POST /api/talent-pool/add-to-job — enroll a rediscovered candidate
+   * into another job in the org. The candidate's stored original file
+   * re-runs the real ingest pipeline into the target job — parse,
+   * per-job hash dedupe, ATS format check, semantic index — so the copy
+   * is a first-class candidate everywhere (review queue, scoring, bias
+   * audits), not a pointer into someone else's pipeline. Dedupe means
+   * re-adding someone who is already on the target job is a no-op, not
+   * an error. The action is audited with a link back to the source
+   * candidate so the paper trail shows where the person came from.
+   */
+  routes.post("/talent-pool/add-to-job", requireAuth(ROLE_MIN.edit), async (c) => {
+    const db = c.get("db");
+    const auth = c.get("auth");
+
+    let body: { candidateId?: string; jobId?: string; reason?: string };
+    try {
+      body = (await c.req.json()) as { candidateId?: string; jobId?: string; reason?: string };
+    } catch {
+      return c.json({ ok: false, error: "invalid_body" }, 400);
+    }
+    const candidateId = typeof body.candidateId === "string" ? body.candidateId : "";
+    const jobId = typeof body.jobId === "string" ? body.jobId : "";
+    const reason =
+      typeof body.reason === "string" && body.reason.trim().length > 0
+        ? body.reason.trim().slice(0, 500)
+        : "Added from the talent pool";
+    if (!candidateId || !jobId) return c.json({ ok: false, error: "invalid_body" }, 400);
+
+    // Source candidate must belong to a job in the caller's org.
+    const [source] = await db
+      .select({
+        id: candidates.id,
+        jobId: candidates.jobId,
+        sourceFileKey: candidates.sourceFileKey,
+      })
+      .from(candidates)
+      .innerJoin(jobs, eq(candidates.jobId, jobs.id))
+      .where(and(eq(candidates.id, candidateId), eq(jobs.orgId, auth.orgId)))
+      .limit(1);
+    if (!source) return c.json({ ok: false, error: "not_found" }, 404);
+
+    // Target job must exist in the caller's org and accept candidates.
+    const [target] = await db
+      .select({ id: jobs.id, status: jobs.status })
+      .from(jobs)
+      .where(and(eq(jobs.id, jobId), eq(jobs.orgId, auth.orgId)))
+      .limit(1);
+    if (!target) return c.json({ ok: false, error: "not_found" }, 404);
+    if (target.status === "closed") {
+      return c.json(
+        {
+          ok: false,
+          error: "job_closed",
+          message: "Closed jobs don't accept new candidates — reopen it first.",
+        },
+        409,
+      );
+    }
+
+    // No stored original file → no re-ingest. This happens only for rows
+    // created before file storage shipped (text-only documents).
+    const [doc] = await db
+      .select({ fileBytes: documents.fileBytes })
+      .from(documents)
+      .where(eq(documents.candidateId, candidateId))
+      .limit(1);
+    if (!doc?.fileBytes) {
+      return c.json(
+        {
+          ok: false,
+          error: "file_unavailable",
+          message: "The original resume file wasn't stored for this candidate.",
+        },
+        404,
+      );
+    }
+
+    const bytes = new Uint8Array(Buffer.from(doc.fileBytes, "base64"));
+    const filename = source.sourceFileKey ?? "resume";
+    try {
+      const result = await ingestBytes(db, { jobId: target.id, filename, bytes }, c.get("indexer"));
+      if (result.status === "duplicate") {
+        return c.json({
+          ok: true,
+          status: "duplicate",
+          candidateId: result.candidateId,
+          message: "Already a candidate on this job.",
+        });
+      }
+      await appendAudit(db, {
+        orgId: auth.orgId,
+        actorId: auth.userId,
+        action: "candidate.added_to_job",
+        payload: {
+          jobId: target.id,
+          candidateId: result.candidateId,
+          sourceJobId: source.jobId,
+          sourceCandidateId: source.id,
+          reason,
+        },
+      });
+      return c.json(
+        { ok: true, status: "created", candidateId: result.candidateId, jobId: target.id },
+        201,
+      );
+    } catch (err) {
+      // Same typed handling as the upload route: the source document was
+      // readable when it was ingested, so these are edge cases from
+      // storage drift — still report as client-input problems.
+      const code = (err as { code?: string })?.code;
+      if (code === "LOW_INFORMATION" || code === "EMPTY_FILE" || code === "UNSUPPORTED_FORMAT") {
+        return c.json(
+          {
+            ok: false,
+            error: "unreadable_document",
+            message:
+              err instanceof Error && err.message
+                ? `${filename}: ${err.message.toLowerCase()}`
+                : `${filename}: could not re-read this document`,
+          },
+          422,
+        );
+      }
+      throw err;
+    }
   });
 
   return routes;
