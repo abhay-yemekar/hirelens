@@ -22,7 +22,7 @@ export const auditLog = pgTable(
     seq: bigserial("seq", { mode: "number" }).primaryKey(),
     orgId: text("org_id")
       .notNull()
-      .references(() => organization.id, { onDelete: "cascade" }),
+      .references(() => organization.id, { onDelete: "restrict" }),
     actorId: text("actor_id").references(() => user.id, { onDelete: "set null" }),
     action: text("action").notNull(),
     payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),

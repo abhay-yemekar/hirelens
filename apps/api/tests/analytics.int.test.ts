@@ -9,6 +9,7 @@ import { auth, createDb, organization } from "@hirelens/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
+import { deleteOrgCompletely } from "./helpers.js";
 
 const DATABASE_URL = process.env["DATABASE_URL"] ?? "";
 const available = DATABASE_URL.length > 0;
@@ -89,7 +90,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (!available || orgId === "") return;
-  await createDb(DATABASE_URL).delete(organization).where(eq(organization.id, orgId));
+  await deleteOrgCompletely(createDb(DATABASE_URL), orgId);
 });
 
 describe.skipIf(!available && allowSkip)("org analytics", () => {

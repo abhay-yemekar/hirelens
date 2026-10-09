@@ -7,6 +7,15 @@ CREATE UNIQUE INDEX IF NOT EXISTS audit_log_org_prev_hash_idx
 CREATE UNIQUE INDEX IF NOT EXISTS audit_log_org_hash_idx
   ON audit_log (org_id, hash);
 
+-- 3. An org's audit trail must not be silently erased by an org delete:
+--    the FK becomes ON DELETE RESTRICT. Sanctioned erasure (GDPR/DPDP)
+--    goes through purgeOrg(), which disables the append-only triggers for
+--    the statement inside one transaction.
+ALTER TABLE audit_log DROP CONSTRAINT audit_log_org_id_organization_id_fk;
+ALTER TABLE audit_log
+  ADD CONSTRAINT audit_log_org_id_organization_id_fk
+  FOREIGN KEY (org_id) REFERENCES organization(id) ON DELETE RESTRICT ON UPDATE no action;
+
 -- 2. Append-only: reject UPDATE and DELETE at the database level.
 CREATE OR REPLACE FUNCTION audit_log_reject_mutation()
 RETURNS trigger AS $$

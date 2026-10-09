@@ -21,6 +21,7 @@ import {
 } from "@hirelens/db";
 import { asc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { purgeOrg } from "../src/audit-purge.js";
 import { runBatch } from "../src/index.js";
 
 const DATABASE_URL = process.env["DATABASE_URL"] ?? "";
@@ -90,8 +91,11 @@ function mockScores(): unknown {
 }
 
 async function seed(db: Database): Promise<void> {
-  // Wipe any previous run of this fixture (org cascade covers jobs,
-  // candidates, rubrics, audit; the user row must go separately).
+  // Wipe any previous run of this fixture. The audit trail is append-only
+  // with an ON DELETE RESTRICT org FK, so erasure goes through purgeOrg;
+  // the org delete then cascades jobs, candidates, and rubrics. The user
+  // row must go separately.
+  await purgeOrg(db, ORG_ID);
   await db.delete(organization).where(eq(organization.id, ORG_ID));
   await db.delete(user).where(eq(user.id, USER_ID));
   await db.insert(organization).values({
@@ -143,6 +147,7 @@ describe.skipIf(!available && allowSkip)("batch orchestrator (integration)", () 
   });
 
   afterAll(async () => {
+    await purgeOrg(db, ORG_ID);
     await db.delete(organization).where(eq(organization.id, ORG_ID));
     await db.delete(user).where(eq(user.id, USER_ID));
   });

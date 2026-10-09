@@ -18,6 +18,7 @@ import {
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
+import { deleteOrgCompletely } from "./helpers.js";
 
 const DATABASE_URL = process.env["DATABASE_URL"] ?? "";
 const available = DATABASE_URL.length > 0;
@@ -103,7 +104,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (!available) return;
-  if (orgId !== "") await db.delete(organization).where(eq(organization.id, orgId));
+  if (orgId !== "") await deleteOrgCompletely(db, orgId);
 });
 
 describe.skipIf(!available && allowSkip)("end-to-end scoring", () => {
