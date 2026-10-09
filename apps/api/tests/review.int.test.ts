@@ -9,6 +9,7 @@ import { auditLog, auth, createDb, organization } from "@hirelens/db";
 import { desc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
+import { deleteOrgCompletely } from "./helpers.js";
 
 const DATABASE_URL = process.env["DATABASE_URL"] ?? "";
 const available = DATABASE_URL.length > 0;
@@ -65,7 +66,9 @@ beforeAll(async () => {
         score: 3,
         confidence: 0.8,
         rationale: `Solid on ${key}.`,
-        quote: "",
+        // Verbatim in the shared resume fixture — passes the
+        // never-a-naked-number evidence check.
+        quote: "EXPERIENCE",
       })),
     },
   });
@@ -94,7 +97,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (!available || orgId === "") return;
-  await createDb(DATABASE_URL).delete(organization).where(eq(organization.id, orgId));
+  await deleteOrgCompletely(createDb(DATABASE_URL), orgId);
 });
 
 describe.skipIf(!available && allowSkip)("review workflow", () => {

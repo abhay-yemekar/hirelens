@@ -1,15 +1,20 @@
 /**
  * Audit writer: appends hash-chained records to the audit_log table.
- * The linkage hash covers (action, payload, prevHash, createdAt) — seq
- * comes from the DB sequence and must not enter the hash, or persisted
- * rows could never be verified. prevHash is the current head of the
- * org's chain; concurrent writers within one process are serialized
- * through a per-org promise chain to keep the head unambiguous.
+ * The linkage hash covers (actorId, action, payload, prevHash, createdAt) —
+ * seq comes from the DB sequence and must not enter the hash, or persisted
+ * rows could never be verified. prevHash is the current head of the org's
+ * chain.
+ *
+ * Concurrency: the head read + insert run inside one transaction holding
+ * pg_advisory_xact_lock(hashtext(orgId)), so two writers (across processes
+ * or serverless instances) can never read the same head. A unique
+ * (org_id, prev_hash) index is the database-level backstop: if the lock
+ * were somehow bypassed, the second commit fails instead of forking.
  */
 
-import { GENESIS, hashLink } from "@hirelens/core";
+import { hashLink } from "@hirelens/core";
 import { auditLog, type Database } from "@hirelens/db";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 
 export interface AuditEntryInput {
   orgId: string;
@@ -18,26 +23,17 @@ export interface AuditEntryInput {
   payload: Record<string, unknown>;
 }
 
-/** Per-org write serialization (per process). */
-const orgLocks = new Map<string, Promise<unknown>>();
-
-function serialize(orgId: string, fn: () => Promise<unknown>): Promise<unknown> {
-  const prev = orgLocks.get(orgId) ?? Promise.resolve();
-  const next = prev.then(fn, fn);
-  orgLocks.set(
-    orgId,
-    next.catch(() => undefined),
-  );
-  return next;
-}
-
 /** Append one hash-chained audit record. Returns the stored row's seq and hash. */
 export async function appendAudit(
   db: Database,
   entry: AuditEntryInput,
 ): Promise<{ seq: number; hash: string }> {
-  const stored = (await serialize(entry.orgId, async () => {
-    const [head] = await db
+  return db.transaction(async (tx) => {
+    // Per-org write lock: serializes head reads + inserts across ALL
+    // processes touching this database, not just this one.
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${entry.orgId}))`);
+
+    const [head] = await tx
       .select({ hash: auditLog.hash })
       .from(auditLog)
       .where(eq(auditLog.orgId, entry.orgId))
@@ -46,13 +42,14 @@ export async function appendAudit(
     const prevHash = head?.hash ?? GENESIS;
     const createdAt = new Date();
     const hash = hashLink({
+      actorId: entry.actorId ?? null,
       action: entry.action,
       payload: entry.payload,
       prevHash,
       createdAt,
     });
 
-    const [row] = await db
+    const [row] = await tx
       .insert(auditLog)
       .values({
         orgId: entry.orgId,
@@ -68,6 +65,8 @@ export async function appendAudit(
       .returning({ seq: auditLog.seq, hash: auditLog.hash });
     if (!row) throw new Error("audit insert returned no row");
     return { seq: row.seq, hash: row.hash };
-  })) as { seq: number; hash: string };
-  return stored;
+  });
 }
+
+/** Genesis hash for an empty chain (mirrors @hirelens/core). */
+const GENESIS = "0".repeat(64);

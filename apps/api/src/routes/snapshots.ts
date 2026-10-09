@@ -16,7 +16,7 @@
 import { biasAudit, type GroupOutcome } from "@hirelens/core";
 import { biasAuditSnapshots, candidates, decisions, demographics, jobs } from "@hirelens/db";
 import { appendAudit } from "@hirelens/orchestrator";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { ROLE_MIN, requireAuth } from "../auth.js";
@@ -40,18 +40,21 @@ async function takeSnapshot(
   if (jobCandidates.length === 0) return null;
   const ids = jobCandidates.map((r) => r.id);
 
-  const demoRows = await db.select().from(demographics);
-  const demoByCandidate = new Map(
-    demoRows.filter((d) => ids.includes(d.candidateId)).map((d) => [d.candidateId, d.selfReported]),
-  );
+  // Job-scoped reads only: never load other tenants' rows.
+  const demoRows = await db
+    .select({ candidateId: demographics.candidateId, selfReported: demographics.selfReported })
+    .from(demographics)
+    .where(inArray(demographics.candidateId, ids));
+  const demoByCandidate = new Map(demoRows.map((d) => [d.candidateId, d.selfReported]));
 
   const decisionRows = await db
     .select({ candidateId: decisions.candidateId, stage: decisions.stage })
     .from(decisions)
+    .where(inArray(decisions.candidateId, ids))
     .orderBy(decisions.decidedAt);
   const latestStage = new Map<string, string>();
   for (const d of decisionRows) {
-    if (ids.includes(d.candidateId)) latestStage.set(d.candidateId, d.stage);
+    latestStage.set(d.candidateId, d.stage);
   }
 
   const groups = new Map<string, GroupOutcome>();

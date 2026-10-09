@@ -28,10 +28,13 @@ const CreateShareSchema = z.object({
   title: z.string().trim().min(1).max(120).optional(),
 });
 
-/** csv field escape: quotes double, whole field wrapped when needed. */
+/** csv field escape: quotes double, whole field wrapped when needed, and
+ * formula-injection-safe: leading =, +, -, @, tab or CR get a ' prefix so
+ * spreadsheet apps treat the cell as text, not a formula. */
 function csvField(v: unknown): string {
   const s = v === null || v === undefined ? "" : String(v);
-  return /[",\n]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s;
+  const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+  return /[",\n]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
 }
 
 /** Sharing routes, mounted at /jobs/:jobId (auth-scoped CRUD) — plus the
@@ -210,18 +213,30 @@ export function auditExportRoutes() {
       .where(eq(auditLog.orgId, auth.orgId))
       .orderBy(auditLog.seq);
 
-    // Keep only this job's entries: the payload carries jobId on job-scoped actions.
-    const jobRows = rows.filter((r) => r.payload["jobId"] === job.id);
-
-    const header = "seq,at,action,actor,chain_valid,prev_hash,hash,payload";
-    const lines = jobRows.map((r) => {
+    // Full-chain verification over ALL org rows in seq order: each row must
+    // (a) recompute its own linkage hash and (b) reference the previous
+    // row's hash as prevHash. Verifying only per-row hashes would miss
+    // deleted, reordered, or re-spliced rows.
+    const validBySeq = new Map<number, boolean>();
+    let prevHash: string = "0".repeat(64); // GENESIS
+    for (const r of rows) {
       const expected = hashLink({
+        actorId: r.actorId,
         action: r.action,
         payload: r.payload,
         prevHash: r.prevHash,
         createdAt: r.createdAt,
       });
-      const valid = expected === r.hash;
+      validBySeq.set(r.seq, expected === r.hash && r.prevHash === prevHash);
+      prevHash = r.hash;
+    }
+
+    // Keep only this job's entries: the payload carries jobId on job-scoped actions.
+    const jobRows = rows.filter((r) => r.payload["jobId"] === job.id);
+
+    const header = "seq,at,action,actor,chain_valid,prev_hash,hash,payload";
+    const lines = jobRows.map((r) => {
+      const valid = validBySeq.get(r.seq) ?? false;
       return [
         r.seq,
         r.createdAt.toISOString(),

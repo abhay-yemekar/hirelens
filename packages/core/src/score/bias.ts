@@ -48,6 +48,8 @@ export interface BiasAudit {
   rows: GroupAuditRow[];
   /** True when every group with data passes the four-fifths rule. */
   allPass: boolean;
+  /** Groups excluded from flagging for insufficient sample size. */
+  lowSampleGroups: string[];
 }
 
 /** Selection rate = selected / considered; 0 for an empty group. */
@@ -55,21 +57,36 @@ export function selectionRate(g: GroupOutcome): number {
   return g.considered > 0 ? g.selected / g.considered : 0;
 }
 
+/** Minimum candidates per group before the four-fifths rule is applied.
+ * Tiny samples (e.g. 1/1 selected = 100%) produce meaningless ratios in
+ * both directions, so those groups are reported but never flagged and
+ * never used as the reference. */
+export const MIN_GROUP_SAMPLE = 4;
+
+/** Groups that never anchor a bias comparison (missing disclosure is not a
+ * demographic group). */
+export const NON_COMPARABLE_GROUPS = new Set(["undisclosed", "unknown", ""]);
+
 /**
- * Compute the audit. Groups with `considered = 0` are reported but never
- * flagged (no data ≠ adverse impact). The reference group defaults to the
- * highest-selection-rate group with at least one consideration, matching
- * common EEOC-style practice.
+ * Compute the audit. Groups with `considered = 0` or below MIN_GROUP_SAMPLE
+ * are reported but never flagged (insufficient data ≠ adverse impact) and
+ * never chosen as reference. Non-comparable buckets ("undisclosed") are
+ * excluded from the reference selection entirely.
  */
 export function biasAudit(outcomes: readonly GroupOutcome[]): BiasAudit {
   const rows = outcomes.map((g) => ({ ...g }));
 
-  const withData = rows.filter((r) => r.considered > 0);
   const rates = new Map(rows.map((r) => [r.group, selectionRate(r)]));
+  const lowSampleGroups = rows
+    .filter((r) => r.considered > 0 && r.considered < MIN_GROUP_SAMPLE)
+    .map((r) => r.group);
+  const comparable = rows.filter(
+    (r) => r.considered >= MIN_GROUP_SAMPLE && !NON_COMPARABLE_GROUPS.has(r.group.toLowerCase()),
+  );
 
   let referenceGroup = "";
   let referenceRate = 0;
-  for (const r of withData) {
+  for (const r of comparable) {
     const rate = rates.get(r.group) ?? 0;
     if (rate > referenceRate) {
       referenceRate = rate;
@@ -92,7 +109,10 @@ export function biasAudit(outcomes: readonly GroupOutcome[]): BiasAudit {
     //   ⟺ 5·selected·refConsidered < 4·considered·refSelected
     // (floats would flag exact-0.8 groups: 24/40 ÷ 30/40 → 0.79999…)
     const adverseImpact =
-      r.considered === 0 || isReference || refRow === undefined || refRow.selected === 0
+      r.considered < MIN_GROUP_SAMPLE ||
+      isReference ||
+      refRow === undefined ||
+      refRow.selected === 0
         ? null
         : 5 * r.selected * refRow.considered < 4 * r.considered * refRow.selected;
     return {
@@ -112,5 +132,6 @@ export function biasAudit(outcomes: readonly GroupOutcome[]): BiasAudit {
     overallRate,
     rows: auditRows,
     allPass: auditRows.every((r) => r.adverseImpact !== true),
+    lowSampleGroups,
   };
 }

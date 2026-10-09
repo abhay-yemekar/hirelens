@@ -60,10 +60,10 @@ function mockScores(overrides: Record<string, Partial<Record<string, unknown>>> 
       rationale: "Strong: led payments platform migration.",
       quote: "Led migration of the payments platform to Kubernetes",
     },
-    { key: "databases", score: 3, confidence: 0.8, rationale: "Solid.", quote: "" },
-    { key: "testing", score: 2, confidence: 0.7, rationale: "Basic.", quote: "" },
+    { key: "databases", score: 0, confidence: 0.8, rationale: "No evidence.", quote: "" },
+    { key: "testing", score: 0, confidence: 0.7, rationale: "No evidence.", quote: "" },
     { key: "ops", score: 4, confidence: 0.85, rationale: "Strong.", quote: "40k req/s" },
-    { key: "communication", score: 3, confidence: 0.75, rationale: "Solid.", quote: "" },
+    { key: "communication", score: 0, confidence: 0.75, rationale: "No evidence.", quote: "" },
   ];
   return {
     criteria: base.map((c) => ({ ...c, ...(overrides[c.key] ?? {}) })),
@@ -84,6 +84,31 @@ describe("scoreResume", () => {
     expect(res.overall).toBeLessThanOrEqual(100);
     expect(res.promptHash).toMatch(/^[0-9a-f]{64}$/);
     expect(res.needsAdjudication).toBe(false);
+  });
+
+  it("withholds positive scores that have no verifiable evidence", async () => {
+    // "Never a naked number": a positive score whose quote is empty or
+    // cannot be located in the resume is clamped to 0 and flagged.
+    const { model } = createMockModel({
+      args: mockScores({ databases: { score: 5, quote: "" } }),
+    });
+    const res = await scoreResume(model as LanguageModel, makeRubric(), RESUME);
+    const db = res.criteria.find((c) => c.key === "databases");
+    expect(db?.score).toBe(0);
+    expect(db?.evidence).toBeNull();
+    expect(db?.rationale).toContain("adjudication");
+    expect(res.needsAdjudication).toBe(true);
+  });
+
+  it("withholds scores whose quote is not verbatim in the resume", async () => {
+    const { model } = createMockModel({
+      args: mockScores({ testing: { score: 4, quote: "built a world-class test suite" } }),
+    });
+    const res = await scoreResume(model as LanguageModel, makeRubric(), RESUME);
+    const t = res.criteria.find((c) => c.key === "testing");
+    expect(t?.score).toBe(0);
+    expect(t?.evidence).toBeNull();
+    expect(res.needsAdjudication).toBe(true);
   });
 
   it("is deterministic for identical inputs (same prompt hash, same overall)", async () => {

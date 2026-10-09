@@ -7,6 +7,30 @@ import { capturePageview, initPostHog } from "@/lib/analytics";
 import { authClient } from "@/lib/auth-client";
 
 /**
+ * Routes that need the better-auth session cookie round-trip before first
+ * paint. Everything else — the marketing site, docs, demo, legal pages —
+ * renders its server content immediately so crawlers, link previews and
+ * slow connections see the real page, not a spinner.
+ */
+const SESSION_GATED_PREFIXES = [
+  "/jobs",
+  "/talent-pool",
+  "/analytics",
+  "/settings",
+  "/welcome",
+  "/candidate",
+  "/portal",
+  "/track",
+  "/report",
+  "/share",
+];
+
+function needsSessionGate(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return SESSION_GATED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+/**
  * Applies the stored theme before paint and hydrates the session state
  * once per app shell.
  */
@@ -26,10 +50,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
     if (ready) capturePageview();
   }, [ready, pathname]);
 
-  // Wait for the better-auth session cookie round-trip so protected pages
-  // render consistently on first paint.
+  // Only session-gated app routes wait for the auth round-trip; public
+  // routes render children immediately (SSR content is already there).
   const { isPending } = authClient.useSession();
-  if (!ready || isPending) {
+  const gated = needsSessionGate(pathname);
+  if (!ready || (gated && isPending)) {
     return (
       <div className="flex min-h-screen items-center justify-center" data-theme="dark">
         <span className="text-sm" style={{ color: "var(--color-fg-muted)" }}>

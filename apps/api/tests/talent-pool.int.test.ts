@@ -10,6 +10,7 @@ import { auditLog, auth, createDb, organization } from "@hirelens/db";
 import { desc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
+import { deleteOrgCompletely } from "./helpers.js";
 
 const DATABASE_URL = process.env["DATABASE_URL"] ?? "";
 const available = DATABASE_URL.length > 0;
@@ -64,6 +65,9 @@ beforeAll(async () => {
         score: 3,
         confidence: 0.9,
         rationale: `mock ${key}`,
+        // Verbatim in every candidate's resume (the shared SKILLS header),
+        // so the never-a-naked-number evidence check passes.
+        quote: "SKILLS",
       })),
     },
   });
@@ -220,8 +224,8 @@ beforeAll(async () => {
 afterAll(async () => {
   if (!available) return;
   const db = createDb(DATABASE_URL);
-  if (orgId !== "") await db.delete(organization).where(eq(organization.id, orgId));
-  if (otherOrgId !== "") await db.delete(organization).where(eq(organization.id, otherOrgId));
+  if (orgId !== "") await deleteOrgCompletely(db, orgId);
+  if (otherOrgId !== "") await deleteOrgCompletely(db, otherOrgId);
 });
 
 describe.skipIf(!available && allowSkip)("talent pool", () => {
@@ -545,5 +549,5 @@ describe.skipIf(!available && allowSkip)("talent pool", () => {
 
 async function dbCleanupOrg(orgId: string) {
   const db = createDb(DATABASE_URL);
-  await db.delete(organization).where(eq(organization.id, orgId));
+  await deleteOrgCompletely(db, orgId);
 }
