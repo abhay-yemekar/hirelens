@@ -56,7 +56,9 @@ describe("runEvals (mock model)", () => {
           score: 3,
           confidence: 0.9,
           rationale: "benchmark",
-          quote: "",
+          // Verbatim in every benchmark resume (all six include the
+          // EXPERIENCE section header).
+          quote: "EXPERIENCE",
         })),
       },
     });
