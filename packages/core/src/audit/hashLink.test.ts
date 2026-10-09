@@ -27,6 +27,17 @@ describe("hashLink", () => {
     );
   });
 
+  it("changes when the actor changes", () => {
+    // actorId is part of the hash so rewriting WHO made a decision
+    // cannot pass verification.
+    expect(hashLink({ ...base, actorId: "user_a" })).not.toBe(hashLink(base));
+    expect(hashLink({ ...base, actorId: "user_a" })).not.toBe(
+      hashLink({ ...base, actorId: "user_b" }),
+    );
+    // Absent actor and explicit null hash identically.
+    expect(hashLink(base)).toBe(hashLink({ ...base, actorId: null }));
+  });
+
   it("is deterministic across calls", () => {
     expect(hashLink(base)).toBe(hashLink(base));
   });

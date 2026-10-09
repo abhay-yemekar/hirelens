@@ -1,4 +1,13 @@
-import { bigserial, index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  bigserial,
+  index,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { organization, user } from "../../auth-schema.js";
 import { candidates } from "./candidates.js";
 
@@ -21,7 +30,14 @@ export const auditLog = pgTable(
     hash: text("hash").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("audit_log_org_idx").on(t.orgId, t.seq)],
+  (t) => [
+    index("audit_log_org_idx").on(t.orgId, t.seq),
+    // Chain integrity: one append per (org, prev head) and one row per hash.
+    // Enforced server-side since migration 0011 alongside the append-only
+    // triggers.
+    uniqueIndex("audit_log_org_prev_hash_idx").on(t.orgId, t.prevHash),
+    uniqueIndex("audit_log_org_hash_idx").on(t.orgId, t.hash),
+  ],
 );
 
 /**

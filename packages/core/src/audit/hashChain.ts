@@ -28,7 +28,7 @@ function hashRecord(
  * Hash for a persisted audit row. Unlike `AuditChain.append` (which folds
  * its in-memory seq into the hash), persisted rows get their seq from a
  * DB sequence, so the linkage hash must be seq-independent: it covers
- * action, payload, prevHash, and createdAt only. Verifiers recompute
+ * actorId, action, payload, prevHash, and createdAt. Verifiers recompute
  * this over each row and compare with the stored `hash`.
  */
 /**
@@ -50,12 +50,14 @@ function canonical(value: unknown): unknown {
 }
 
 export function hashLink(input: {
+  actorId?: string | null;
   action: string;
   payload: unknown;
   prevHash: string;
   createdAt: Date;
 }): string {
   const canonicalStr = JSON.stringify([
+    input.actorId ?? null,
     input.action,
     canonical(input.payload),
     input.prevHash,
