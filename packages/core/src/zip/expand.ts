@@ -21,46 +21,70 @@ export interface ZipEntry {
  * Expand a ZIP buffer into supported document entries.
  *
  * Security: path components are flattened (no traversal via
- * ../ or absolute names), zip-bombs are bounded by entry count and
- * total uncompressed size, and unsupported extensions are skipped
- * (not errors) so mixed-content archives ingest cleanly.
+ * ../ or absolute names), and zip-bomb limits are enforced BEFORE
+ * decompression via fflate's filter hook (declared per-entry size,
+ * running total, entry count) — a hostile archive never gets its
+ * payloads inflated. The post-inflate checks below still run as a
+ * second layer against headers that lie about their size.
+ * Unsupported extensions are skipped (not errors) so mixed-content
+ * archives ingest cleanly.
  */
 export function expandZip(data: Uint8Array): {
   entries: ZipEntry[];
   skipped: Array<{ filename: string; reason: string }>;
 } {
+  const skipped: Array<{ filename: string; reason: string }> = [];
+  let inflatedCount = 0;
+  let declaredTotal = 0;
+  let overLimit = false;
+
   let unzipped: Record<string, Uint8Array>;
   try {
-    unzipped = unzipSync(data);
+    unzipped = unzipSync(data, {
+      filter: (file) => {
+        if (file.name.endsWith("/")) return false;
+        const base = sanitizeEntryName(file.name);
+        const ext = base.split(".").pop()?.toLowerCase() ?? "";
+        if (!isSupportedExtension(ext)) {
+          skipped.push({ filename: base, reason: `unsupported type .${ext}` });
+          return false;
+        }
+        if (file.size > MAX_ZIP_ENTRY_BYTES) {
+          skipped.push({ filename: base, reason: "file too large" });
+          return false;
+        }
+        if (inflatedCount >= MAX_ZIP_ENTRIES || declaredTotal + file.size > MAX_ZIP_TOTAL_BYTES) {
+          overLimit = true;
+          return false;
+        }
+        inflatedCount++;
+        declaredTotal += file.size;
+        return true;
+      },
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     throw new ExtractionError("PARSE_FAILED", `Invalid ZIP archive: ${message}`, err);
   }
 
-  const names = Object.keys(unzipped).filter((n) => !n.endsWith("/"));
-  if (names.length > MAX_ZIP_ENTRIES) {
+  if (overLimit) {
     throw new ExtractionError(
       "UNSUPPORTED_FORMAT",
-      `ZIP contains ${names.length} files (max ${MAX_ZIP_ENTRIES})`,
+      `ZIP exceeds the ${MAX_ZIP_ENTRIES}-file or ${MAX_ZIP_TOTAL_BYTES}-byte limit`,
     );
   }
 
   const entries: ZipEntry[] = [];
-  const skipped: Array<{ filename: string; reason: string }> = [];
   let total = 0;
 
-  for (const name of names) {
+  for (const name of Object.keys(unzipped)) {
     const base = sanitizeEntryName(name);
-    const ext = base.split(".").pop()?.toLowerCase() ?? "";
-    if (!isSupportedExtension(ext)) {
-      skipped.push({ filename: base, reason: `unsupported type .${ext}` });
-      continue;
-    }
     const content = unzipped[name];
     if (!content || content.length === 0) {
       skipped.push({ filename: base, reason: "empty file" });
       continue;
     }
+    // Lying-header defense: declared small, inflated big.
     if (content.length > MAX_ZIP_ENTRY_BYTES) {
       skipped.push({ filename: base, reason: "file too large" });
       continue;
