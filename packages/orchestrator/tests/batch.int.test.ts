@@ -194,6 +194,7 @@ describe.skipIf(!available && allowSkip)("batch orchestrator (integration)", () 
     for (const row of rows) {
       expect(row.prevHash).toBe(prevHash);
       const expected = hashLink({
+        actorId: row.actorId,
         action: row.action,
         payload: row.payload,
         prevHash,
