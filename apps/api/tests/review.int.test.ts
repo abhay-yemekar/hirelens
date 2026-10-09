@@ -65,7 +65,9 @@ beforeAll(async () => {
         score: 3,
         confidence: 0.8,
         rationale: `Solid on ${key}.`,
-        quote: "",
+        // Verbatim in the shared resume fixture — passes the
+        // never-a-naked-number evidence check.
+        quote: "EXPERIENCE",
       })),
     },
   });

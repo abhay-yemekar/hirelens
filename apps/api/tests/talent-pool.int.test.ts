@@ -64,6 +64,9 @@ beforeAll(async () => {
         score: 3,
         confidence: 0.9,
         rationale: `mock ${key}`,
+        // Verbatim in every candidate's resume (the shared SKILLS header),
+        // so the never-a-naked-number evidence check passes.
+        quote: "SKILLS",
       })),
     },
   });

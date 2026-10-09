@@ -60,7 +60,7 @@ beforeAll(async () => {
         score: 3,
         confidence: 0.8,
         rationale: `Solid on ${key}.`,
-        quote: "",
+        quote: "SKILLS", // verbatim in RESUME — passes evidence check
       })),
     },
   });
