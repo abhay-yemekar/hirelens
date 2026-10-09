@@ -54,7 +54,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   // routes render children immediately (SSR content is already there).
   const { isPending } = authClient.useSession();
   const gated = needsSessionGate(pathname);
-  if (!ready || (gated && isPending)) {
+  if (gated && (!ready || isPending)) {
     return (
       <div className="flex min-h-screen items-center justify-center" data-theme="dark">
         <span className="text-sm" style={{ color: "var(--color-fg-muted)" }}>
