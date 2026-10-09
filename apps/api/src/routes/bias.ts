@@ -1,7 +1,7 @@
 import { biasAudit, type GroupOutcome } from "@hirelens/core";
 import { candidates, decisions, demographics } from "@hirelens/db";
 import { appendAudit } from "@hirelens/orchestrator";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { requireAuth } from "../auth.js";
@@ -109,12 +109,12 @@ export function biasAuditRoutes(): Hono<AppEnv> {
     }
 
     const ids = jobCandidates.map((r) => r.id);
-    const demoRows = await db.select().from(demographics);
-    const demoByCandidate = new Map(
-      demoRows
-        .filter((d) => ids.includes(d.candidateId))
-        .map((d) => [d.candidateId, d.selfReported]),
-    );
+    // Job-scoped reads only: never load other tenants' rows.
+    const demoRows = await db
+      .select({ candidateId: demographics.candidateId, selfReported: demographics.selfReported })
+      .from(demographics)
+      .where(inArray(demographics.candidateId, ids));
+    const demoByCandidate = new Map(demoRows.map((d) => [d.candidateId, d.selfReported]));
 
     const decisionRows = await db
       .select({
@@ -123,10 +123,11 @@ export function biasAuditRoutes(): Hono<AppEnv> {
         decidedAt: decisions.decidedAt,
       })
       .from(decisions)
+      .where(inArray(decisions.candidateId, ids))
       .orderBy(decisions.decidedAt);
     const latestStage = new Map<string, string>();
     for (const d of decisionRows) {
-      if (ids.includes(d.candidateId)) latestStage.set(d.candidateId, d.stage);
+      latestStage.set(d.candidateId, d.stage);
     }
 
     // Group outcomes: everyone considered; selected = latest stage in set.

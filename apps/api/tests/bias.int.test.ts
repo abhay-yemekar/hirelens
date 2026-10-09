@@ -56,7 +56,9 @@ beforeAll(async () => {
         score: 3,
         confidence: 0.8,
         rationale: `Solid on ${key}.`,
-        quote: "",
+        // Verbatim in every resume fixture — passes the
+        // never-a-naked-number evidence check.
+        quote: "Backend Engineer",
       })),
     },
   });
@@ -190,15 +192,98 @@ describe.skipIf(!available && allowSkip)("bias audit", () => {
 
     expect(body.withDemographics).toBe(3);
     const byGroup = new Map(body.audit.rows.map((r) => [r.group, r]));
-    // women: 2/2 selected = 1.0 ← reference; man: 1/1 = 1.0 → ratio 1 → pass;
-    // undisclosed: 0/1 = 0 → ratio 0 → flagged.
-    expect(byGroup.get("woman")?.selected).toBe(2);
-    expect(byGroup.get("woman")?.adverseImpact).toBeNull(); // reference group
-    expect(body.audit.referenceGroup).toBe("woman");
-    expect(byGroup.get("man")?.adverseImpact).toBe(false);
-    expect(byGroup.get("undisclosed")?.adverseImpact).toBe(true);
-    expect(body.audit.allPass).toBe(false);
+    // Tiny samples (2/2, 1/1, 0/1) must NOT produce confident conclusions:
+    // no comparable reference group, no flags, low-sample reported instead.
+    const auditBody = body.audit as unknown as { lowSampleGroups: string[] };
+    expect(body.audit.referenceGroup).toBe("");
+    expect(byGroup.get("woman")?.adverseImpact).toBeNull();
+    expect(byGroup.get("man")?.adverseImpact).toBeNull();
+    expect(byGroup.get("undisclosed")?.adverseImpact).toBeNull();
+    expect(auditBody.lowSampleGroups).toContain("woman");
+    expect(auditBody.lowSampleGroups).toContain("man");
+    expect(body.audit.allPass).toBe(true);
     expect(body.disclaimer).toContain("not a legal conclusion");
+  });
+
+  it("flags adverse impact only at meaningful sample sizes", async () => {
+    // 12 candidates: woman 3/4, man 1/4, undisclosed 2/4 — now every group
+    // has n>=4, so four-fifths applies for real (man ratio 1/3 < 0.8).
+    const jobRes = await app.request("/api/jobs", {
+      method: "POST",
+      headers: { ...authHeaders, "content-type": "application/json" },
+      body: JSON.stringify({ title: `Bias Powered ${STAMP}`, description: "Powered audit." }),
+    });
+    expect(jobRes.status).toBe(201);
+    const poweredJobId = ((await jobRes.json()) as { job: { id: string } }).job.id;
+
+    const rubricRes = await app.request(`/api/jobs/${poweredJobId}/rubrics`, {
+      method: "POST",
+      headers: { ...authHeaders, "content-type": "application/json" },
+      body: JSON.stringify({ rubric: rubricJson() }),
+    });
+    expect(rubricRes.status).toBe(201);
+
+    const plan: Array<[string, string, string]> = [];
+    for (let i = 0; i < 4; i++) plan.push([`W${i} AVERY`, `skill-w-${i}`, "woman"]);
+    for (let i = 0; i < 4; i++) plan.push([`M${i} LEE`, `skill-m-${i}`, "man"]);
+    for (let i = 0; i < 4; i++) plan.push([`U${i} ROSS`, `skill-u-${i}`, "undisclosed"]);
+
+    const shortlist = new Set(["W0 AVERY", "W1 AVERY", "W2 AVERY", "M0 LEE", "U0 ROSS", "U1 ROSS"]);
+    for (const [name, skill] of plan) {
+      const form = new FormData();
+      form.append("file", new File([resume(name, skill)], `${name}.txt`, { type: "text/plain" }));
+      const up = await app.request(`/api/jobs/${poweredJobId}/candidates`, {
+        method: "POST",
+        headers: authHeaders,
+        body: form,
+      });
+      expect(up.status).toBe(201);
+      const { candidateId } = (await up.json()) as { candidateId: string };
+      if (!shortlist.has(name)) continue;
+      const dec = await app.request(`/api/jobs/${poweredJobId}/decisions`, {
+        method: "POST",
+        headers: { ...authHeaders, "content-type": "application/json" },
+        body: JSON.stringify({ candidateId, stage: "shortlisted", reason: "Meets bar." }),
+      });
+      expect(dec.status).toBe(201);
+    }
+    for (const [name, , value] of plan) {
+      if (value === "undisclosed") continue;
+      const cid = (
+        (await (
+          await app.request(`/api/jobs/${poweredJobId}/candidates`, { headers: authHeaders })
+        ).json()) as { candidates: Array<{ id: string; sourceFileKey: string | null }> }
+      ).candidates.find((r) => r.sourceFileKey === `${name}.txt`)?.id;
+      if (!cid) throw new Error(`fixture: candidate ${name} missing`);
+      const res = await app.request(`/api/jobs/${poweredJobId}/demographics/${cid}/demographics`, {
+        method: "PUT",
+        headers: { ...authHeaders, "content-type": "application/json" },
+        body: JSON.stringify({ dimension: "gender", value }),
+      });
+      expect(res.status).toBe(200);
+    }
+
+    const res = await app.request(`/api/jobs/${poweredJobId}/bias-audit`, {
+      method: "POST",
+      headers: { ...authHeaders, "content-type": "application/json" },
+      body: JSON.stringify({ dimension: "gender" }),
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      audit: {
+        referenceGroup: string;
+        rows: Array<{ group: string; adverseImpact: boolean | null }>;
+        allPass: boolean;
+        lowSampleGroups: string[];
+      };
+    };
+    const byGroup = new Map(body.audit.rows.map((r) => [r.group, r]));
+    // "undisclosed" is never the reference group even when eligible.
+    expect(body.audit.referenceGroup).toBe("woman");
+    expect(byGroup.get("man")?.adverseImpact).toBe(true);
+    expect(byGroup.get("woman")?.adverseImpact).toBeNull();
+    expect(body.audit.allPass).toBe(false);
+    expect(body.audit.lowSampleGroups).toEqual([]);
   });
 
   it("rejects an invalid dimension and unknown candidates", async () => {
