@@ -7,6 +7,77 @@ import { LlmRuntimeError, SchemaViolationError } from "./types.js";
 const MAX_ATTEMPTS = 2;
 
 /**
+ * Transient provider failures (overload / rate limit / capacity errors like
+ * Google's "This model is currently experiencing high demand") get their
+ * own retry ladder, separate from the schema-repair loop: the AI SDK's
+ * internal retries are quick, but free-tier spikes can outlast them.
+ */
+const TRANSIENT_MAX_RETRIES = 2;
+const TRANSIENT_BASE_DELAY_MS = 5_000;
+const TRANSIENT_MAX_DELAY_MS = 20_000;
+
+/**
+ * Test hook: tests call this to shrink the ladder's sleeps to near-zero.
+ * Production code never calls it.
+ */
+let transientTestDelayMs: number | undefined;
+export function setTransientRetryDelayForTests(ms: number | undefined): void {
+  transientTestDelayMs = ms;
+}
+
+/** Overload / capacity / rate-limit signatures across providers. */
+export function isTransientProviderError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return /\b(429|529|500|503)\b|high demand|overloaded overload|rate.?limit|quota|resource.?exhausted|too many requests|try again later/i.test(
+    message,
+  );
+}
+
+/** Honor a provider's retry-after hint when it is a sane number of seconds. */
+function retryAfterMs(err: unknown): number | undefined {
+  if (!(err instanceof Error)) return undefined;
+  const headers = (err as { responseHeaders?: Record<string, unknown> }).responseHeaders;
+  const raw = headers?.["retry-after"];
+  const secs = typeof raw === "string" ? Number(raw) : NaN;
+  if (Number.isFinite(secs) && secs > 0 && secs <= 120) return secs * 1_000;
+  return undefined;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Wrap one provider call in the transient retry ladder: up to
+ * TRANSIENT_MAX_RETRIES extra attempts with 5s→20s exponential backoff
+ * (plus jitter), or the provider's retry-after hint. Non-transient errors
+ * rethrow immediately so the schema-repair / failover paths can classify
+ * them.
+ */
+async function withTransientRetry<T>(fn: () => Promise<T>): Promise<T> {
+  let lastErr: unknown;
+  for (let retry = 0; retry <= TRANSIENT_MAX_RETRIES; retry++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (retry === TRANSIENT_MAX_RETRIES || !isTransientProviderError(err)) {
+        throw lastErr;
+      }
+      await sleep(
+        transientTestDelayMs ??
+          Math.min(
+            TRANSIENT_MAX_DELAY_MS,
+            retryAfterMs(err) ?? TRANSIENT_BASE_DELAY_MS * 2 ** retry,
+          ) + Math.floor(Math.random() * 500),
+      );
+    }
+  }
+  // Unreachable: the loop either returns or throws.
+  throw lastErr;
+}
+
+/**
  * Providers that proved unable to express the request schema in any
  * structured-output mode (learned at runtime). Google's response_schema
  * proto rejects arrays nested inside arrays ("Proto field is not
@@ -128,6 +199,22 @@ function toUsage(u: unknown): UsageInfo {
 }
 
 /**
+ * Minimal reachability probe for a provider/model: one tiny completion.
+ * Returns latency; throws on failure so callers (Settings → provider test)
+ * can show the reason. Budgeted at a few tokens — it must be cheap.
+ */
+export async function pingModel(model: LanguageModel): Promise<{ ok: true; latencyMs: number }> {
+  const t0 = Date.now();
+  await generateText({
+    model,
+    system: "Reply with the single word: pong",
+    prompt: "ping",
+    maxOutputTokens: 8,
+  });
+  return { ok: true, latencyMs: Date.now() - t0 };
+}
+
+/**
  * Generate output constrained to a Zod schema.
  *
  * Strategy: the AI SDK's native structured-output path (`generateObject`)
@@ -168,7 +255,9 @@ export async function generateStructured<S extends z.ZodType>(
     if (!jsonMode) {
       let result: Awaited<ReturnType<typeof generateObject>>;
       try {
-        result = await generateObject({ ...common, schema, system, prompt });
+        result = await withTransientRetry(() =>
+          generateObject({ ...common, schema, system, prompt }),
+        );
       } catch (err) {
         if (err instanceof NoObjectGeneratedError) {
           lastRaw = err.text ?? undefined;
@@ -218,11 +307,13 @@ export async function generateStructured<S extends z.ZodType>(
     let finishReason: string | undefined;
     let usage: unknown;
     try {
-      const r = await generateText({
-        ...common,
-        system: `${system}\n\nReturn ONLY a single JSON object that validates against this JSON Schema. No markdown fences, no commentary, no text before or after.\nSchema:\n${JSON.stringify(js)}`,
-        prompt,
-      });
+      const r = await withTransientRetry(() =>
+        generateText({
+          ...common,
+          system: `${system}\n\nReturn ONLY a single JSON object that validates against this JSON Schema. No markdown fences, no commentary, no text before or after.\nSchema:\n${JSON.stringify(js)}`,
+          prompt,
+        }),
+      );
       text = r.text;
       finishReason = r.finishReason;
       usage = r.usage;

@@ -27,6 +27,7 @@ import { reviewRoutes } from "./routes/review.js";
 import { rubricsRoutes } from "./routes/rubrics.js";
 import { scoringRoutes } from "./routes/scoring.js";
 import { searchRoutes } from "./routes/search.js";
+import { settingsRoutes } from "./routes/settings.js";
 import { auditExportRoutes, publicShareRoutes, sharingRoutes } from "./routes/sharing.js";
 import { auditSnapshotRoutes, cronSnapshotRoutes } from "./routes/snapshots.js";
 import { talentPoolRoutes } from "./routes/talent-pool.js";
@@ -161,6 +162,7 @@ export function createApp(deps: AppDeps) {
   protectedApi.route("/analytics", analyticsRoutes());
   protectedApi.route("/", talentPoolRoutes());
   protectedApi.route("/tokens", tokenRoutes());
+  protectedApi.route("/settings", settingsRoutes());
   app.route("/api", protectedApi);
 
   app.onError((err, c) => {

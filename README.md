@@ -164,7 +164,8 @@ One `.env` per package that needs secrets, with `.env.example` documenting every
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth sign-in (redirect: `<origin>/api/auth/callback/github`) |
 | `NEXT_PUBLIC_SITE_URL` | Canonical site URL used by sitemap/robots/metadata |
 | `NEXT_PUBLIC_API_URL` | Leave **empty** on Vercel (same-origin API mount at `/api/*`); set only for split-origin self-hosts |
-| `HIRELENS_LLM_PROVIDER` + `HIRELENS_LLM_MODEL` (+ `_API_KEY`, `_BASE_URL`) | Enables LLM routes (google/anthropic/groq/openrouter/ollama) |
+| `HIRELENS_LLM_PROVIDER` + `HIRELENS_LLM_MODEL` (+ `_API_KEY`, `_BASE_URL`) | Enables LLM routes (google/anthropic/groq/openrouter/mistral/cerebras/ollama) |
+| `HIRELENS_LLM_FALLBACKS` | Comma-separated **failover chain**, e.g. `groq,openrouter`. Fallbacks are tried only when the primary is overloaded/rate-limited. Per-provider overrides: `HIRELENS_LLM_<ID>_MODEL`, `_API_KEY`, `_BASE_URL` (e.g. `HIRELENS_LLM_GROQ_API_KEY`). |
 | `SENTRY_DSN` | Error tracking (optional) |
 | `LANGFUSE_PUBLIC_KEY` / `_SECRET_KEY` / `_BASE_URL` | LLM tracing (optional) |
 | `NEXT_PUBLIC_POSTHOG_KEY` | Product analytics — explicit events only, autocapture off (optional) |
