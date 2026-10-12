@@ -75,6 +75,28 @@ describe("generateStructured", () => {
     expect(calls[1]?.system).toContain("JSON Schema");
   });
 
+  // Regression: production Google error seen live on /rubrics/derive —
+  // the tuple-shaped `scale` items schema got rejected as
+  // "schema at properties.criteria.items.properties.scale.items must be a
+  // boolean or an object". That wording must also trigger JSON-text mode.
+  it("falls back to JSON-text mode on Google's 'schema at …' structural rejection", async () => {
+    const { model, calls } = createMockModel({
+      provider: "google",
+      failWithOnce: new Error(
+        "schema at properties.criteria.items.properties.scale.items must be a boolean or an object",
+      ),
+      args: { title: "t", score: 80 },
+    });
+    const res = await generateStructured(
+      model as LanguageModel,
+      { system: "s", prompt: "p" },
+      Reply,
+    );
+    expect(res.object).toEqual({ title: "t", score: 80 });
+    expect(calls).toHaveLength(2);
+    expect(calls[1]?.system).toContain("JSON Schema");
+  });
+
   it("wraps provider failures in LlmRuntimeError", async () => {
     const { model } = createMockModel({ failWith: new Error("boom") });
     await expect(
