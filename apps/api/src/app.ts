@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { LanguageModel } from "@hirelens/core";
 import { ExtractionError } from "@hirelens/core";
 import type { Database } from "@hirelens/db";
@@ -169,12 +170,31 @@ export function createApp(deps: AppDeps) {
     if (err instanceof ExtractionError) {
       return c.json({ ok: false, error: "unreadable_document", message: err.message }, 422);
     }
+    const errorId = randomUUID();
     captureException(err, {
       requestId: c.get("requestId"),
       method: c.req.method,
       path: c.req.path,
     });
-    return c.json({ ok: false, error: "internal_error" }, 500);
+    // Correlation id: users can quote it, support can find it in logs.
+    // Full details are returned ONLY when both a server-side env flag and
+    // a matching secret header are present (operator debug tooling —
+    // never visible to regular users).
+    const debugAuthorized =
+      process.env["ERROR_DEBUG_ENABLED"] === "true" &&
+      process.env["ERROR_DEBUG_SECRET"] !== undefined &&
+      c.req.header("x-error-debug-secret") === process.env["ERROR_DEBUG_SECRET"];
+    return c.json(
+      {
+        ok: false,
+        error: "internal_error",
+        errorId,
+        ...(debugAuthorized
+          ? { debug: { name: err.name, message: err.message, stack: err.stack } }
+          : {}),
+      },
+      500,
+    );
   });
 
   app.notFound((c) => c.json({ ok: false, error: "not_found" }, 404));

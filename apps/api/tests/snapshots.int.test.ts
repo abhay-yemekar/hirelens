@@ -5,8 +5,7 @@
  */
 
 import { createMockModel } from "@hirelens/core";
-import { auth, createDb, organization } from "@hirelens/db";
-import { eq } from "drizzle-orm";
+import { auth, createDb } from "@hirelens/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 import { deleteOrgCompletely } from "./helpers.js";
@@ -154,7 +153,9 @@ describe.skipIf(!available && allowSkip)("scheduled audit snapshots", () => {
     expect(badAuth.status).toBe(401);
   });
 
-  it("cron endpoint snapshots every job with the right secret", async () => {
+  // The dev DB may hold many legacy jobs (cron sweeps all of them × 4
+  // dimensions), so allow a generous timeout — the default 5 s is too tight.
+  it("cron endpoint snapshots every job with the right secret", { timeout: 30_000 }, async () => {
     const cron = await app.request("/api/cron/audit-snapshots", {
       method: "POST",
       headers: { authorization: `Bearer test-cron-${STAMP}` },
