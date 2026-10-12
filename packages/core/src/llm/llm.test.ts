@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { generateStructured } from "./generate.js";
+import { generateStructured, setTransientRetryDelayForTests } from "./generate.js";
+
+// Shrink the transient ladder's sleeps so overload-retry tests are fast.
+setTransientRetryDelayForTests(1);
+
 import {
   assertValidProviderConfig,
   createMockModel,
@@ -95,6 +99,56 @@ describe("generateStructured", () => {
     expect(res.object).toEqual({ title: "t", score: 80 });
     expect(calls).toHaveLength(2);
     expect(calls[1]?.system).toContain("JSON Schema");
+  });
+
+  // Phase 0: provider overload (“high demand”) gets its own transient retry
+  // ladder before the error escapes — the free-tier spike case.
+  it("retries transient provider overload and succeeds within the ladder", async () => {
+    let call = 0;
+    const { model, calls } = createMockModel({
+      provider: "google",
+      args: { title: "t", score: 80 },
+    });
+    const orig = (model as unknown as { doGenerate: (o: unknown) => Promise<unknown> }).doGenerate;
+    (model as unknown as { doGenerate: (o: unknown) => Promise<unknown> }).doGenerate = async (
+      o: unknown,
+    ) => {
+      call += 1;
+      if (call === 1) {
+        throw new Error(
+          "Provider call failed: AI_APICallError: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+        );
+      }
+      return orig(o);
+    };
+    const res = await generateStructured(
+      model as LanguageModel,
+      { system: "s", prompt: "p" },
+      Reply,
+    );
+    expect(res.object).toEqual({ title: "t", score: 80 });
+    // The overloaded attempt throws before the mock records it, so the
+    // captured-calls list may be shorter — the call counter is what proves
+    // the retry ladder fired.
+    expect(call).toBeGreaterThanOrEqual(2);
+  });
+
+  it("does not burn transient retries on permanent errors (schema rejection proceeds to JSON mode)", async () => {
+    const { model, calls } = createMockModel({
+      provider: "transient-test",
+      failWithOnce: new Error(
+        "schema at properties.criteria.items.properties.scale.items must be a boolean or an object",
+      ),
+      args: { title: "t", score: 80 },
+    });
+    const res = await generateStructured(
+      model as LanguageModel,
+      { system: "s", prompt: "p" },
+      Reply,
+    );
+    expect(res.object).toEqual({ title: "t", score: 80 });
+    // 1 rejected native-schema call + 1 JSON-mode call — no transient ladder.
+    expect(calls).toHaveLength(2);
   });
 
   it("wraps provider failures in LlmRuntimeError", async () => {

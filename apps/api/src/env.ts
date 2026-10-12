@@ -23,13 +23,33 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): ApiEnv {
 
 /** LLM selection from env; consumed by resolveLanguageModel(). */
 export interface LlmEnv {
-  provider: "google" | "anthropic" | "groq" | "openrouter" | "ollama";
+  provider: "google" | "anthropic" | "groq" | "openrouter" | "mistral" | "cerebras" | "ollama";
   model: string;
   apiKey?: string | undefined;
   baseUrl?: string | undefined;
+  /**
+   * Ordered fallback providers tried only on transient provider failures
+   * (overload/rate limit). Each entry may carry its own key/model via
+   * HIRELENS_LLM_<PROVIDER>_API_KEY / _MODEL, else inherits the primary's
+   * provider-level env where applicable.
+   */
+  fallbacks: Array<{
+    provider: LlmEnv["provider"];
+    model?: string | undefined;
+    apiKey?: string | undefined;
+    baseUrl?: string | undefined;
+  }>;
 }
 
-const LLM_PROVIDER_IDS = ["google", "anthropic", "groq", "openrouter", "ollama"] as const;
+const LLM_PROVIDER_IDS = [
+  "google",
+  "anthropic",
+  "groq",
+  "openrouter",
+  "mistral",
+  "cerebras",
+  "ollama",
+] as const;
 
 /**
  * Read HIRELENS_LLM_* variables. Returns null when none are set so the
@@ -54,9 +74,39 @@ export function readLlmEnv(source: NodeJS.ProcessEnv = process.env): LlmEnv | nu
   }
   const apiKey = source["HIRELENS_LLM_API_KEY"];
   const baseUrl = source["HIRELENS_LLM_BASE_URL"];
+
+  // Fallback chain: comma-separated provider ids. Each may override its
+  // model/key/base URL via HIRELENS_LLM_<ID>_MODEL / _API_KEY / _BASE_URL
+  // (uppercase provider id in the var name, e.g. HIRELENS_LLM_GROQ_API_KEY).
+  const fallbacks: LlmEnv["fallbacks"] = [];
+  const rawFallbacks = source["HIRELENS_LLM_FALLBACKS"]?.trim() ?? "";
+  if (rawFallbacks !== "") {
+    for (const part of rawFallbacks.split(",")) {
+      const fp = part.trim().toLowerCase();
+      if (fp === "") continue;
+      if (!(LLM_PROVIDER_IDS as readonly string[]).includes(fp)) {
+        throw new Error(
+          `Unknown HIRELENS_LLM_FALLBACKS provider "${fp}" (expected one of: ${LLM_PROVIDER_IDS.join(", ")})`,
+        );
+      }
+      if (fp === provider) continue; // dedupe: primary already tried first
+      const upper = fp.toUpperCase().replaceAll("-", "_");
+      const fModel = source[`HIRELENS_LLM_${upper}_MODEL`]?.trim() || undefined;
+      const fKey = source[`HIRELENS_LLM_${upper}_API_KEY`]?.trim() || undefined;
+      const fBase = source[`HIRELENS_LLM_${upper}_BASE_URL`]?.trim() || undefined;
+      fallbacks.push({
+        provider: fp as LlmEnv["provider"],
+        ...(fModel === undefined ? {} : { model: fModel }),
+        ...(fKey === undefined ? {} : { apiKey: fKey }),
+        ...(fBase === undefined ? {} : { baseUrl: fBase }),
+      });
+    }
+  }
+
   return {
     provider: provider as LlmEnv["provider"],
     model,
+    fallbacks,
     ...(apiKey === undefined || apiKey === "" ? {} : { apiKey }),
     ...(baseUrl === undefined || baseUrl === "" ? {} : { baseUrl }),
   };

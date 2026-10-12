@@ -1,4 +1,5 @@
 export * from "./config.js";
+export * from "./failover.js";
 export * from "./generate.js";
 export * from "./mockModel.js";
 export * from "./promptHash.js";

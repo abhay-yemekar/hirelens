@@ -12,6 +12,7 @@ export {
   stageEnum,
 } from "./enums.js";
 export * from "./jobs.js";
+export * from "./org-settings.js";
 export * from "./portal.js";
 export * from "./scoring.js";
 export * from "./sharing.js";

@@ -17,6 +17,18 @@ export const PROVIDER_FACTORIES: Record<string, LanguageModelFactory> = {
     createAnthropic(c.apiKey === undefined ? {} : { apiKey: c.apiKey })(c.model),
   groq: (c: ProviderConfig) =>
     createGroq(c.apiKey === undefined ? {} : { apiKey: c.apiKey })(c.model),
+  mistral: (c: ProviderConfig) =>
+    createOpenAICompatible({
+      name: "mistral",
+      baseURL: "https://api.mistral.ai/v1",
+      ...(c.apiKey === undefined ? {} : { apiKey: c.apiKey }),
+    })(c.model),
+  cerebras: (c: ProviderConfig) =>
+    createOpenAICompatible({
+      name: "cerebras",
+      baseURL: "https://api.cerebras.ai/v1",
+      ...(c.apiKey === undefined ? {} : { apiKey: c.apiKey }),
+    })(c.model),
   openrouter: (c: ProviderConfig) =>
     createOpenAICompatible({
       name: "openrouter",

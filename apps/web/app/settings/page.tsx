@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { NoticeBanner } from "@/components/notice-banner";
 import { organization, userTrack, useSession } from "@/lib/auth-client";
+import { LlmProvidersCard } from "./ai-providers-card";
 import { ApiTokensCard } from "./api-tokens-card";
 import { MembersCard } from "./members-card";
 import { TrackCard } from "./track-card";
@@ -148,6 +149,7 @@ export default function SettingsPage() {
         )}
 
         <TrackCard />
+        {isRecruiter && <LlmProvidersCard />}
         {isRecruiter && <MembersCard />}
         {isRecruiter && <ApiTokensCard />}
       </div>

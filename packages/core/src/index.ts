@@ -38,17 +38,26 @@ export {
   renderKitHtml,
 } from "./interview/kit.js";
 export {
+  type ChainEntry,
+  createFailoverModel,
   createMockModel,
   DEFAULT_REGISTRY,
+  type FailoverMetadata,
   type GenerationRequest,
   generateStructured,
+  isTransientProviderError,
   type LanguageModel,
+  type LlmProviderId,
+  lastFailoverMetadata,
   modelIdOf,
+  PROVIDER_LABELS,
   type ProviderConfig,
+  pingModel,
   promptHash,
   resolveLanguageModel,
   SchemaViolationError,
   type StructuredResult,
+  setTransientRetryDelayForTests,
 } from "./llm/index.js";
 export {
   type AiContentReport,

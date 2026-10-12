@@ -5,7 +5,14 @@
 
 import type { LanguageModel as AiLanguageModel } from "ai";
 
-export type LlmProviderId = "google" | "anthropic" | "groq" | "openrouter" | "ollama";
+export type LlmProviderId =
+  | "google"
+  | "anthropic"
+  | "groq"
+  | "openrouter"
+  | "mistral"
+  | "cerebras"
+  | "ollama";
 
 export interface ProviderConfig {
   id: LlmProviderId;
@@ -47,7 +54,25 @@ export const DEFAULT_REGISTRY: ResolvedRegistry = {
   adjudicator: "google",
 };
 
-const HOSTED: ReadonlySet<string> = new Set(["google", "anthropic", "groq", "openrouter"]);
+const HOSTED: ReadonlySet<string> = new Set([
+  "google",
+  "anthropic",
+  "groq",
+  "openrouter",
+  "mistral",
+  "cerebras",
+]);
+
+/** Human-readable provider names for UI and docs. */
+export const PROVIDER_LABELS: Record<LlmProviderId, string> = {
+  google: "Google Gemini",
+  anthropic: "Anthropic Claude",
+  groq: "Groq",
+  openrouter: "OpenRouter",
+  mistral: "Mistral AI",
+  cerebras: "Cerebras",
+  ollama: "Ollama (self-hosted)",
+};
 
 /** Validate a provider config; throws with a precise message on misuse. */
 export function assertValidProviderConfig(config: ProviderConfig): void {
