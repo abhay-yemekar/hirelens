@@ -48,17 +48,34 @@ export function describeError(err: unknown): ErrorDescriptor {
           tone: "warning",
           text: "Too many requests in a short window — wait a minute and try again.",
         };
-      case "bad_response":
+      case "bad_response": {
         // The AI provider failed (derivation / Ask / scoring upstream).
-        // The server includes its reason in the message when it has one.
+        // The server includes its reason in the message when it has one,
+        // but internal SDK/stack strings (schema paths, JSON payload
+        // internals, provider-protocol errors) are never user-facing —
+        // strip them to a single professional sentence.
+        const raw = err.message ?? "";
+        // Cosmetic summary lines always work, even when the API didn't
+        // attach a reason.
+        if (!raw || raw === "bad_response") {
+          return {
+            tone: "warning",
+            text: "The AI provider could not complete this right now — this is usually transient. Try again; if it keeps happening, please report it.",
+            cta: { label: "Report an issue", href: "/contact" },
+          };
+        }
+        const looksInternal =
+          /schema at |properties\.|\.items\.|JSON payload|Proto field|function-call|tool_use|response_schema|invalid_request_error|invalid_api_key|API key/i.test(
+            raw,
+          );
         return {
           tone: "warning",
-          text:
-            err.message && err.message !== "bad_response"
-              ? `The AI provider could not complete this: ${err.message}`
-              : "The AI provider could not complete this right now — this is usually transient. Try again; if it keeps happening, please report it.",
+          text: looksInternal
+            ? "The AI provider rejected this request (often a temporary provider-side schema or configuration issue). Try again; if it keeps happening, please report it."
+            : `The AI provider could not complete this: ${raw}`,
           cta: { label: "Report an issue", href: "/contact" },
         };
+      }
       case "internal_error":
         return {
           tone: "error",

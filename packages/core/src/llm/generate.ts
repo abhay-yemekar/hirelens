@@ -88,10 +88,33 @@ export function extractJsonObject(
   }
 }
 
-/** Gemini's schema-rejection signature; other providers may match later. */
+/**
+ * Provider rejection signatures for schemas the provider cannot express
+ * natively.
+ *
+ * Google has shipped at least three flavors over time:
+ * - "Proto field is not repeating, cannot start list." (nested array-of-arrays)
+ * - `response_schema` mentions when the API rejects the generated schema
+ * - "schema at properties.… must be a boolean or an object" — the current
+ *   error when a tuple/tuple-item schema is sent to Google's schema
+ *   converter (`items: [...]` in an array's schema). The AI SDK's
+ *   JSON-schema→OpenAPI conversion produces that shape for Zod tuples.
+ *
+ * Anything matching is treated as "the provider can't take this schema
+ * natively" → fall back to JSON-text mode (schema embedded in the prompt)
+ * rather than surfacing a raw SDK error to the user.
+ */
 function isSchemaUnsupportedError(err: unknown): boolean {
   const message = err instanceof Error ? err.message : String(err);
-  return message.includes("Proto field is not repeating") || message.includes("response_schema");
+  return (
+    message.includes("Proto field is not repeating") ||
+    message.includes("response_schema") ||
+    // Google's schema-structural rejections: "schema at <path> must be a
+    // boolean or an object", "must be a valid schema", etc. — robust to
+    // varied path wording by matching the stable prefix and clause.
+    (message.includes("schema at ") && message.includes("must be a")) ||
+    (message.includes("Invalid JSON payload received") && message.includes("Unknown name"))
+  );
 }
 
 function toUsage(u: unknown): UsageInfo {
