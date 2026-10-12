@@ -49,10 +49,25 @@ export function describeError(err: unknown): ErrorDescriptor {
           text: "Too many requests in a short window — wait a minute and try again.",
         };
       case "bad_response":
+        // The AI provider failed (derivation / Ask / scoring upstream).
+        // The server includes its reason in the message when it has one.
+        return {
+          tone: "warning",
+          text:
+            err.message && err.message !== "bad_response"
+              ? `The AI provider could not complete this: ${err.message}`
+              : "The AI provider could not complete this right now — this is usually transient. Try again; if it keeps happening, please report it.",
+          cta: { label: "Report an issue", href: "/contact" },
+        };
       case "internal_error":
         return {
           tone: "error",
-          text: "The API hit a temporary problem — this is usually transient. Try again; if it keeps happening, please report it.",
+          // ApiRequestError.message carries the server's errorId so support
+          // can look the exact failure up in the logs.
+          text:
+            err.message && err.message !== "internal_error"
+              ? `The API hit an unexpected problem — reference ${err.message}. Try again; if it keeps happening, please report it with this reference.`
+              : "The API hit a temporary problem — this is usually transient. Try again; if it keeps happening, please report it.",
           cta: { label: "Report an issue", href: "/contact" },
         };
       case "file_too_large":
