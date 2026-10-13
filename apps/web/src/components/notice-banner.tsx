@@ -29,10 +29,17 @@ const TONE: Record<
 
 /**
  * Human-facing error/setup banner. Feed it any thrown value; raw API
- * codes never render.
+ * codes never render. For messages that aren't errors (setup hints,
+ * migration notices) pass a `descriptor` directly.
  */
-export function NoticeBanner({ error }: { error: unknown }) {
-  const d = describeError(error);
+export function NoticeBanner({
+  error,
+  descriptor,
+}: {
+  error?: unknown;
+  descriptor?: ErrorDescriptor;
+}) {
+  const d = descriptor ?? describeError(error);
   const t = TONE[d.tone];
   return (
     <div

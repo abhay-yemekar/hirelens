@@ -112,6 +112,28 @@ docker compose up --build -d`}</code>
           </tr>
           <tr>
             <td>
+              <code>HIRELENS_LLM_FALLBACKS</code> (+ per-provider{" "}
+              <code>HIRELENS_LLM_&lt;ID&gt;_MODEL</code>, <code>_API_KEY</code>)
+            </td>
+            <td>no</td>
+            <td>
+              Failover chain for overloaded moments. Every fallback needs its own{" "}
+              <code>_MODEL</code> (a provider never inherits another provider&apos;s model id —
+              validation fails at boot otherwise), e.g. <code>openai/gpt-oss-120b</code> for Groq.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <code>HIRELENS_LLM_DEADLINE_MS</code>
+            </td>
+            <td>no</td>
+            <td>
+              Overall retry/failover deadline in ms (default 120000). Keeps the retry ladder inside
+              serverless function limits.
+            </td>
+          </tr>
+          <tr>
+            <td>
               <code>SENTRY_DSN</code>, <code>LANGFUSE_*</code>, <code>NEXT_PUBLIC_POSTHOG_KEY</code>
             </td>
             <td>no</td>

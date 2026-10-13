@@ -26,6 +26,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { ROLE_MIN, requireAuth } from "../auth.js";
 import { readJson } from "../http.js";
+import { isMissingTableError } from "../llm-error.js";
 import { llmProviderStatus } from "../model-status.js";
 import type { AppEnv } from "../types.js";
 
@@ -42,14 +43,23 @@ export function settingsRoutes(): Hono<AppEnv> {
   /** Current org LLM preference + which providers the server has configured. */
   routes.get("/llm", requireAuth(), async (c) => {
     const db = c.get("db");
-    const [row] = await db
-      .select()
-      .from(orgSettings)
-      .where(eq(orgSettings.orgId, c.get("auth").orgId))
-      .limit(1);
-    const stored = row?.llmProvider as
-      | { llmProvider?: string | null; fallbackOrder?: string[] }
-      | undefined;
+    // Resilience: a deployment whose migrations haven't run yet must not
+    // 500 the settings page — it gets defaults plus a flag instead.
+    let stored: { llmProvider?: string | null; fallbackOrder?: string[] } | undefined;
+    let migrationsPending = false;
+    try {
+      const [row] = await db
+        .select()
+        .from(orgSettings)
+        .where(eq(orgSettings.orgId, c.get("auth").orgId))
+        .limit(1);
+      stored = row?.llmProvider as
+        | { llmProvider?: string | null; fallbackOrder?: string[] }
+        | undefined;
+    } catch (err) {
+      if (!isMissingTableError(err)) throw err;
+      migrationsPending = true;
+    }
 
     const configured = llmProviderStatus().map((p) => ({
       id: p.id,
@@ -66,6 +76,8 @@ export function settingsRoutes(): Hono<AppEnv> {
       configured,
       /** Human names for the picker. */
       providerLabels: PROVIDER_LABELS,
+      /** org_settings table missing — the operator hasn't run migrations. */
+      migrationsPending,
     });
   });
 
@@ -99,20 +111,37 @@ export function settingsRoutes(): Hono<AppEnv> {
 
     const db = c.get("db");
     const auth = c.get("auth");
-    await db
-      .insert(orgSettings)
-      .values({
-        orgId: auth.orgId,
-        llmProvider: { llmProvider, fallbackOrder: fallbackOrder ?? [] },
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: orgSettings.orgId,
-        set: {
+    try {
+      await db
+        .insert(orgSettings)
+        .values({
+          orgId: auth.orgId,
           llmProvider: { llmProvider, fallbackOrder: fallbackOrder ?? [] },
           updatedAt: new Date(),
-        },
-      });
+        })
+        .onConflictDoUpdate({
+          target: orgSettings.orgId,
+          set: {
+            llmProvider: { llmProvider, fallbackOrder: fallbackOrder ?? [] },
+            updatedAt: new Date(),
+          },
+        });
+    } catch (err) {
+      // Missing table → tell the operator exactly what to run instead of
+      // an opaque 500.
+      if (isMissingTableError(err)) {
+        return c.json(
+          {
+            ok: false,
+            error: "migrations_pending",
+            message:
+              "The org_settings table does not exist yet. Run: pnpm --filter @hirelens/db db:migrate",
+          },
+          503,
+        );
+      }
+      throw err;
+    }
 
     await appendAudit(db, {
       orgId: auth.orgId,

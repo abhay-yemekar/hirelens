@@ -27,6 +27,26 @@ export interface StructuredResult<T> {
   attempts: number;
 }
 
+/**
+ * Every provider in a failover chain failed (each with its own error).
+ * Lives in types.ts, not failover.ts, so generate.ts can instanceof it
+ * without a circular module import.
+ */
+export class AllProvidersFailedError extends Error {
+  /** providerId → error message, in chain order. */
+  readonly attempts: ReadonlyArray<{ provider: string; message: string }>;
+
+  constructor(attempts: ReadonlyArray<{ provider: string; message: string }>) {
+    super(
+      `All ${attempts.length} providers failed: ${attempts
+        .map((a) => `${a.provider}: ${a.message}`)
+        .join("; ")}`,
+    );
+    this.name = "AllProvidersFailedError";
+    this.attempts = attempts;
+  }
+}
+
 /** Raised when the provider call itself fails after retries. */
 export class LlmRuntimeError extends Error {
   readonly provider: string | undefined;

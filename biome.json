@@ -9,6 +9,7 @@
       "!**/.source",
       "!**/coverage",
       "!**/.turbo",
+      "!**/.freebuff",
       "!**/pnpm-lock.yaml"
     ]
   },

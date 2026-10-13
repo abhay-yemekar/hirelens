@@ -165,7 +165,10 @@ One `.env` per package that needs secrets, with `.env.example` documenting every
 | `NEXT_PUBLIC_SITE_URL` | Canonical site URL used by sitemap/robots/metadata |
 | `NEXT_PUBLIC_API_URL` | Leave **empty** on Vercel (same-origin API mount at `/api/*`); set only for split-origin self-hosts |
 | `HIRELENS_LLM_PROVIDER` + `HIRELENS_LLM_MODEL` (+ `_API_KEY`, `_BASE_URL`) | Enables LLM routes (google/anthropic/groq/openrouter/mistral/cerebras/ollama) |
-| `HIRELENS_LLM_FALLBACKS` | Comma-separated **failover chain**, e.g. `groq,openrouter`. Fallbacks are tried only when the primary is overloaded/rate-limited. Per-provider overrides: `HIRELENS_LLM_<ID>_MODEL`, `_API_KEY`, `_BASE_URL` (e.g. `HIRELENS_LLM_GROQ_API_KEY`). |
+| `HIRELENS_LLM_FALLBACKS` | Comma-separated **failover chain**, e.g. `groq,openrouter`. Fallbacks are tried only when the primary is overloaded/rate-limited. **Required for every fallback:** `HIRELENS_LLM_<ID>_MODEL` — a fallback never inherits the primary's model id (boot fails otherwise, because providers cannot serve each other's model names). Also per-provider: `HIRELENS_LLM_<ID>_API_KEY`, `_BASE_URL`. Example: `HIRELENS_LLM_FALLBACKS=groq` + `HIRELENS_LLM_GROQ_API_KEY=…` + `HIRELENS_LLM_GROQ_MODEL=openai/gpt-oss-120b`. |
+| `HIRELENS_LLM_DEADLINE_MS` | Optional overall retry/failover deadline (default 120000 ms, capped at 600000). Guarantees the 5s→20s retry ladder plus failover cannot outlive a serverless function limit. |
+
+**Deployment note (Vercel):** environment-variable changes only reach **new deployments** — after adding or editing any `HIRELENS_LLM_*` variable, redeploy. If the database schema is behind the code, `/api/health?db=1` returns `503 migrations_pending` with the migration command in the message instead of opaque 500s on org routes. |
 | `SENTRY_DSN` | Error tracking (optional) |
 | `LANGFUSE_PUBLIC_KEY` / `_SECRET_KEY` / `_BASE_URL` | LLM tracing (optional) |
 | `NEXT_PUBLIC_POSTHOG_KEY` | Product analytics — explicit events only, autocapture off (optional) |

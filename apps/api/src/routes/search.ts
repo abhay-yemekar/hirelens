@@ -25,6 +25,7 @@ import { ROLE_MIN, requireAuth } from "../auth.js";
 import { ApiInputError } from "../errors.js";
 import { readJson } from "../http.js";
 import { labelFromFileKey } from "../labels.js";
+import { llmRouteError } from "../llm-error.js";
 import type { AppEnv } from "../types.js";
 import { loadOrgJob } from "./jobs.js";
 
@@ -302,12 +303,9 @@ export function searchRoutes(): Hono<AppEnv> {
       })),
     ).catch((err) => {
       // Provider/runtime or schema-violation failures surface as 502
-      // bad_response — an upstream problem, not an internal_error 500.
-      throw new ApiInputError(
-        "bad_response",
-        `The AI could not answer this question right now: ${err instanceof Error ? err.message : String(err)}`,
-        502,
-      );
+      // Transient upstream problems → 502 bad_response; a wrong model id
+      // or rejected key → 503 llm_misconfigured. Never an opaque 500.
+      throw llmRouteError("The AI could not answer this question right now", err);
     });
 
     // Verify citations: only chunks actually sent may be cited.
