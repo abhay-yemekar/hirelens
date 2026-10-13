@@ -12,6 +12,7 @@ import { trimTrailingSlash } from "hono/trailing-slash";
 import { requireAuth } from "./auth.js";
 import { ApiInputError } from "./errors.js";
 import type { HireLensIndexer } from "./indexing.js";
+import { isMissingTableError } from "./llm-error.js";
 import { requestLogging } from "./middleware.js";
 import { captureException } from "./observability.js";
 import { openApiDocument } from "./openapi.js";
@@ -123,10 +124,54 @@ export function createApp(deps: AppDeps) {
   // Better Auth handles its own routes (sign-up/sign-in/session/org).
   app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
-  // Health check — public, no DB round-trip.
-  app.get("/api/health", (c) =>
-    c.json({ ok: true as const, service: "hirelens-api", version: "0.1.0" }),
-  );
+  // Health check — public, no DB round-trip by default so load balancers
+  // can probe cheaply. `?db=1` additionally verifies the database is
+  // reachable AND that migrations are current (drizzle's journal exists
+  // and is non-empty): a deployment whose schema is behind reports a
+  // clear 503 migrations_pending instead of opaque 500s on every
+  // org-scoped route.
+  app.get("/api/health", async (c) => {
+    if (c.req.query("db") !== "1") {
+      return c.json({ ok: true as const, service: "hirelens-api", version: "0.1.0" });
+    }
+    let db: Database | null = null;
+    try {
+      db = c.get("db");
+      const { sql } = await import("drizzle-orm");
+      const result = await db.execute<{ n: number }>(
+        sql`SELECT count(*)::int AS n FROM drizzle.__drizzle_migrations`,
+      );
+      const n = Number(result.rows[0]?.n ?? 0);
+      if (n === 0) {
+        return c.json(
+          {
+            ok: false as const,
+            service: "hirelens-api",
+            version: "0.1.0",
+            migrationsPending: true,
+            message: "Database schema is out of date. Run: pnpm --filter @hirelens/db db:migrate",
+          },
+          503,
+        );
+      }
+      return c.json({ ok: true as const, service: "hirelens-api", version: "0.1.0" });
+    } catch (err) {
+      const missing = isMissingTableError(err);
+      captureException(err, { requestId: c.get("requestId"), path: "/api/health?db=1" });
+      return c.json(
+        {
+          ok: false as const,
+          service: "hirelens-api",
+          version: "0.1.0",
+          ...(missing ? { migrationsPending: true } : {}),
+          message: missing
+            ? "Database schema is out of date (migrations journal missing). Run: pnpm --filter @hirelens/db db:migrate"
+            : "Database is unreachable.",
+        },
+        503,
+      );
+    }
+  });
 
   // Public API contract (public document; auth still governs the endpoints it describes).
   app.get("/api/openapi.json", (c) => c.json(openApiDocument));

@@ -23,6 +23,8 @@ interface LlmSettings {
   setting: { llmProvider: string | null; fallbackOrder: string[] };
   configured: ProviderEntry[];
   providerLabels: Record<string, string>;
+  /** org_settings table missing — server migrations haven't run. */
+  migrationsPending?: boolean;
 }
 
 /**
@@ -108,6 +110,15 @@ export function LlmProvidersCard() {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {error ? <NoticeBanner error={error} /> : null}
+
+        {data?.migrationsPending ? (
+          <NoticeBanner
+            descriptor={{
+              tone: "warning",
+              text: "Server migrations haven't run yet, so saving a provider choice is unavailable for now. Ask your operator to run: pnpm --filter @hirelens/db db:migrate",
+            }}
+          />
+        ) : null}
 
         {!data ? (
           <p className="text-sm" style={{ color: "var(--hl-muted)" }}>

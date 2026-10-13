@@ -15,6 +15,7 @@
  */
 import type { LanguageModel } from "./config.js";
 import { isTransientProviderError } from "./generate.js";
+import { AllProvidersFailedError } from "./types.js";
 
 /** The narrow shape we actually need from any model in the chain. */
 interface DoGenerateCapable {
@@ -62,6 +63,17 @@ function providerIdOf(model: LanguageModel): string {
  * Build a chain model. The returned object satisfies the AI SDK's
  * LanguageModelV2 interface by delegating (specificationVersion, provider,
  * modelId, doGenerate) to whichever entry is currently being tried.
+ *
+ * Error semantics:
+ * - The PRIMARY (i === 0) rethrows on any non-transient failure (schema
+ *   rejections, violations) so the caller's repair machinery — which must
+ *   stay on one provider — keeps working.
+ * - A FALLBACK's failure (whatever kind: 404 model-not-found, 401/403
+ *   auth, schema) never aborts the chain — it is recorded and the next
+ *   entry is tried. A fallback raised with "model gemini-2.5-flash does
+ *   not exist" used to mask the primary's real transient outage.
+ * - When every entry has failed, one AllProvidersFailedError names each
+ *   provider and its error so the root cause chain is visible end-to-end.
  */
 export function createFailoverModel(entries: ChainEntry[]): LanguageModel {
   if (entries.length === 0) {
@@ -79,6 +91,7 @@ export function createFailoverModel(entries: ChainEntry[]): LanguageModel {
       [key: string]: unknown;
     }) {
       let lastError: unknown;
+      const attempts: Array<{ provider: string; message: string }> = [];
       for (let i = 0; i < entries.length; i++) {
         const entry = entries[i];
         if (!entry) continue;
@@ -100,17 +113,21 @@ export function createFailoverModel(entries: ChainEntry[]): LanguageModel {
           return result;
         } catch (err) {
           lastError = err;
-          // Non-provider-level failures (schema rejections, violations)
-          // must not jump providers — rethrow for the repair paths.
-          if (!isTransientProviderError(err)) {
+          attempts.push({
+            provider: entry.id,
+            message: (err instanceof Error ? err.message : String(err)).slice(0, 300),
+          });
+          // Non-transient failures on the primary rethrow so the caller's
+          // schema-repair paths run on the original provider. Everything
+          // else (transient primary failures, ANY fallback failure) tries
+          // the next entry.
+          if (i === 0 && !isTransientProviderError(err)) {
             throw err;
           }
         }
       }
-      // Every entry transiently failed: surface the primary's last error
-      // wrapped with the chain context.
-      const msg = lastError instanceof Error ? lastError.message : String(lastError);
-      throw new Error(`All ${entries.length} providers failed; last error: ${msg}`);
+      // Every entry failed — surface the aggregated chain.
+      throw new AllProvidersFailedError(attempts);
     },
   };
 

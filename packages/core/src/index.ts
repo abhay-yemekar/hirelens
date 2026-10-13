@@ -38,6 +38,7 @@ export {
   renderKitHtml,
 } from "./interview/kit.js";
 export {
+  AllProvidersFailedError,
   type ChainEntry,
   createFailoverModel,
   createMockModel,
@@ -48,6 +49,7 @@ export {
   isTransientProviderError,
   type LanguageModel,
   type LlmProviderId,
+  LlmRuntimeError,
   lastFailoverMetadata,
   modelIdOf,
   PROVIDER_LABELS,

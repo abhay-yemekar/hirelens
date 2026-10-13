@@ -3,6 +3,11 @@
  * can each one actually serve right now? Powers the Settings UI's
  * provider list and its live "Test" probes. Keys themselves never leave
  * the server — only ids, labels, and ping outcomes.
+ *
+ * All provider configuration comes from readLlmEnv() — the single source
+ * of truth for HIRELENS_LLM_* parsing. This module no longer re-parses
+ * the env (that duplication is how the "Groq called with the primary's
+ * model id" bug happened).
  */
 import {
   type LanguageModel,
@@ -10,6 +15,7 @@ import {
   pingModel,
   resolveLanguageModel,
 } from "@hirelens/core";
+import { type LlmEnv, readLlmEnv } from "./env.js";
 
 interface ProviderInfo {
   id: string;
@@ -18,49 +24,41 @@ interface ProviderInfo {
   buildModel: () => LanguageModel;
 }
 
-function buildProviderModel(provider: string, model: string, isFallback: boolean): LanguageModel {
-  const upper = provider.toUpperCase().replaceAll("-", "_");
-  const keyConn = isFallback
-    ? process.env[`HIRELENS_LLM_${upper}_API_KEY`]
-    : process.env["HIRELENS_LLM_API_KEY"];
-  const key = (keyConn ?? "").trim();
-  const baseConn = isFallback
-    ? process.env[`HIRELENS_LLM_${upper}_BASE_URL`]
-    : process.env["HIRELENS_LLM_BASE_URL"];
-  const baseUrl = (baseConn ?? "").trim();
+function buildProviderModel(provider: string, model: string, key?: string, baseUrl?: string) {
   return resolveLanguageModel({
     id: provider as Parameters<typeof resolveLanguageModel>[0]["id"],
     model,
-    ...(key === "" ? {} : { apiKey: key }),
-    ...(baseUrl === "" ? {} : { baseUrl }),
+    ...(key === undefined || key === "" ? {} : { apiKey: key }),
+    ...(baseUrl === undefined || baseUrl === "" ? {} : { baseUrl }),
   });
 }
 
 /** The set of (provider, model, key, baseUrl) configs known to the server. */
-export function configuredProviderInfos(): ProviderInfo[] {
-  const out: ProviderInfo[] = [];
-  const provider = process.env["HIRELENS_LLM_PROVIDER"]?.trim();
-  const model = process.env["HIRELENS_LLM_MODEL"]?.trim();
-  if (provider && model) {
-    out.push({
-      id: provider,
-      label: PROVIDER_LABELS[provider as keyof typeof PROVIDER_LABELS] ?? provider,
-      model,
-      buildModel: () => buildProviderModel(provider, model, false),
-    });
+export function configuredProviderInfos(source: NodeJS.ProcessEnv = process.env): ProviderInfo[] {
+  let llm: LlmEnv | null = null;
+  try {
+    llm = readLlmEnv(source);
+  } catch {
+    // A misconfigured HIRELENS_LLM_* env must not 500 the settings page —
+    // the picker works (empty), and boot/other routes surface the error.
+    return [];
   }
-  const fallbacks = process.env["HIRELENS_LLM_FALLBACKS"]?.trim() ?? "";
-  for (const part of fallbacks.split(",")) {
-    const fp = part.trim().toLowerCase();
-    if (fp === "" || out.some((o) => o.id === fp)) continue;
-    const upper = fp.toUpperCase().replaceAll("-", "_");
-    const fModel = process.env[`HIRELENS_LLM_${upper}_MODEL`]?.trim() || model;
-    if (!fModel) continue;
+  if (llm === null) return [];
+  const out: ProviderInfo[] = [
+    {
+      id: llm.provider,
+      label: PROVIDER_LABELS[llm.provider] ?? llm.provider,
+      model: llm.model,
+      buildModel: () => buildProviderModel(llm.provider, llm.model, llm.apiKey, llm.baseUrl),
+    },
+  ];
+  for (const f of llm.fallbacks) {
+    if (out.some((o) => o.id === f.provider)) continue;
     out.push({
-      id: fp,
-      label: PROVIDER_LABELS[fp as keyof typeof PROVIDER_LABELS] ?? fp,
-      model: fModel,
-      buildModel: () => buildProviderModel(fp, fModel, true),
+      id: f.provider,
+      label: PROVIDER_LABELS[f.provider] ?? f.provider,
+      model: f.model,
+      buildModel: () => buildProviderModel(f.provider, f.model, f.apiKey, f.baseUrl),
     });
   }
   return out;

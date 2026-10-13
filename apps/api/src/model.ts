@@ -2,25 +2,16 @@ import type { LanguageModel } from "@hirelens/core";
 import { type ChainEntry, createFailoverModel, resolveLanguageModel } from "@hirelens/core";
 import type { LlmEnv } from "./env.js";
 
-/** Build one provider's model from a fallback entry (model overrides tolerated). */
-function fallbackEntry(f: LlmEnv["fallbacks"][number], primaryModel: string): ChainEntry {
-  const model = resolveLanguageModel({
-    id: f.provider,
-    model: f.model ?? primaryModel,
-    ...(f.apiKey === undefined ? {} : { apiKey: f.apiKey }),
-    ...(f.baseUrl === undefined ? {} : { baseUrl: f.baseUrl }),
-  });
-  return { id: f.provider, model };
-}
-
 /**
  * Build the app-wide LanguageModel from parsed env. Returns null when
  * HIRELENS_LLM_* is unset (LLM routes respond 503 llm_not_configured).
  *
  * With HIRELENS_LLM_FALLBACKS set, the model is a failover chain: the
  * primary serves every call; fallbacks are tried only on transient
- * provider failures (overload / rate limit), exactly the free-tier spike
- * case.
+ * provider failures (overload / rate limit). Every fallback has its own
+ * model id by construction — readLlmEnv rejects a fallback without
+ * HIRELENS_LLM_<ID>_MODEL at boot, so no cross-provider inheritance can
+ * reach this module.
  */
 export function modelFromEnv(llm: LlmEnv | null): LanguageModel | null {
   if (llm === null) return null;
@@ -34,5 +25,18 @@ export function modelFromEnv(llm: LlmEnv | null): LanguageModel | null {
     }),
   };
   if (llm.fallbacks.length === 0) return primary.model;
-  return createFailoverModel([primary, ...llm.fallbacks.map((f) => fallbackEntry(f, llm.model))]);
+  return createFailoverModel([
+    primary,
+    ...llm.fallbacks.map(
+      (f): ChainEntry => ({
+        id: f.provider,
+        model: resolveLanguageModel({
+          id: f.provider,
+          model: f.model,
+          ...(f.apiKey === undefined ? {} : { apiKey: f.apiKey }),
+          ...(f.baseUrl === undefined ? {} : { baseUrl: f.baseUrl }),
+        }),
+      }),
+    ),
+  ]);
 }

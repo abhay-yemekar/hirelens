@@ -2,7 +2,7 @@ import { generateObject, generateText, jsonSchema, NoObjectGeneratedError } from
 import { z } from "zod";
 import type { LanguageModel } from "./config.js";
 import type { GenerationRequest, StructuredResult, UsageInfo } from "./types.js";
-import { LlmRuntimeError, SchemaViolationError } from "./types.js";
+import { AllProvidersFailedError, LlmRuntimeError, SchemaViolationError } from "./types.js";
 
 const MAX_ATTEMPTS = 2;
 
@@ -23,6 +23,25 @@ const TRANSIENT_MAX_DELAY_MS = 20_000;
 let transientTestDelayMs: number | undefined;
 export function setTransientRetryDelayForTests(ms: number | undefined): void {
   transientTestDelayMs = ms;
+}
+
+/**
+ * Overall deadline for the transient retry ladder (and, via the failover
+ * chain's per-provider ladder calls, the whole chain). Serverless hosts
+ * kill the function at a hard limit; retries that would outlive it are
+ * pointless — better to fail now with the real transient error than to
+ * burn the budget then time out opaquely.
+ *
+ * Default 120s covers Vercel's default function max duration with headroom.
+ * Self-hosters can raise it via HIRELENS_LLM_DEADLINE_MS.
+ */
+const DEFAULT_RETRY_DEADLINE_MS = 120_000;
+
+function deadlineMs(): number {
+  const raw = process.env["HIRELENS_LLM_DEADLINE_MS"];
+  if (raw === undefined || raw.trim() === "") return DEFAULT_RETRY_DEADLINE_MS;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 1_000 ? Math.min(n, 600_000) : DEFAULT_RETRY_DEADLINE_MS;
 }
 
 /** Overload / capacity / rate-limit signatures across providers. */
@@ -55,6 +74,7 @@ function sleep(ms: number): Promise<void> {
  * them.
  */
 async function withTransientRetry<T>(fn: () => Promise<T>): Promise<T> {
+  const deadline = Date.now() + deadlineMs();
   let lastErr: unknown;
   for (let retry = 0; retry <= TRANSIENT_MAX_RETRIES; retry++) {
     try {
@@ -64,13 +84,18 @@ async function withTransientRetry<T>(fn: () => Promise<T>): Promise<T> {
       if (retry === TRANSIENT_MAX_RETRIES || !isTransientProviderError(err)) {
         throw lastErr;
       }
-      await sleep(
+      const delay =
         transientTestDelayMs ??
-          Math.min(
-            TRANSIENT_MAX_DELAY_MS,
-            retryAfterMs(err) ?? TRANSIENT_BASE_DELAY_MS * 2 ** retry,
-          ) + Math.floor(Math.random() * 500),
-      );
+        Math.min(
+          TRANSIENT_MAX_DELAY_MS,
+          retryAfterMs(err) ?? TRANSIENT_BASE_DELAY_MS * 2 ** retry,
+        ) + Math.floor(Math.random() * 500);
+      // Out of budget: no more sleep-and-retry — rethrow now so the
+      // failure surfaces with the real provider error, not a host timeout.
+      if (Date.now() + delay >= deadline) {
+        throw lastErr;
+      }
+      await sleep(delay);
     }
   }
   // Unreachable: the loop either returns or throws.
@@ -276,8 +301,14 @@ export async function generateStructured<S extends z.ZodType>(
           lastIssues = "provider rejected the native schema; retrying in JSON mode";
           continue;
         }
+        // An aggregated chain failure must keep its identity so callers
+        // can read per-provider attempts (error surface, classification).
+        if (err instanceof AllProvidersFailedError) {
+          throw err;
+        }
         throw new LlmRuntimeError(
           `Provider call failed: ${err instanceof Error ? err.message : String(err)}`,
+          providerIdOf(model) || undefined,
         );
       }
       // The SDK validated against the schema already; re-validate cheaply
@@ -318,6 +349,11 @@ export async function generateStructured<S extends z.ZodType>(
       finishReason = r.finishReason;
       usage = r.usage;
     } catch (err) {
+      // Same rule as the native path below the loop: keep the chain
+      // aggregate's identity so per-provider attempts stay readable.
+      if (err instanceof AllProvidersFailedError) {
+        throw err;
+      }
       throw new LlmRuntimeError(
         `Provider call failed: ${err instanceof Error ? err.message : String(err)}`,
       );

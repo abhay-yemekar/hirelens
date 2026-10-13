@@ -85,6 +85,13 @@
       "when": 1791542400000,
       "tag": "0011_audit_chain_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791628800000,
+      "tag": "0012_org_settings",
+      "breakpoints": true
     }
   ]
 }

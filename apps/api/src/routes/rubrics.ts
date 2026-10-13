@@ -5,8 +5,8 @@ import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { ROLE_MIN, requireAuth } from "../auth.js";
-import { ApiInputError } from "../errors.js";
 import { readJson } from "../http.js";
+import { llmRouteError } from "../llm-error.js";
 import type { AppEnv } from "../types.js";
 import { loadOrgJob } from "./jobs.js";
 
@@ -103,14 +103,10 @@ export function rubricsRoutes(): Hono<AppEnv> {
     if (!model) return c.json({ ok: false, error: "llm_not_configured" }, 503);
 
     const result = await deriveRubric(model, job.description).catch((err) => {
-      // Provider/runtime failures are reported as 502 bad_response (the
-      // generic “upstream problem” code the UI maps to a real message) —
-      // not an uncaught 500 internal_error.
-      throw new ApiInputError(
-        "bad_response",
-        `Rubric drafting failed: ${err instanceof Error ? err.message : String(err)}`,
-        502,
-      );
+      // Transient provider failures → 502 bad_response; wrong model id /
+      // rejected key → 503 llm_misconfigured with actionable text. Either
+      // way, never an uncaught 500 internal_error.
+      throw llmRouteError("Rubric drafting failed", err);
     });
     const version = await nextVersion(db, job.id);
     const [row] = await db

@@ -28,14 +28,16 @@ export interface LlmEnv {
   apiKey?: string | undefined;
   baseUrl?: string | undefined;
   /**
-   * Ordered fallback providers tried only on transient provider failures
-   * (overload/rate limit). Each entry may carry its own key/model via
-   * HIRELENS_LLM_<PROVIDER>_API_KEY / _MODEL, else inherits the primary's
-   * provider-level env where applicable.
+   * Ordered fallback providers tried only when the primary is overloaded
+   * or rate-limited. EVERY fallback must carry its own model id
+   * (HIRELENS_LLM_<PROVIDER>_MODEL) — a provider never inherits another
+   * provider's model id, because providers cannot serve each other's
+   * model names (Groq returning "model gemini-2.5-flash does not exist"
+   * was exactly that bug).
    */
   fallbacks: Array<{
     provider: LlmEnv["provider"];
-    model?: string | undefined;
+    model: string;
     apiKey?: string | undefined;
     baseUrl?: string | undefined;
   }>;
@@ -92,11 +94,19 @@ export function readLlmEnv(source: NodeJS.ProcessEnv = process.env): LlmEnv | nu
       if (fp === provider) continue; // dedupe: primary already tried first
       const upper = fp.toUpperCase().replaceAll("-", "_");
       const fModel = source[`HIRELENS_LLM_${upper}_MODEL`]?.trim() || undefined;
+      if (fModel === undefined) {
+        throw new Error(
+          `HIRELENS_LLM_${upper}_MODEL is required when "${fp}" appears in HIRELENS_LLM_FALLBACKS. ` +
+            `Fallback providers never inherit the primary's model id (${model}) — each provider ` +
+            `serves its own model names. Set HIRELENS_LLM_${upper}_MODEL to a model id listed by ` +
+            `this provider (its /models endpoint is authoritative).`,
+        );
+      }
       const fKey = source[`HIRELENS_LLM_${upper}_API_KEY`]?.trim() || undefined;
       const fBase = source[`HIRELENS_LLM_${upper}_BASE_URL`]?.trim() || undefined;
       fallbacks.push({
         provider: fp as LlmEnv["provider"],
-        ...(fModel === undefined ? {} : { model: fModel }),
+        model: fModel,
         ...(fKey === undefined ? {} : { apiKey: fKey }),
         ...(fBase === undefined ? {} : { baseUrl: fBase }),
       });

@@ -1,5 +1,5 @@
 /** HTTP statuses this API maps input errors to. */
-export type ApiInputErrorStatus = 400 | 404 | 413 | 415 | 422 | 502;
+export type ApiInputErrorStatus = 400 | 404 | 413 | 415 | 422 | 502 | 503;
 
 /** Typed input error from API-level validation, mapped to HTTP status. */
 export class ApiInputError extends Error {
