@@ -41,9 +41,22 @@ async function buildApp(): Promise<HonoLikeApp> {
   }
   const db = createDb(databaseUrl);
   const embedding = embeddingModelFromEnv(process.env);
+  // Serverless degrade-loudly rule: a bad HIRELENS_LLM_* config must not
+  // kill every route (a throw here takes the whole function down — as the
+  // "groq fallback without a model id" incident showed, when the strict
+  // boot validation fired at cold start and even /api/health 500'd).
+  // Degraded mode keeps auth/jobs/settings working and the LLM routes
+  // report 503 llm_not_configured until the operator fixes the env.
+  let llm: ReturnType<typeof readLlmEnv> = null;
+  try {
+    llm = readLlmEnv();
+  } catch (err) {
+    const { captureException } = await import("./observability.js");
+    captureException(err, { scope: "llm-config", mode: "degraded_no_llm" });
+  }
   return createApp({
     db,
-    llm: modelFromEnv(readLlmEnv()),
+    llm: modelFromEnv(llm),
     indexer: embedding ? createIndexer(db, embedding) : null,
   });
 }
