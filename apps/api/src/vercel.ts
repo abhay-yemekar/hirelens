@@ -48,16 +48,22 @@ async function buildApp(): Promise<HonoLikeApp> {
   // Degraded mode keeps auth/jobs/settings working and the LLM routes
   // report 503 llm_not_configured until the operator fixes the env.
   let llm: ReturnType<typeof readLlmEnv> = null;
+  let llmConfigError: string | null = null;
   try {
     llm = readLlmEnv();
   } catch (err) {
     const { captureException } = await import("./observability.js");
     captureException(err, { scope: "llm-config", mode: "degraded_no_llm" });
+    // Keep the reason: health?db=1 and Settings surface it, so the
+    // operator sees "the env is invalid because …" instead of the
+    // misleading "needs an LLM key".
+    llmConfigError = err instanceof Error ? err.message : String(err);
   }
   return createApp({
     db,
     llm: modelFromEnv(llm),
     indexer: embedding ? createIndexer(db, embedding) : null,
+    ...(llmConfigError === null ? {} : { llmConfigError }),
   });
 }
 

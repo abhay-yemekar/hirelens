@@ -26,7 +26,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { ROLE_MIN, requireAuth } from "../auth.js";
 import { readJson } from "../http.js";
-import { isMissingTableError } from "../llm-error.js";
+import { isMissingTableError, sanitizeLlmConfigError } from "../llm-error.js";
 import { llmProviderStatus } from "../model-status.js";
 import type { AppEnv } from "../types.js";
 
@@ -66,6 +66,7 @@ export function settingsRoutes(): Hono<AppEnv> {
       label: p.label,
       model: p.model,
     }));
+    const llmConfigError = c.get("llmConfigError");
     return c.json({
       ok: true,
       setting: {
@@ -78,6 +79,13 @@ export function settingsRoutes(): Hono<AppEnv> {
       providerLabels: PROVIDER_LABELS,
       /** org_settings table missing — the operator hasn't run migrations. */
       migrationsPending,
+      /**
+       * HIRELENS_LLM_* was set but invalid — degraded mode's actual reason,
+       * shown as a banner so "no providers listed" is never mysterious.
+       */
+      ...(llmConfigError !== null
+        ? { llmConfigError: sanitizeLlmConfigError(llmConfigError) }
+        : {}),
     });
   });
 

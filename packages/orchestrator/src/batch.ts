@@ -5,7 +5,7 @@
  * and never abort the whole batch or vanish silently.
  */
 
-import { type LanguageModel, modelIdOf } from "@hirelens/core";
+import { blindView, type LanguageModel, modelIdOf } from "@hirelens/core";
 import type { Database } from "@hirelens/db";
 import { candidates, documents, jobs, rubrics, scoringRuns } from "@hirelens/db";
 import { desc, eq, inArray } from "drizzle-orm";
@@ -108,6 +108,15 @@ export async function runBatch(
         : eq(candidates.jobId, input.jobId),
     );
 
+  // Blind review enforced server-side: when the job's blind setting is
+  // on (the default), the LLM is scored on identity-masked text — the
+  // name line and contacts are ■-blocks BEFORE the prompt is built, so
+  // the stored promptHash/prompt proves the model never saw identity
+  // cues. blindView preserves string length, so evidence offsets stay
+  // aligned with the unmasked resume the reviewer later sees.
+  const blind = job.blindReviewDefault;
+  const maskedRows = blind ? rows.map((r) => ({ ...r, rawText: blindView(r.rawText) })) : rows;
+
   const [runRow] = await db
     .insert(scoringRuns)
     .values({
@@ -147,7 +156,7 @@ export async function runBatch(
     while (cursor < rows.length) {
       const index = cursor;
       cursor += 1;
-      const row = rows[index];
+      const row = maskedRows[index];
       if (!row) continue;
       try {
         const overall = await withRetry(
@@ -207,6 +216,9 @@ export async function runBatch(
       scored,
       failed: results.length - scored,
       failures: failures.map((f) => ({ candidateId: f.candidateId, error: f.error })),
+      // Masking enforced at scoring time is part of the audit story:
+      // prove the run was blind (or explicitly not).
+      blindReview: blind,
     },
   });
 

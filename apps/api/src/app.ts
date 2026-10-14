@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { LanguageModel } from "@hirelens/core";
 import { ExtractionError } from "@hirelens/core";
 import type { Database } from "@hirelens/db";
-import { auth } from "@hirelens/db";
+import { auth, MIGRATION_SNAPSHOT } from "@hirelens/db";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -12,8 +12,9 @@ import { trimTrailingSlash } from "hono/trailing-slash";
 import { requireAuth } from "./auth.js";
 import { ApiInputError } from "./errors.js";
 import type { HireLensIndexer } from "./indexing.js";
-import { isMissingTableError } from "./llm-error.js";
+import { isMissingTableError, sanitizeLlmConfigError } from "./llm-error.js";
 import { requestLogging } from "./middleware.js";
+import { compareMigrations } from "./migration-health.js";
 import { captureException } from "./observability.js";
 import { openApiDocument } from "./openapi.js";
 import { aiContentRoutes } from "./routes/ai-content.js";
@@ -41,6 +42,12 @@ export interface AppDeps {
   llm: LanguageModel | null;
   /** Semantic indexer; null/omitted → search falls back to keyword mode. */
   indexer?: HireLensIndexer | null;
+  /**
+   * Captured readLlmEnv() failure: the env HAS LLM variables but they are
+   * invalid. Surfaced (sanitised) by /api/health?db=1 and Settings so the
+   * operator sees the real problem instead of a generic "no key".
+   */
+  llmConfigError?: string | null;
 }
 
 /** Body-size caps: tight for JSON, larger for resume/zip uploads (§Day 19). */
@@ -108,6 +115,7 @@ export function createApp(deps: AppDeps) {
     c.set("db", deps.db);
     c.set("model", deps.llm);
     c.set("indexer", deps.indexer ?? null);
+    c.set("llmConfigError", deps.llmConfigError ?? null);
     await next();
   });
 
@@ -131,30 +139,59 @@ export function createApp(deps: AppDeps) {
   // clear 503 migrations_pending instead of opaque 500s on every
   // org-scoped route.
   app.get("/api/health", async (c) => {
+    const llmInfo = {
+      configured: deps.llm != null,
+      ...(deps.llmConfigError ? { configError: sanitizeLlmConfigError(deps.llmConfigError) } : {}),
+    };
     if (c.req.query("db") !== "1") {
-      return c.json({ ok: true as const, service: "hirelens-api", version: "0.1.0" });
+      return c.json({ ok: true as const, service: "hirelens-api", version: "0.1.0", llm: llmInfo });
     }
     let db: Database | null = null;
     try {
       db = c.get("db");
       const { sql } = await import("drizzle-orm");
-      const result = await db.execute<{ n: number }>(
-        sql`SELECT count(*)::int AS n FROM drizzle.__drizzle_migrations`,
+      // Applied state vs the checked-in journal snapshot: the migrator
+      // records created_at = the journal entry's `when`, so comparing
+      // the sets detects "behind by N" (e.g. 11 of 13 applied) that a
+      // count-only check passes as healthy.
+      const result = await db.execute<{ t: string }>(
+        sql`SELECT created_at::text AS t FROM drizzle.__drizzle_migrations`,
       );
-      const n = Number(result.rows[0]?.n ?? 0);
-      if (n === 0) {
+      const state = compareMigrations(result.rows.map((r) => Number(r.t)));
+      const migrations = {
+        applied: state.applied,
+        expected: MIGRATION_SNAPSHOT.length,
+        behindBy: state.missing.length,
+        ...(state.missing.length > 0 ? { missing: state.missing.slice(-5) } : {}),
+        ...(state.unknown > 0 ? { unknown: state.unknown } : {}),
+      };
+      if (state.missing.length > 0) {
+        const missing = state.missing.slice(-3).join(", ");
         return c.json(
           {
             ok: false as const,
             service: "hirelens-api",
             version: "0.1.0",
             migrationsPending: true,
-            message: "Database schema is out of date. Run: pnpm --filter @hirelens/db db:migrate",
+            migrations,
+            llm: llmInfo,
+            message: `Database schema is behind by ${state.missing.length} migration(s) (newest missing: ${missing}). Run: pnpm --filter @hirelens/db db:migrate`,
           },
           503,
         );
       }
-      return c.json({ ok: true as const, service: "hirelens-api", version: "0.1.0" });
+      const warnings =
+        state.unknown > 0
+          ? ` ${state.unknown} applied migration(s) do not match the journal — verify they were applied intentionally.`
+          : "";
+      return c.json({
+        ok: true as const,
+        service: "hirelens-api",
+        version: "0.1.0",
+        migrations,
+        llm: llmInfo,
+        ...(state.unknown > 0 ? { message: `Schema is current.${warnings}` } : {}),
+      });
     } catch (err) {
       const missing = isMissingTableError(err);
       captureException(err, { requestId: c.get("requestId"), path: "/api/health?db=1" });
@@ -164,6 +201,7 @@ export function createApp(deps: AppDeps) {
           service: "hirelens-api",
           version: "0.1.0",
           ...(missing ? { migrationsPending: true } : {}),
+          llm: llmInfo,
           message: missing
             ? "Database schema is out of date (migrations journal missing). Run: pnpm --filter @hirelens/db db:migrate"
             : "Database is unreachable.",

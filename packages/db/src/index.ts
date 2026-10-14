@@ -11,5 +11,10 @@ export function createDb(databaseUrl: string): Database {
 
 export { auth } from "../auth.config.js";
 export { member, organization, user } from "../auth-schema.js";
+// Checked-in journal snapshot for the API's migration-state health check.
+export {
+  MIGRATION_SNAPSHOT,
+  type MigrationSnapshotEntry,
+} from "./migration-snapshot.js";
 export * from "./schema/index.js";
 export { schema };

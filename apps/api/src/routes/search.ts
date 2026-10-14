@@ -25,7 +25,7 @@ import { ROLE_MIN, requireAuth } from "../auth.js";
 import { ApiInputError } from "../errors.js";
 import { readJson } from "../http.js";
 import { labelFromFileKey } from "../labels.js";
-import { llmRouteError } from "../llm-error.js";
+import { llmRouteError, requireLlmModel } from "../llm-error.js";
 import type { AppEnv } from "../types.js";
 import { loadOrgJob } from "./jobs.js";
 
@@ -182,8 +182,7 @@ export function searchRoutes(): Hono<AppEnv> {
     const auth = c.get("auth");
     const job = await loadOrgJob(db, c.req.param("jobId"), auth.orgId);
     if (!job) return c.json({ ok: false, error: "not_found" }, 404);
-    const model = c.get("model");
-    if (!model) return c.json({ ok: false, error: "llm_not_configured" }, 503);
+    const model = requireLlmModel(c);
 
     const parsed = AskSchema.safeParse(await readJson(c));
     if (!parsed.success) {

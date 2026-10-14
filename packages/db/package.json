@@ -10,6 +10,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
+    "gen:migrations": "node scripts/gen-migration-snapshot.mjs",
     "db:migrate": "tsx src/migrate.ts",
     "db:extensions": "tsx src/enable-extensions.ts",
     "db:studio": "drizzle-kit studio",

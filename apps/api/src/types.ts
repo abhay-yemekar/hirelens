@@ -19,5 +19,11 @@ export type AppEnv = {
     session: AuthSessionPayload | null;
     auth: AuthContext;
     requestId: string;
+    /**
+     * Why the server is running without an LLM (captured readLlmEnv()
+     * message when the env is set but misconfigured). Null/absent when the
+     * LLM is usable or simply unset.
+     */
+    llmConfigError: string | null;
   };
 };

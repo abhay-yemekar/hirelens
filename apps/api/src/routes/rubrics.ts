@@ -6,7 +6,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { ROLE_MIN, requireAuth } from "../auth.js";
 import { readJson } from "../http.js";
-import { llmRouteError } from "../llm-error.js";
+import { llmRouteError, requireLlmModel } from "../llm-error.js";
 import type { AppEnv } from "../types.js";
 import { loadOrgJob } from "./jobs.js";
 
@@ -99,8 +99,7 @@ export function rubricsRoutes(): Hono<AppEnv> {
     const auth = c.get("auth");
     const job = await loadOrgJob(db, c.req.param("jobId"), auth.orgId);
     if (!job) return c.json({ ok: false, error: "not_found" }, 404);
-    const model = c.get("model");
-    if (!model) return c.json({ ok: false, error: "llm_not_configured" }, 503);
+    const model = requireLlmModel(c);
 
     const result = await deriveRubric(model, job.description).catch((err) => {
       // Transient provider failures → 502 bad_response; wrong model id /

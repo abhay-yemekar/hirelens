@@ -61,6 +61,7 @@ export {
   type StructuredResult,
   setTransientRetryDelayForTests,
 } from "./llm/index.js";
+export { blindView } from "./mask/index.js";
 export {
   type AiContentReport,
   type AiContentSignal,

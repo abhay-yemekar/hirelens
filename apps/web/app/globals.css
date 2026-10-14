@@ -219,6 +219,19 @@ body {
   font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
 }
 
+/* ── Evidence highlights ─────────────────────────────────────────
+   Default <mark> UA styling is near-black text on yellow — unreadable
+   on the dark UI. Keep whatever tint each component sets as the
+   background, but force the text colour to inherit and underline for
+   extra contrast beyond the tint alone. */
+mark {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
+  text-underline-offset: 2px;
+  border-radius: 2px;
+}
+
 /* ── Hero evidence pulse ─────────────────────────────────────────
    One restrained highlight sweep on load, reinforcing the glass-box
    pitch ("the resume lights up where the score came from"). Respects

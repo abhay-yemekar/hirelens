@@ -12,6 +12,7 @@ import { Hono } from "hono";
 import { ROLE_MIN, requireAuth } from "../auth.js";
 import { type IngestResult, ingestBytes } from "../ingest.js";
 import { labelFromFileKey } from "../labels.js";
+import { requireLlmModel } from "../llm-error.js";
 import { langfuseTraceSink } from "../trace-sink.js";
 import type { AppEnv } from "../types.js";
 import { loadOrgJob } from "./jobs.js";
@@ -130,8 +131,7 @@ export function scoringRoutes(): Hono<AppEnv> {
     const auth = c.get("auth");
     const job = await loadOrgJob(db, c.req.param("jobId"), auth.orgId);
     if (!job) return c.json({ ok: false, error: "not_found" }, 404);
-    const model = c.get("model");
-    if (!model) return c.json({ ok: false, error: "llm_not_configured" }, 503);
+    const model = requireLlmModel(c);
 
     // Fail with a typed error before runBatch throws an internal one.
     const [latest] = await db
@@ -196,8 +196,7 @@ export function scoringRoutes(): Hono<AppEnv> {
       );
     }
 
-    const model = c.get("model");
-    if (!model) return c.json({ ok: false, error: "llm_not_configured" }, 503);
+    const model = requireLlmModel(c);
 
     const summary = await runBatch(
       db,

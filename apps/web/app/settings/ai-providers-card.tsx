@@ -25,6 +25,8 @@ interface LlmSettings {
   providerLabels: Record<string, string>;
   /** org_settings table missing — server migrations haven't run. */
   migrationsPending?: boolean;
+  /** HIRELENS_LLM_* is set but invalid — degraded mode's actual reason (sanitised, env-var names only). */
+  llmConfigError?: string;
 }
 
 /**
@@ -110,6 +112,18 @@ export function LlmProvidersCard() {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {error ? <NoticeBanner error={error} /> : null}
+
+        {/* Degraded mode's real reason: the env HAS LLM variables but they
+            are invalid. Without this the empty provider list looks like a
+            missing key. */}
+        {data?.llmConfigError ? (
+          <NoticeBanner
+            descriptor={{
+              tone: "error",
+              text: `The server's HIRELENS_LLM_* environment is set but invalid, so scoring and derivation are degraded. Operator fix: ${data.llmConfigError}`,
+            }}
+          />
+        ) : null}
 
         {data?.migrationsPending ? (
           <NoticeBanner
