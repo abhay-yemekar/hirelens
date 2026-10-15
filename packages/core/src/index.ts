@@ -15,6 +15,14 @@ export {
   normalizeName,
   textHash,
 } from "./dedupe/index.js";
+export {
+  type DoctorFinding,
+  type DoctorReport,
+  type FindingCategory,
+  isDoctorInputEnough,
+  runResumeDoctor,
+  type Severity,
+} from "./doctor/index.js";
 export { locateEvidenceSpan, type TextSpan } from "./evidence/textSpan.js";
 export {
   type ExtractedDocument,
