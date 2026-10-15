@@ -23,6 +23,7 @@ import { atsWebhookRoutes } from "./routes/ats-webhook.js";
 import { biasAuditRoutes, demographicsRoutes } from "./routes/bias.js";
 import { candidateReportRoutes, publicCandidateReportRoutes } from "./routes/candidate-report.js";
 import { candidateReadRoutes } from "./routes/candidates-read.js";
+import { doctorRoutes } from "./routes/doctor.js";
 import { jobsRoutes } from "./routes/jobs.js";
 import { publicParseRoutes } from "./routes/public-parse.js";
 import { reviewRoutes } from "./routes/review.js";
@@ -223,6 +224,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", cronSnapshotRoutes());
   app.route("/api", atsWebhookRoutes());
   app.route("/api", publicParseRoutes());
+  app.route("/api", doctorRoutes());
 
   // Authenticated, org-scoped API surface.
   const protectedApi = new Hono<AppEnv>();
@@ -246,6 +248,7 @@ export function createApp(deps: AppDeps) {
   protectedApi.route("/", talentPoolRoutes());
   protectedApi.route("/tokens", tokenRoutes());
   protectedApi.route("/settings", settingsRoutes());
+  protectedApi.route("/", doctorRoutes());
   app.route("/api", protectedApi);
 
   app.onError((err, c) => {
