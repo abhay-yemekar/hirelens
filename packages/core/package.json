@@ -15,21 +15,21 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^4.0.71",
-    "@ai-sdk/google": "^4.0.87",
-    "@ai-sdk/groq": "^4.0.54",
-    "@ai-sdk/openai-compatible": "^3.0.62",
-    "ai": "^7.0.127",
+    "@ai-sdk/anthropic": "^4.0.82",
+    "@ai-sdk/google": "^4.0.99",
+    "@ai-sdk/groq": "^4.0.63",
+    "@ai-sdk/openai-compatible": "^3.0.71",
+    "ai": "^7.0.143",
     "fflate": "^0.8.3",
     "mammoth": "^1.13.0",
-    "unpdf": "^1.8.1",
-    "zod": "^4.6.5"
+    "unpdf": "^1.9.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@hirelens/config": "workspace:*",
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.5",
     "pdf-lib": "^1.17.1",
     "typescript": "~5.9.3",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.5"
   }
 }
