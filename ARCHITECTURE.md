@@ -46,12 +46,12 @@ Quality posture: ~89 tests (unit + component + DB-backed integration), strict Ty
 
 `packages/core/llm` abstracts the model behind `ProviderConfig` (id, model, apiKey, baseUrl) over the Vercel AI SDK:
 
-| Provider | Selected by |
-|---|---|
-| Google Gemini | `apiKey` + model id |
-| Anthropic | `apiKey` + model id |
-| Groq | `apiKey` + model id |
-| OpenRouter | `apiKey` + model id |
+| Provider       | Selected by                                          |
+| -------------- | ---------------------------------------------------- |
+| Google Gemini  | `apiKey` + model id                                  |
+| Anthropic      | `apiKey` + model id                                  |
+| Groq           | `apiKey` + model id                                  |
+| OpenRouter     | `apiKey` + model id                                  |
 | Ollama (local) | `baseUrl` — no key, resumes never leave your machine |
 
 `generateStructured` forces a tool-call, validates with Zod, runs one automatic repair round on violation, and raises typed errors (`LlmConfigError`, `LlmRuntimeError`, `SchemaViolationError`) — there is no silent `JSON.parse` fallback anywhere. Every call yields a deterministic `promptHash` for the audit trail.

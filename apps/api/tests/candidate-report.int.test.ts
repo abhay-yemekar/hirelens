@@ -10,7 +10,7 @@ import { auth, createDb, organization } from "@hirelens/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
-import { deleteOrgCompletely } from "./helpers.js";
+import { createOtherTenant, deleteOrgCompletely } from "./helpers.js";
 
 const DATABASE_URL = process.env["DATABASE_URL"] ?? "";
 const available = DATABASE_URL.length > 0;
@@ -20,6 +20,7 @@ let db: ReturnType<typeof createDb>;
 let app: ReturnType<typeof createApp>;
 let authHeaders: Record<string, string>;
 let orgId = "";
+let otherOrgId = "";
 
 const STAMP = Date.now();
 
@@ -103,6 +104,7 @@ beforeAll(async () => {
 afterAll(async () => {
   if (!available || orgId === "") return;
   await deleteOrgCompletely(createDb(DATABASE_URL), orgId);
+  if (otherOrgId !== "") await deleteOrgCompletely(createDb(DATABASE_URL), otherOrgId);
 });
 
 describe.skipIf(!available && allowSkip)("candidate report", () => {
@@ -251,6 +253,29 @@ describe.skipIf(!available && allowSkip)("candidate report", () => {
     // Guidance present and bounded (max 5 steps).
     expect(body.report.improve?.length ?? 0).toBeGreaterThan(0);
     expect((body.report.improve ?? []).length).toBeLessThanOrEqual(5);
+  });
+
+  it("does not let another org revoke this org's report link", async () => {
+    const listRes = await app.request(`/api/jobs/${jobId}/candidates/${candidateId}/report`, {
+      headers: authHeaders,
+    });
+    const list = (await listRes.json()) as {
+      links: Array<{ id: string; revokedAt: string | null }>;
+    };
+    const active = list.links.find((l) => l.revokedAt === null);
+    expect(active).toBeDefined();
+
+    const other = await createOtherTenant(app, "report-other");
+    otherOrgId = other.orgId;
+    const del = await app.request(
+      `/api/jobs/${other.jobId}/candidates/${candidateId}/report/${active?.id}`,
+      { method: "DELETE", headers: other.headers },
+    );
+    expect(del.status).toBe(404);
+
+    // The 404 must not hide a committed revoke: the link still works.
+    const still = await app.request(`/api/report/${token}`);
+    expect(still.status).toBe(200);
   });
 
   it("counts reads, revokes via DELETE (→410), and 404s unknown tokens", async () => {

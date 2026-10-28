@@ -2,9 +2,9 @@
 
 ## Supported versions
 
-| Version | Supported |
-|---|---|
-| `main` branch | ✅ |
+| Version                 | Supported        |
+| ----------------------- | ---------------- |
+| `main` branch           | ✅               |
 | tagged releases < 1.0.0 | ❌ (pre-release) |
 
 ## Reporting a vulnerability
