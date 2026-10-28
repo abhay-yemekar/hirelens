@@ -217,20 +217,23 @@ export function candidateReportRoutes() {
     const job = await loadOrgJob(db, c.req.param("jobId"), auth.orgId);
     if (!job) return c.json({ ok: false, error: "not_found" }, 404);
 
-    const jobCandidates = await db
-      .select({ id: candidates.id })
-      .from(candidates)
-      .where(eq(candidates.jobId, job.id));
-    const ids = jobCandidates.map((r) => r.id);
-
+    // Scope the write itself to this candidate on this job: a link id from
+    // another org matches no row, so nothing is revoked before the 404.
     const [revoked] = await db
       .update(candidateReportLinks)
       .set({ revokedAt: new Date() })
-      .where(eq(candidateReportLinks.id, c.req.param("linkId") ?? ""))
-      .returning({ id: candidateReportLinks.id, candidateId: candidateReportLinks.candidateId });
-    if (!revoked || !ids.includes(revoked.candidateId)) {
-      return c.json({ ok: false, error: "not_found" }, 404);
-    }
+      .where(
+        and(
+          eq(candidateReportLinks.id, c.req.param("linkId") ?? ""),
+          eq(candidateReportLinks.candidateId, c.req.param("candidateId") ?? ""),
+          inArray(
+            candidateReportLinks.candidateId,
+            db.select({ id: candidates.id }).from(candidates).where(eq(candidates.jobId, job.id)),
+          ),
+        ),
+      )
+      .returning({ id: candidateReportLinks.id });
+    if (!revoked) return c.json({ ok: false, error: "not_found" }, 404);
 
     await appendAudit(db, {
       orgId: auth.orgId,
