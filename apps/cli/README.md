@@ -16,10 +16,10 @@ Requires Node ≥ 20. Zero runtime dependencies.
 
 The CLI talks to a HireLens server (the one you self-host with `docker compose up`, or your deployment):
 
-| Environment | Purpose | Default |
-|---|---|---|
-| `HIRELENS_API_URL` | Server base URL | `http://localhost:4000` |
-| `HIRELENS_CONFIG_DIR` | Where the session config is stored | `~/.hirelens` |
+| Environment           | Purpose                            | Default                 |
+| --------------------- | ---------------------------------- | ----------------------- |
+| `HIRELENS_API_URL`    | Server base URL                    | `http://localhost:4000` |
+| `HIRELENS_CONFIG_DIR` | Where the session config is stored | `~/.hirelens`           |
 
 `hirelens login` stores your session in `~/.hirelens/config.json` (override the directory with `HIRELENS_CONFIG_DIR`).
 

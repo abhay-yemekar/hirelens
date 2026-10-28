@@ -8,8 +8,9 @@
  * (job, candidate text) through ingest's content-hash dedupe; results read
  * back through the normal API or the CLI.
  *
- * Deliberate limits: fetches only HTTPS URLs, ≤ 10 MiB, and never
- * overwrites anything in the ATS (push-back is explicit).
+ * Deliberate limits: fetches only HTTPS URLs on public hosts (redirects
+ * re-checked hop by hop), ≤ 10 MiB, and never overwrites anything in the
+ * ATS (push-back is explicit).
  */
 
 import type { Database } from "@hirelens/db";
@@ -18,6 +19,7 @@ import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { ingestBytes } from "../ingest.js";
+import { fetchPublicHttps, PublicFetchError, type PublicFetchErrorKind } from "../public-fetch.js";
 import { authenticateToken } from "../token-auth.js";
 import type { AppEnv } from "../types.js";
 
@@ -43,32 +45,28 @@ class ResponseError extends Error {
   }
 }
 
+const FETCH_ERRORS: Record<PublicFetchErrorKind, { code: string; status: 400 | 413 | 502 }> = {
+  invalid: { code: "invalid_resume_url", status: 400 },
+  insecure: { code: "insecure_url", status: 400 },
+  blocked: { code: "blocked_url", status: 400 },
+  failed: { code: "fetch_failed", status: 502 },
+  too_large: { code: "file_too_large", status: 413 },
+};
+
 async function fetchResumeBytes(url: string): Promise<{ bytes: Uint8Array; filename: string }> {
-  let parsed: URL;
+  // HTTPS to public hosts only — resumes are PII, and the URL is caller-supplied.
+  let bytes: Uint8Array;
   try {
-    parsed = new URL(url);
-  } catch {
-    throw new ResponseError("invalid_resume_url", "resumeUrl is not a valid URL", 400);
+    bytes = await fetchPublicHttps(url, { maxBytes: MAX_FETCH_BYTES, timeoutMs: 15_000 });
+  } catch (err) {
+    if (err instanceof PublicFetchError) {
+      const { code, status } = FETCH_ERRORS[err.kind];
+      throw new ResponseError(code, `resumeUrl: ${err.message}`, status);
+    }
+    throw err;
   }
-  // HTTPS only — resumes are PII; we do not fetch them over plaintext.
-  if (parsed.protocol !== "https:") {
-    throw new ResponseError("insecure_url", "resumeUrl must be https", 400);
-  }
-  let res: Response;
-  try {
-    res = await fetch(parsed, { redirect: "follow", signal: AbortSignal.timeout(15_000) });
-  } catch {
-    throw new ResponseError("fetch_failed", "resume download failed (network error)", 502);
-  }
-  if (!res.ok) {
-    throw new ResponseError("fetch_failed", `resume download failed: HTTP ${res.status}`, 502);
-  }
-  const buf = new Uint8Array(await res.arrayBuffer());
-  if (buf.length > MAX_FETCH_BYTES) {
-    throw new ResponseError("file_too_large", "resume exceeds 10 MiB", 413);
-  }
-  const filename = parsed.pathname.split("/").pop() || "resume.pdf";
-  return { bytes: buf, filename: decodeURIComponent(filename) };
+  const filename = new URL(url).pathname.split("/").pop() || "resume.pdf";
+  return { bytes, filename: decodeURIComponent(filename) };
 }
 
 /** Public (token-authenticated, not session-authenticated) webhook surface. */

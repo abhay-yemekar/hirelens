@@ -14,6 +14,7 @@
  * few scoped queries; no window functions needed.
  */
 
+import type { Database } from "@hirelens/db";
 import { auditLog, candidates, decisions, jobs, scores, scoringRuns } from "@hirelens/db";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
@@ -29,6 +30,11 @@ function median(values: number[]): number | null {
   const hi = sorted[mid] ?? lo;
   const m = sorted.length % 2 === 1 ? (sorted[mid] ?? lo) : (lo + hi) / 2;
   return Math.round(m * 10) / 10;
+}
+
+/** Candidates on the org's jobs, as a subquery: keeps decision reads in-tenant. */
+function orgCandidateIds(db: Database, jobIds: string[]) {
+  return db.select({ id: candidates.id }).from(candidates).where(inArray(candidates.jobId, jobIds));
 }
 
 export function analyticsRoutes(): Hono<AppEnv> {
@@ -66,14 +72,10 @@ export function analyticsRoutes(): Hono<AppEnv> {
             decidedAt: decisions.decidedAt,
           })
           .from(decisions)
+          .where(inArray(decisions.candidateId, orgCandidateIds(db, jobIds)))
           .orderBy(decisions.decidedAt);
         const latestStage = new Map<string, string>();
-        for (const d of decisionRows) {
-          if (candById.has(d.candidateId)) {
-            latestStage.set(d.candidateId, d.stage);
-            decisionCount += 0; // counted via latestStage below
-          }
-        }
+        for (const d of decisionRows) latestStage.set(d.candidateId, d.stage);
         decisionCount = latestStage.size;
         for (const id of candById.keys()) {
           const stage = latestStage.get(id) ?? "new";
@@ -131,14 +133,11 @@ export function analyticsRoutes(): Hono<AppEnv> {
                 decidedAt: decisions.decidedAt,
               })
               .from(decisions)
+              .where(inArray(decisions.candidateId, orgCandidateIds(db, jobIds)))
               .orderBy(decisions.decidedAt)
           : [];
       const decidedAtByCandidate = new Map<string, Date>();
-      for (const d of decisionRows) {
-        if (candRows.some((cr) => cr.id === d.candidateId)) {
-          decidedAtByCandidate.set(d.candidateId, d.decidedAt);
-        }
-      }
+      for (const d of decisionRows) decidedAtByCandidate.set(d.candidateId, d.decidedAt);
       const uploadAtByCandidate = new Map(candRows.map((r) => [r.id, r.createdAt]));
       const durationsHours: number[] = [];
       for (const [cid, decidedAt] of decidedAtByCandidate) {
