@@ -5,6 +5,7 @@
  * path. Skips unless DATABASE_URL is set (never skips on CI).
  */
 
+import dns from "node:dns";
 import { createServer } from "node:http";
 import { createMockModel } from "@hirelens/core";
 import { auth, candidates, createDb, organization } from "@hirelens/db";
@@ -162,6 +163,11 @@ describe.skipIf(!available && allowSkip)("ats integration surface", () => {
     const realFetch = globalThis.fetch;
     globalThis.fetch = (async () =>
       new Response(resumeText, { headers: { "content-type": "text/plain" } })) as typeof fetch;
+    // The SSRF guard resolves the host first; answer with a public address.
+    const realLookup = dns.promises.lookup;
+    dns.promises.lookup = (async () => [
+      { address: "93.184.215.14", family: 4 },
+    ]) as unknown as typeof dns.promises.lookup;
 
     let firstId = "";
     try {
@@ -204,8 +210,25 @@ describe.skipIf(!available && allowSkip)("ats integration surface", () => {
       expect(row?.email).toBe("jane@example.com");
     } finally {
       globalThis.fetch = realFetch;
+      dns.promises.lookup = realLookup;
     }
     expect(firstId).not.toBe("");
+  });
+
+  it("refuses resume URLs that point inside the network (SSRF guard)", async () => {
+    const res = await app.request("/api/webhooks/ats", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${rawToken}`,
+      },
+      body: JSON.stringify({
+        jobId,
+        candidate: { name: "Jane Doe", resumeUrl: "https://169.254.169.254/latest/meta-data/" },
+      }),
+    });
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { error: string }).error).toBe("blocked_url");
   });
 
   it("revocation fails the webhook closed immediately", async () => {

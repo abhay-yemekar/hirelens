@@ -7,16 +7,16 @@ the same morning (~8–10am PT, weekday), then LinkedIn/X with the GIF.
 Pre-flight checklist (do the day before):
 
 - [x] Demo GIF: **done — `docs/demo.gif`** (auto-generated; re-run
-      `node scripts/record-demo.mjs && node scripts/frames-to-gif.mjs` with
-      the dev server on :3001 after any scoring-UI change). It's embedded
-      at the top of the README.
+  `node scripts/record-demo.mjs && node scripts/frames-to-gif.mjs` with
+  the dev server on :3001 after any scoring-UI change). It's embedded
+  at the top of the README.
 - [x] Repo social preview: set to `.github/social-preview.png` — also
-      re-upload `docs/demo.gif` in Settings → Social preview if you want
-      motion in the OG card (GitHub accepts GIFs there).
+  re-upload `docs/demo.gif` in Settings → Social preview if you want
+  motion in the OG card (GitHub accepts GIFs there).
 - [ ] Confirm https://hirelens-rosy.vercel.app/demo works logged-out.
 - [ ] Confirm Discussions is enabled (it is) and pin a "Welcome" thread.
 - [ ] Reply-squad ready: block 3 hours after posting; early comments decide
-      the HN front page.
+  the HN front page.
 
 ---
 

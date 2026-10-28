@@ -1,8 +1,8 @@
 # HireLens vs. the field — competitor analysis & v1.1 plan
 
-*Researched 21 September 2026. Sources: live site review (screenshots captured by
+_Researched 21 September 2026. Sources: live site review (screenshots captured by
 the founder) + product/pricing pages for each competitor. Checked against our
-shipped v1.0 surface.*
+shipped v1.0 surface._
 
 ## The landscape in one paragraph
 
@@ -18,21 +18,21 @@ auditable decision trail. That's the moat.**
 
 ## Feature matrix
 
-| Capability | HireLens | ResumeScreening.ai | CVViz | Jobscan | Enhancv | Resume Worded | MyPerfectResume | Naukri360 |
-|---|---|---|---|---|---|---|---|---|
-| Bulk resume ranking vs a JD | ✅ rubric-based | ✅ per-resume $ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Evidence quote behind every score | ✅ exact offsets | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Recruiter-owned rubric (edit/version/fork) | ✅ JSON | ❌ black-box | partial | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Bias audit (four-fifths) | ✅ one click | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Tamper-evident audit log | ✅ hash chain | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Interview kits from anchors + evidence | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Candidate-facing transparency | 🔜 v1.1 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Blind review mode | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Self-host / data control | ✅ Docker + local LLM | ❌ SaaS | ❌ SaaS | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Resume builder / templates | ❌ (never — out of scope) | ❌ | ❌ | ✅ | ✅ | partial | ✅ | ✅ |
-| LinkedIn optimization | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ | ❌ | ❌ |
-| ATS integrations | 🔜 v1.2 | partial | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Pricing | MIT, self-host free | $0.07/resume | org quote | $49.95/mo* | $23.95/mo* | $29.99/mo* | $23.95/mo* | freemium |
+| Capability                                 | HireLens                  | ResumeScreening.ai | CVViz     | Jobscan    | Enhancv    | Resume Worded | MyPerfectResume | Naukri360 |
+| ------------------------------------------ | ------------------------- | ------------------ | --------- | ---------- | ---------- | ------------- | --------------- | --------- |
+| Bulk resume ranking vs a JD                | ✅ rubric-based           | ✅ per-resume $    | ✅        | ❌         | ❌         | ❌            | ❌              | ❌        |
+| Evidence quote behind every score          | ✅ exact offsets          | ❌                 | ❌        | ❌         | ❌         | ❌            | ❌              | ❌        |
+| Recruiter-owned rubric (edit/version/fork) | ✅ JSON                   | ❌ black-box       | partial   | ❌         | ❌         | ❌            | ❌              | ❌        |
+| Bias audit (four-fifths)                   | ✅ one click              | ❌                 | ❌        | ❌         | ❌         | ❌            | ❌              | ❌        |
+| Tamper-evident audit log                   | ✅ hash chain             | ❌                 | ❌        | ❌         | ❌         | ❌            | ❌              | ❌        |
+| Interview kits from anchors + evidence     | ✅                        | ❌                 | ❌        | ❌         | ❌         | ❌            | ❌              | ❌        |
+| Candidate-facing transparency              | 🔜 v1.1                   | ❌                 | ❌        | ❌         | ❌         | ❌            | ❌              | ❌        |
+| Blind review mode                          | ✅                        | ❌                 | ❌        | ❌         | ❌         | ❌            | ❌              | ❌        |
+| Self-host / data control                   | ✅ Docker + local LLM     | ❌ SaaS            | ❌ SaaS   | ❌         | ❌         | ❌            | ❌              | ❌        |
+| Resume builder / templates                 | ❌ (never — out of scope) | ❌                 | ❌        | ✅         | ✅         | partial       | ✅              | ✅        |
+| LinkedIn optimization                      | ❌                        | ❌                 | ❌        | ✅         | ❌         | ✅            | ❌              | ❌        |
+| ATS integrations                           | 🔜 v1.2                   | partial            | ✅        | ❌         | ❌         | ❌            | ❌              | ❌        |
+| Pricing                                    | MIT, self-host free       | $0.07/resume       | org quote | $49.95/mo* | $23.95/mo* | $29.99/mo*    | $23.95/mo*      | freemium  |
 
 \* competitor public list prices, subject to change; verified against public
 pages Sept 2026.
@@ -48,15 +48,15 @@ with a one-line promise — exactly the two-line pattern our mega-menu uses.
 Structural patterns observed across their pages, mapped to what we already ship
 or deliberately reject:
 
-| Pattern | Who uses it | Our take |
-|---|---|---|
-| Tool-first hero (drop your resume) | Resume Worded, Jobscan, Naukri360 | We ship a **live no-signup demo** hero CTA — stronger, because it runs the real engine |
-| Grouped dropdown mega-menu | Enhancv, Jobscan, Resume Worded | ✅ Shipped |
-| "As seen on" / trust logos | Resume Worded, Jobscan, CVViz | Rejected until real; fake social proof is dishonest |
-| Feature→benefit two-line cards | all | ✅ Our features section follows it |
-| Pricing per resume / per seat | ResumeScreening.ai, CVViz | We publish **free/self-host**; honesty is the differentiator |
-| FAQ accordions | Jobscan, Naukri360 | ✅ Shipped |
-| Deep content-SEO library (50+ guides) | Jobscan, Enhancv | Deferred — post-launch growth lever, needs writing capacity |
+| Pattern                               | Who uses it                       | Our take                                                                               |
+| ------------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------- |
+| Tool-first hero (drop your resume)    | Resume Worded, Jobscan, Naukri360 | We ship a **live no-signup demo** hero CTA — stronger, because it runs the real engine |
+| Grouped dropdown mega-menu            | Enhancv, Jobscan, Resume Worded   | ✅ Shipped                                                                             |
+| "As seen on" / trust logos            | Resume Worded, Jobscan, CVViz     | Rejected until real; fake social proof is dishonest                                    |
+| Feature→benefit two-line cards        | all                               | ✅ Our features section follows it                                                     |
+| Pricing per resume / per seat         | ResumeScreening.ai, CVViz         | We publish **free/self-host**; honesty is the differentiator                           |
+| FAQ accordions                        | Jobscan, Naukri360                | ✅ Shipped                                                                             |
+| Deep content-SEO library (50+ guides) | Jobscan, Enhancv                  | Deferred — post-launch growth lever, needs writing capacity                            |
 
 ## Positioning statement
 
@@ -95,7 +95,7 @@ this matrix — into a brand asset. No competitor offers it.
 5. **ATS integrations** (CVViz's moat, our v1.2): Greenhouse/Lever/Ashby pull
    APIs — research spike first.
 6. **AI-content detection** (Naukri360's angle): flag likely-generated
-   resumes as a *signal*, never an auto-reject.
+   resumes as a _signal_, never an auto-reject.
 
 ## What we deliberately never build
 
