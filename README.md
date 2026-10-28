@@ -42,7 +42,7 @@ A pnpm + Turborepo monorepo shipping the full product:
 15. **CLI** — `hirelens login / org / jobs / rubric derive / score` — the whole pipeline from a terminal, zero runtime dependencies.
 16. **Self-host** — `docker compose up --build -d` brings up web + API + Postgres with migrations applied automatically.
 17. **Observability** — structured logging always on; Sentry, Langfuse LLM tracing, and privacy-first PostHog behind env flags.
-18. **Eval harness** — seeded benchmark measuring direction accuracy, self-consistency, position bias, and name-swap bias, wired into CI ([numbers below](#evaluation-harness--an-unevaluated-ranker-is-a-liability)).
+18. **Eval harness** — seeded benchmark measuring direction accuracy, self-consistency, position bias, and name-swap bias, with a mock-model plumbing test in CI; real-model numbers not published yet ([details below](#evaluation-harness--an-unevaluated-ranker-is-a-liability)).
 19. **Talent-pool rediscovery (v1.4)** — one org-wide search across every candidate from every job: identity search, skill facet chips, latest-stage filter, and a rubric-weighted minimum-score filter; shortlisting writes a regular, audited decision so rediscovered people re-enter the pipeline. Blind review honored.
 20. **Public parser API (v1.4)** — `POST /api/public/parse`: stateless resume → JSON-Resume-compatible profile with a Bearer org API token (multipart file or raw text), SHA-256 content hash for dedupe, per-token rate limiting, and nothing stored server-side.
 21. **ATS format check (v1.4)** — a deterministic parse simulation (`pass | warn | fail` + 0–100 score + actionable findings) run on every upload: catches scanned pages, table/multi-column layouts, mojibake encoding, and missing sections _before_ a scoring run is spent on a mangled resume. Also returned by the public parser API as `formatCheck`.
@@ -186,7 +186,7 @@ The production deployment runs entirely on free tiers — deliberate choices, do
 | Errors            | **Sentry** (Developer plan)   | Wired and active when `SENTRY_DSN` is set — nothing phones home until you opt in                                                                                                                       |
 | Product analytics | **PostHog** (free tier)       | Privacy-first configuration: explicit events only, autocapture off — matches the product's data-minimization stance                                                                                    |
 | LLM tracing       | **Langfuse** (free tier)      | Traces every prompt/score for eval reproducibility; no-op until keys exist                                                                                                                             |
-| CI                | **GitHub Actions**            | Free for public repos — lint, typecheck, tests, eval harness, CodeQL, and secrets scanning on every PR                                                                                                 |
+| CI                | **GitHub Actions**            | Free for public repos — lint, typecheck, tests (incl. the eval harness mock run), CodeQL, and secrets scanning on every PR                                                                             |
 
 Deployment is a single Vercel project from the repo root (root directory `apps/web`); migrations run with `pnpm --filter @hirelens/db db:migrate` against the Neon pooled connection string. Self-hosters use the Docker path above instead — same app, your infrastructure.
 
@@ -196,10 +196,10 @@ Deployment is a single Vercel project from the repo root (root directory `apps/w
 
 - **Direction accuracy** — agreement with expected strong/weak per criterion
 - **Self-consistency** — score variance across repeated runs (lower is better)
-- **Position bias** — Kendall τ between rank orderings when input order is shuffled (1.0 = order-invariant)
+- **Position bias** — Kendall τ between the ranking from the original input order and from the reversed order (1.0 = order made no difference)
 - **Name-swap bias** — score movement when only the name changes (0 = invariant); movement above 5 points is flagged
 
-Latest committed numbers (`packages/eval-report.json`) — **important caveat: this is the offline mock-model run. It validates that the harness plumbing works end-to-end; the 0.47 accuracy is the mock baseline, NOT real model performance.** Regenerate live with `pnpm --filter @hirelens/evals run evals` and a billing-enabled key:
+Latest committed numbers (`packages/eval-report.json`) — **this is the offline mock-model run, a plumbing check: the mock scores every criterion 3, so 0.47 is just the share of expected-strong labels and the σ/τ/Δ values are trivially perfect. Real-model results: not measured yet.** Run them yourself with `pnpm --filter @hirelens/evals run evals` and your own key:
 
 | Metric                                | Value           |
 | ------------------------------------- | --------------- |

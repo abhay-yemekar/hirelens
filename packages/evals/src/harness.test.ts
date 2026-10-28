@@ -78,4 +78,31 @@ describe("runEvals (mock model)", () => {
     expect(report.nameSwapBias.meanAbsDelta).toBe(0);
     expect(report.nameSwapBias.flaggedShare).toBe(0);
   });
+
+  it("ranks the reverse-order pass by its own scores, so order effects show up in τ", async () => {
+    const withScore = (score: number) => ({
+      criteria: ["system-design", "databases", "testing", "ops", "communication"].map((key) => ({
+        key,
+        score,
+        confidence: 0.9,
+        rationale: "order-sensitive mock",
+        quote: "EXPERIENCE",
+      })),
+    });
+    // Call order in runEvals: 6 accuracy calls (resumes 0..5), 6 × 3
+    // self-consistency calls, then 6 reverse-pass calls (resumes 5..0).
+    // Resume k scores k in the first pass and 5 - k in the reverse pass,
+    // so the two rankings are exact opposites: τ must be -1.
+    const { model } = createMockModel({
+      argsPerCall: [
+        ...[0, 1, 2, 3, 4, 5].map(withScore),
+        ...Array.from({ length: 18 }, () => withScore(3)),
+        ...[0, 1, 2, 3, 4, 5].map(withScore),
+      ],
+    });
+
+    const report = await runEvals(model, { repeats: 3 });
+
+    expect(report.positionBias.meanTau).toBe(-1);
+  });
 });
