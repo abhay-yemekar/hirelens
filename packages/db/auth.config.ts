@@ -5,6 +5,7 @@ import { createAccessControl } from "better-auth/plugins/access";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as authSchema from "./auth-schema.js";
+import { resolveAuthSecret } from "./src/auth-secret.js";
 
 const pool = new Pool({
   connectionString:
@@ -23,9 +24,7 @@ const ac = createAccessControl({
 export const auth = betterAuth({
   appName: "hirelens",
   baseURL: process.env["BETTER_AUTH_URL"] ?? "http://localhost:3000",
-  secret:
-    process.env["BETTER_AUTH_SECRET"] ??
-    "dev-only-secret-do-not-use-in-production-0123456789abcdef",
+  secret: resolveAuthSecret(process.env),
   database: drizzleAdapter(drizzle(pool), {
     provider: "pg",
     schema: authSchema,

@@ -1,5 +1,7 @@
-import { createDb } from "@hirelens/db";
+// Must stay the first import: @hirelens/db builds the auth config (secret,
+// base URL, trusted origins) from process.env when it is evaluated.
 import "dotenv/config";
+import { createDb } from "@hirelens/db";
 import { serve } from "@hono/node-server";
 import { createApp } from "./app.js";
 import { loadEnv, readLlmEnv } from "./env.js";
