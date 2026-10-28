@@ -9,7 +9,7 @@ import { auth, createDb, organization } from "@hirelens/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
-import { deleteOrgCompletely } from "./helpers.js";
+import { createOtherTenant, deleteOrgCompletely } from "./helpers.js";
 
 const DATABASE_URL = process.env["DATABASE_URL"] ?? "";
 const available = DATABASE_URL.length > 0;
@@ -19,6 +19,7 @@ let db: ReturnType<typeof createDb>;
 let app: ReturnType<typeof createApp>;
 let authHeaders: Record<string, string>;
 let orgId = "";
+let otherOrgId = "";
 
 const STAMP = Date.now();
 
@@ -95,6 +96,7 @@ beforeAll(async () => {
 afterAll(async () => {
   if (!available || orgId === "") return;
   await deleteOrgCompletely(createDb(DATABASE_URL), orgId);
+  if (otherOrgId !== "") await deleteOrgCompletely(createDb(DATABASE_URL), otherOrgId);
 });
 
 describe.skipIf(!available && allowSkip)("interview kits + candidate portal", () => {
@@ -268,5 +270,26 @@ describe.skipIf(!available && allowSkip)("interview kits + candidate portal", ()
     expect(revoked.status).toBe(410);
     expect(portalToken.length).toBeGreaterThan(0);
     expect(portalLinkId.length).toBeGreaterThan(0);
+  });
+
+  it("does not let another org revoke this org's portal link", async () => {
+    const create = await app.request(`/api/jobs/${jobId}/portal/${candidateId}`, {
+      method: "POST",
+      headers: authHeaders,
+    });
+    expect(create.status).toBe(201);
+    const { link } = (await create.json()) as { link: { id: string; token: string } };
+
+    const other = await createOtherTenant(app, "wave4-other");
+    otherOrgId = other.orgId;
+    const del = await app.request(`/api/jobs/${other.jobId}/portal/${link.id}`, {
+      method: "DELETE",
+      headers: other.headers,
+    });
+    expect(del.status).toBe(404);
+
+    // The 404 must not hide a committed revoke: the link still works.
+    const still = await app.request(`/api/portal/${link.token}`);
+    expect(still.status).toBe(200);
   });
 });
