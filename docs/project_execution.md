@@ -8,12 +8,12 @@ This guide takes you from a clean machine to a fully verified local setup. It is
 
 ## 0. Prerequisites
 
-| Tool | Version | Check with | Why |
-|---|---|---|---|
-| Node.js | **20 or newer** | `node --version` | Required by `engines` in `package.json`; CI runs on 22 |
-| pnpm | **11.x** | `pnpm --version` | Workspace package manager (npm/yarn will not work) |
-| Docker Desktop | recent | `docker --version` | Runs Postgres 16 + pgvector for the database |
-| Git | recent | `git --version` | Clone and contribute |
+| Tool           | Version         | Check with         | Why                                                    |
+| -------------- | --------------- | ------------------ | ------------------------------------------------------ |
+| Node.js        | **20 or newer** | `node --version`   | Required by `engines` in `package.json`; CI runs on 22 |
+| pnpm           | **11.x**        | `pnpm --version`   | Workspace package manager (npm/yarn will not work)     |
+| Docker Desktop | recent          | `docker --version` | Runs Postgres 16 + pgvector for the database           |
+| Git            | recent          | `git --version`    | Clone and contribute                                   |
 
 Install pnpm if you have Node but not pnpm (corepack ships with Node and will activate the exact pnpm version pinned in `packageManager`):
 
@@ -135,24 +135,24 @@ pnpm --filter @hirelens/api dev
 
 The API is the full product surface: Better Auth at `/api/auth/*` (email/password sign-up, sign-in, organizations), then authenticated, org-scoped routes:
 
-| Route | What it does |
-|---|---|
-| `GET /api/health` | Public health check |
-| `POST /api/auth/sign-up/email`, `/sign-in/email` | Register / log in (Better Auth) |
-| `GET/POST/PATCH /api/jobs` | Jobs CRUD (org-scoped) |
-| `GET/POST /api/jobs/:id/rubrics`, `POST …/derive` | Rubric versions; `derive` = LLM JD → criteria |
-| `POST /api/jobs/:id/candidates` | Upload a resume (PDF/DOCX/TXT/MD) — extract → parse → persist, deduped per job |
-| `POST /api/jobs/:id/candidates/zip` | Batch-upload a ZIP of resumes |
-| `POST /api/jobs/:id/score` | Score all candidates against the latest rubric (concurrency-bounded, audited) |
-| `GET /api/jobs/:id/runs` | Scoring run history |
-| `GET /api/jobs/:id/runs/:runId` | Run detail: per-candidate overall, criterion scores, evidence spans |
-| `GET /api/jobs/:id/candidates` | Candidate list (metadata only — no resume text) |
-| `GET /api/jobs/:id/candidates/:cid` | Candidate detail: parsed profile, document text, decisions |
-| `GET /api/jobs/:id/review` | Ranked review table: latest overall per candidate + stage + overrides |
-| `POST /api/jobs/:id/decisions` | Record a decision (stage + required reason; audit-chained) |
-| `PATCH /api/jobs/:id/scores/:scoreId` | Manual score override (author + reason recorded, audited) |
-| `PUT /api/jobs/:id/demographics/:cid` | Candidate's opt-in demographics self-report (merged per dimension) |
-| `POST /api/jobs/:id/bias-audit` | Adverse-impact report: selection rates + four-fifths rule by group (audited) |
+| Route                                             | What it does                                                                   |
+| ------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `GET /api/health`                                 | Public health check                                                            |
+| `POST /api/auth/sign-up/email`, `/sign-in/email`  | Register / log in (Better Auth)                                                |
+| `GET/POST/PATCH /api/jobs`                        | Jobs CRUD (org-scoped)                                                         |
+| `GET/POST /api/jobs/:id/rubrics`, `POST …/derive` | Rubric versions; `derive` = LLM JD → criteria                                  |
+| `POST /api/jobs/:id/candidates`                   | Upload a resume (PDF/DOCX/TXT/MD) — extract → parse → persist, deduped per job |
+| `POST /api/jobs/:id/candidates/zip`               | Batch-upload a ZIP of resumes                                                  |
+| `POST /api/jobs/:id/score`                        | Score all candidates against the latest rubric (concurrency-bounded, audited)  |
+| `GET /api/jobs/:id/runs`                          | Scoring run history                                                            |
+| `GET /api/jobs/:id/runs/:runId`                   | Run detail: per-candidate overall, criterion scores, evidence spans            |
+| `GET /api/jobs/:id/candidates`                    | Candidate list (metadata only — no resume text)                                |
+| `GET /api/jobs/:id/candidates/:cid`               | Candidate detail: parsed profile, document text, decisions                     |
+| `GET /api/jobs/:id/review`                        | Ranked review table: latest overall per candidate + stage + overrides          |
+| `POST /api/jobs/:id/decisions`                    | Record a decision (stage + required reason; audit-chained)                     |
+| `PATCH /api/jobs/:id/scores/:scoreId`             | Manual score override (author + reason recorded, audited)                      |
+| `PUT /api/jobs/:id/demographics/:cid`             | Candidate's opt-in demographics self-report (merged per dimension)             |
+| `POST /api/jobs/:id/bias-audit`                   | Adverse-impact report: selection rates + four-fifths rule by group (audited)   |
 
 LLM features need `HIRELENS_LLM_PROVIDER` + `HIRELENS_LLM_MODEL` (+ key) in `apps/api/.env`; without them the server runs fine and derive/score return `503 llm_not_configured`. A partial LLM config fails at boot rather than half-working. Try the API with the bundled REST collection: import `docs/api.http` into VS Code (REST Client) or curl — see the file for ready-made requests.
 
@@ -203,40 +203,40 @@ pnpm dev                             # runs every package's dev task in parallel
 
 Other useful commands:
 
-| Command | What it does |
-|---|---|
-| `pnpm --filter @hirelens/db db:studio` | Drizzle Studio — browse tables/rows in a browser UI |
-| `pnpm --filter @hirelens/db db:extensions` | Re-run `CREATE EXTENSION vector` against `DATABASE_URL` |
-| `pnpm format` | Auto-format everything with Biome |
-| `pnpm lint` | Biome check (CI runs this; must be clean) |
-| `pnpm typecheck` / `pnpm test` / `pnpm build` | Turborepo fan-out of each task across packages |
+| Command                                       | What it does                                            |
+| --------------------------------------------- | ------------------------------------------------------- |
+| `pnpm --filter @hirelens/db db:studio`        | Drizzle Studio — browse tables/rows in a browser UI     |
+| `pnpm --filter @hirelens/db db:extensions`    | Re-run `CREATE EXTENSION vector` against `DATABASE_URL` |
+| `pnpm format`                                 | Auto-format everything with Biome                       |
+| `pnpm lint`                                   | Biome check (CI runs this; must be clean)               |
+| `pnpm typecheck` / `pnpm test` / `pnpm build` | Turborepo fan-out of each task across packages          |
 
 Git hooks (via husky + lint-staged + commitlint) enforce Biome formatting on staged files and [Conventional Commits](https://www.conventionalcommits.org) messages (`feat:`, `fix:`, `chore:`, `docs:`, …) automatically. Reset the database completely with `docker compose down -v` (⚠️ deletes all data in the volume).
 
 ## 8. Troubleshooting — real errors, real fixes
 
-| Symptom (error text) | Cause | Fix |
-|---|---|---|
-| `error during connect: … docker engine is not running` (or `//./pipe/dockerDesktopLinuxEngine`) | Docker Desktop is not started | Start Docker Desktop, wait for it to be green, retry `docker compose up -d` |
-| `port is already allocated` / `bind: address already in use` on **5433** | Another container or service owns 5433 (e.g. a second copy of this compose project) | `docker compose down` in any other checkout; or change the left side of `"5433:5432"` in `docker-compose.yml` **and** your `DATABASE_URL` consistently |
-| `DATABASE_URL is required` from `db:migrate` | `packages/db/.env` missing or empty | Repeat step 3 (`cp packages/db/.env.example packages/db/.env`) |
-| `password authentication failed for user "postgres"` | Connecting to a **different** Postgres than ours (a local 5432 install) | Confirm the URL uses port **5433** and points at `localhost`, and the compose stack is up |
-| `relation "user" does not exist` (or any table) in tests | Migrations were never applied to this volume | Run `pnpm --filter @hirelens/db db:migrate`, re-run tests |
-| Orchestrator integration tests fail, everything else passes | Database container stopped or unreachable | `docker compose up -d`, wait for `healthy` in `docker compose ps`, retry |
-| `function gen_random_uuid() does not exist` | Postgres image without needed contrib modules | Use the pinned image `pgvector/pgvector:pg16` (it includes them) — this is why `docker-compose.yml` pins it |
-| `type "vector" does not exist` | pgvector extension missing (non-Docker Postgres) | Run `pnpm --filter @hirelens/db db:extensions` with a superuser `DATABASE_URL`, or switch to the compose stack |
-| `Ignored build scripts: @swc/core` warning at install | pnpm blocked native build scripts | `pnpm approve-builds` → approve listed packages → `pnpm install` again |
-| `Unsupported engine` warning on install | Node older than 20 | Upgrade Node (nvm-windows / nvm / fnm all work) |
-| CRLF / formatting diffs flood a PR on Windows | Git `core.autocrlf` rewrites line endings | Run `pnpm format` before committing; the repo's `.gitattributes`/Biome config expects LF |
-| `EADDRINUSE` on 3000 / 4000 / 6006 | Another dev server (or a previous one that didn't shut down) is on that port | Kill the stale process (`npx kill-port 3000` or close the old terminal); ports are fixed by convention in this repo |
-| Storybook page renders unstyled | Tailwind not wired through the Vite builder | Already configured in `packages/ui/.storybook/main.ts` (`@tailwindcss/vite`); if you added a new framework, wire the same plugin |
-| `gh` commands fail with `command not found` (Windows) | GitHub CLI not on PATH in that shell | Add `C:\Program Files\GitHub CLI` to PATH, or use the full path to `gh.exe` |
-| Every `pnpm` command fails with a corepack stack trace mentioning `runDepsStatusCheck` or `[ERR_PNPM_IGNORED_BUILDS]` | A placeholder value in `pnpm-workspace.yaml` `allowBuilds` (e.g. `core-js: set this to true or false`) makes install verification exit 1 | Set every `allowBuilds` entry to `true` or `false`, then `pnpm install` |
-| Tests all report "skipped" (not failed) | `DATABASE_URL` not set in the shell that ran them | Export `DATABASE_URL=postgres://postgres:postgres@localhost:5433/hirelens` first (see step 3) |
-| `error [503 llm_not_configured]` from `rubric derive` / `score` (API in Docker) | The compose file interpolates `HIRELENS_LLM_*` from the **root** `.env`; empty-string values count as "set" but the key is empty | Put real `HIRELENS_LLM_API_KEY` / `_MODEL` / `_PROVIDER` values in the root `.env`, then `docker compose up -d api` |
-| `LlmRuntimeError: … Proto field is not repeating, cannot start list` (Google/Gemini) | Gemini rejects JSON schemas with arrays nested inside arrays — rubric and scoring schemas use that shape | Fixed in the LLM layer: `generateStructured` automatically falls back to validated JSON-text mode per provider. If you see this on an old build, update to current `main` |
-| `hirelens score` hangs after creating a job | `jobs create` without `--jd` reads the job description from **stdin**, which never closes in a scripted shell | Always pass `--jd <file>` (or pipe: `echo "..." | hirelens jobs create …`) |
-| `error [401 sign_in_failed]` right after a fresh sign-up via API | better-auth requires an `Origin` header matching a trusted origin (the web app's, e.g. `http://localhost:3000`) — plain curl/CLI calls without it are rejected on sign-up | Sign up once through the web UI or include `-H "Origin: http://localhost:3000"`; then CLI login works normally |
+| Symptom (error text)                                                                                                  | Cause                                                                                                                                                                     | Fix                                                                                                                                                                       |
+| --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `error during connect: … docker engine is not running` (or `//./pipe/dockerDesktopLinuxEngine`)                       | Docker Desktop is not started                                                                                                                                             | Start Docker Desktop, wait for it to be green, retry `docker compose up -d`                                                                                               |
+| `port is already allocated` / `bind: address already in use` on **5433**                                              | Another container or service owns 5433 (e.g. a second copy of this compose project)                                                                                       | `docker compose down` in any other checkout; or change the left side of `"5433:5432"` in `docker-compose.yml` **and** your `DATABASE_URL` consistently                    |
+| `DATABASE_URL is required` from `db:migrate`                                                                          | `packages/db/.env` missing or empty                                                                                                                                       | Repeat step 3 (`cp packages/db/.env.example packages/db/.env`)                                                                                                            |
+| `password authentication failed for user "postgres"`                                                                  | Connecting to a **different** Postgres than ours (a local 5432 install)                                                                                                   | Confirm the URL uses port **5433** and points at `localhost`, and the compose stack is up                                                                                 |
+| `relation "user" does not exist` (or any table) in tests                                                              | Migrations were never applied to this volume                                                                                                                              | Run `pnpm --filter @hirelens/db db:migrate`, re-run tests                                                                                                                 |
+| Orchestrator integration tests fail, everything else passes                                                           | Database container stopped or unreachable                                                                                                                                 | `docker compose up -d`, wait for `healthy` in `docker compose ps`, retry                                                                                                  |
+| `function gen_random_uuid() does not exist`                                                                           | Postgres image without needed contrib modules                                                                                                                             | Use the pinned image `pgvector/pgvector:pg16` (it includes them) — this is why `docker-compose.yml` pins it                                                               |
+| `type "vector" does not exist`                                                                                        | pgvector extension missing (non-Docker Postgres)                                                                                                                          | Run `pnpm --filter @hirelens/db db:extensions` with a superuser `DATABASE_URL`, or switch to the compose stack                                                            |
+| `Ignored build scripts: @swc/core` warning at install                                                                 | pnpm blocked native build scripts                                                                                                                                         | `pnpm approve-builds` → approve listed packages → `pnpm install` again                                                                                                    |
+| `Unsupported engine` warning on install                                                                               | Node older than 20                                                                                                                                                        | Upgrade Node (nvm-windows / nvm / fnm all work)                                                                                                                           |
+| CRLF / formatting diffs flood a PR on Windows                                                                         | Git`core.autocrlf` rewrites line endings                                                                                                                                  | Run `pnpm format` before committing; the repo's `.gitattributes`/Biome config expects LF                                                                                  |
+| `EADDRINUSE` on 3000 / 4000 / 6006                                                                                    | Another dev server (or a previous one that didn't shut down) is on that port                                                                                              | Kill the stale process (`npx kill-port 3000` or close the old terminal); ports are fixed by convention in this repo                                                       |
+| Storybook page renders unstyled                                                                                       | Tailwind not wired through the Vite builder                                                                                                                               | Already configured in `packages/ui/.storybook/main.ts` (`@tailwindcss/vite`); if you added a new framework, wire the same plugin                                          |
+| `gh` commands fail with `command not found` (Windows)                                                                 | GitHub CLI not on PATH in that shell                                                                                                                                      | Add `C:\Program Files\GitHub CLI` to PATH, or use the full path to `gh.exe`                                                                                               |
+| Every `pnpm` command fails with a corepack stack trace mentioning `runDepsStatusCheck` or `[ERR_PNPM_IGNORED_BUILDS]` | A placeholder value in `pnpm-workspace.yaml` `allowBuilds` (e.g. `core-js: set this to true or false`) makes install verification exit 1                                  | Set every `allowBuilds` entry to `true` or `false`, then `pnpm install`                                                                                                   |
+| Tests all report "skipped" (not failed)                                                                               | `DATABASE_URL` not set in the shell that ran them                                                                                                                         | Export `DATABASE_URL=postgres://postgres:postgres@localhost:5433/hirelens` first (see step 3)                                                                             |
+| `error [503 llm_not_configured]` from `rubric derive` / `score` (API in Docker)                                       | The compose file interpolates `HIRELENS_LLM_*` from the **root** `.env`; empty-string values count as "set" but the key is empty                                          | Put real `HIRELENS_LLM_API_KEY` / `_MODEL` / `_PROVIDER` values in the root `.env`, then `docker compose up -d api`                                                       |
+| `LlmRuntimeError: … Proto field is not repeating, cannot start list` (Google/Gemini)                                  | Gemini rejects JSON schemas with arrays nested inside arrays — rubric and scoring schemas use that shape                                                                  | Fixed in the LLM layer: `generateStructured` automatically falls back to validated JSON-text mode per provider. If you see this on an old build, update to current `main` |
+| `hirelens score` hangs after creating a job                                                                           | `jobs create` without `--jd` reads the job description from **stdin**, which never closes in a scripted shell                                                             | Always pass `--jd <file>` (or pipe: `echo "..."                                                                                                                           | hirelens jobs create …`) |
+| `error [401 sign_in_failed]` right after a fresh sign-up via API                                                      | better-auth requires an `Origin` header matching a trusted origin (the web app's, e.g. `http://localhost:3000`) — plain curl/CLI calls without it are rejected on sign-up | Sign up once through the web UI or include `-H "Origin: http://localhost:3000"`; then CLI login works normally                                                            |
 
 Still stuck? Open an issue with your OS, Node/pnpm/Docker versions, the exact command, and the full error — see [SUPPORT.md](../SUPPORT.md).
 
@@ -254,12 +254,12 @@ That's the full local surface today. As phases land (API routes, product UI, RAG
 
 Every observability integration is a **strict no-op until its env vars are set** — nothing phones home in a default local install.
 
-| Concern | Enable with | Where to get the value |
-|---|---|---|
-| Structured logs | nothing — always on (pretty in dev, JSON in production) | change verbosity with `LOG_LEVEL` in `apps/api/.env` |
-| Error tracking | `SENTRY_DSN` in `apps/api/.env` | Sentry → Settings → Client Keys (sentry.io free tier is fine) |
-| LLM tracing | `LANGFUSE_PUBLIC_KEY` + `LANGFUSE_SECRET_KEY` in `apps/api/.env` | Langfuse → Settings → API Keys (self-host via Docker or use cloud) |
-| Product analytics | `NEXT_PUBLIC_POSTHOG_KEY` in `apps/web/.env.local` | PostHog → Settings → Project API key |
+| Concern           | Enable with                                                      | Where to get the value                                             |
+| ----------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Structured logs   | nothing — always on (pretty in dev, JSON in production)          | change verbosity with `LOG_LEVEL` in `apps/api/.env`               |
+| Error tracking    | `SENTRY_DSN` in `apps/api/.env`                                  | Sentry → Settings → Client Keys (sentry.io free tier is fine)      |
+| LLM tracing       | `LANGFUSE_PUBLIC_KEY` + `LANGFUSE_SECRET_KEY` in `apps/api/.env` | Langfuse → Settings → API Keys (self-host via Docker or use cloud) |
+| Product analytics | `NEXT_PUBLIC_POSTHOG_KEY` in `apps/web/.env.local`               | PostHog → Settings → Project API key                               |
 
 How to verify each one:
 
