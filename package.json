@@ -23,13 +23,13 @@
     "test": "turbo run test"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.15",
-    "@commitlint/cli": "^21.2.3",
-    "@commitlint/config-conventional": "^21.2.3",
+    "@biomejs/biome": "2.6.3",
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
     "gifenc": "^1.0.3",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
     "pngjs": "^7.0.0",
-    "turbo": "^2.11.7"
+    "turbo": "^2.11.10"
   }
 }
