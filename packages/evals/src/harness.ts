@@ -121,26 +121,25 @@ export async function runEvals(
 
   // --- position bias: score the pool in two shuffled orders ---
   const swapped = [...resumes].reverse();
-  const reverseRecords: ScoreRecord[] = [];
+  const reverseOveralls = new Map<string, number>();
   for (const r of swapped) {
     const result = await scoreResume(model, rubric, r.text, { seed: BENCHMARK_SEED });
-    reverseRecords.push({ resumeId: r.id, result });
+    reverseOveralls.set(r.id, overallOf(criteria, result));
     await pause();
   }
-  // Deterministic ordering: overall desc, ties broken by the benchmark's
-  // expected rank (NOT input order — otherwise the stable sort would make
-  // the two "orderings" differ by construction on tied scores).
-  const byOverallDesc = (recs: readonly ScoreRecord[]): string[] =>
-    [...recs]
-      .sort((x, y) => {
-        const ox = overalls.get(x.resumeId) ?? 0;
-        const oy = overalls.get(y.resumeId) ?? 0;
-        if (oy !== ox) return oy - ox;
-        return rank(x.resumeId) - rank(y.resumeId);
-      })
-      .map((rec) => rec.resumeId);
-  const orderA = byOverallDesc(records);
-  const orderB = byOverallDesc(reverseRecords);
+  // Each pass is ranked by its OWN scores (ranking the reverse pass by the
+  // first pass's scores made τ = 1 by construction). Ties break on the
+  // benchmark's expected rank, not input order, so a stable sort cannot
+  // make the two orderings differ on tied scores either.
+  const byOverallDesc = (scored: ReadonlyMap<string, number>): string[] =>
+    [...scored.keys()].sort((x, y) => {
+      const ox = scored.get(x) ?? 0;
+      const oy = scored.get(y) ?? 0;
+      if (oy !== ox) return oy - ox;
+      return rank(x) - rank(y);
+    });
+  const orderA = byOverallDesc(overalls);
+  const orderB = byOverallDesc(reverseOveralls);
   const bias = positionBias([orderA, orderB]);
 
   // --- name-swap bias: change ONLY the name, expect equal scores ---

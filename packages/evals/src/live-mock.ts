@@ -20,7 +20,9 @@ async function main(): Promise<void> {
         score: 3,
         confidence: 0.9,
         rationale: "mock benchmark run",
-        quote: "",
+        // Verbatim in every benchmark resume, so the engine's evidence check
+        // passes; an empty quote would zero every score and skew the run.
+        quote: "EXPERIENCE",
       })),
     },
   });
@@ -31,7 +33,7 @@ async function main(): Promise<void> {
   const { writeFileSync } = await import("node:fs");
   writeFileSync(
     new URL("../../eval-report.json", import.meta.url),
-    JSON.stringify(report, null, 2),
+    `${JSON.stringify(report, null, 2)}\n`,
   );
   console.error("Wrote eval-report.json (mock model — plumbing check, not a quality signal)");
 }
