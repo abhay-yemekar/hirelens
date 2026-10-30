@@ -1,0 +1,708 @@
+{
+  "date": "2026-10-30",
+  "provider": "groq",
+  "model": "openai/gpt-oss-120b",
+  "rubricVersion": 1,
+  "candidates": [
+    {
+      "id": "jordan-avery",
+      "overall": 70,
+      "needsAdjudication": false,
+      "criteria": [
+        {
+          "key": "event-driven-systems",
+          "score": 3,
+          "confidence": 0.95,
+          "evidence": {
+            "startOffset": 568,
+            "endOffset": 641,
+            "quotedText": "Built retry queues with exponential backoff for third-party integrations."
+          }
+        },
+        {
+          "key": "postgres-at-scale",
+          "score": 4,
+          "confidence": 0.97,
+          "evidence": {
+            "startOffset": 497,
+            "endOffset": 565,
+            "quotedText": "Owned PostgreSQL schema for a 200M-row ledger; cut slow queries 60%."
+          }
+        },
+        {
+          "key": "distributed-systems",
+          "score": 3,
+          "confidence": 0.9,
+          "evidence": {
+            "startOffset": 306,
+            "endOffset": 379,
+            "quotedText": "Designed idempotent webhook delivery with a Postgres-backed outbox table."
+          }
+        },
+        {
+          "key": "reliability-ops",
+          "score": 4,
+          "confidence": 0.96,
+          "evidence": {
+            "startOffset": 382,
+            "endOffset": 444,
+            "quotedText": "Introduced SLO dashboards and on-call runbooks; MTTR down 45%."
+          }
+        },
+        {
+          "key": "fintech-payments",
+          "score": 3,
+          "confidence": 0.85,
+          "evidence": {
+            "startOffset": 150,
+            "endOffset": 228,
+            "quotedText": "Led migration of the payments platform to Kubernetes, cutting deploy time 80%."
+          }
+        },
+        {
+          "key": "platform-tooling",
+          "score": 4,
+          "confidence": 0.9,
+          "evidence": {
+            "startOffset": 150,
+            "endOffset": 228,
+            "quotedText": "Led migration of the payments platform to Kubernetes, cutting deploy time 80%."
+          }
+        }
+      ]
+    },
+    {
+      "id": "priya-sharma",
+      "overall": 38,
+      "needsAdjudication": false,
+      "criteria": [
+        {
+          "key": "event-driven-systems",
+          "score": 3,
+          "confidence": 0.95,
+          "evidence": {
+            "startOffset": 191,
+            "endOffset": 258,
+            "quotedText": "Designed a message queue layer with retries and dead-letter queues."
+          }
+        },
+        {
+          "key": "postgres-at-scale",
+          "score": 3,
+          "confidence": 0.9,
+          "evidence": {
+            "startOffset": 331,
+            "endOffset": 400,
+            "quotedText": "Improved p95 latency of the checkout API by 35% through query tuning."
+          }
+        },
+        {
+          "key": "distributed-systems",
+          "score": 2,
+          "confidence": 0.85,
+          "evidence": {
+            "startOffset": 191,
+            "endOffset": 258,
+            "quotedText": "Designed a message queue layer with retries and dead-letter queues."
+          }
+        },
+        {
+          "key": "reliability-ops",
+          "score": 0,
+          "confidence": 1,
+          "evidence": null
+        },
+        {
+          "key": "fintech-payments",
+          "score": 2,
+          "confidence": 0.8,
+          "evidence": {
+            "startOffset": 331,
+            "endOffset": 400,
+            "quotedText": "Improved p95 latency of the checkout API by 35% through query tuning."
+          }
+        },
+        {
+          "key": "platform-tooling",
+          "score": 1,
+          "confidence": 0.8,
+          "evidence": {
+            "startOffset": 630,
+            "endOffset": 636,
+            "quotedText": "Docker"
+          }
+        }
+      ]
+    },
+    {
+      "id": "marcus-lee",
+      "overall": 84,
+      "needsAdjudication": false,
+      "criteria": [
+        {
+          "key": "event-driven-systems",
+          "score": 4,
+          "confidence": 0.95,
+          "evidence": {
+            "startOffset": 125,
+            "endOffset": 192,
+            "quotedText": "Architected a multi-region event pipeline processing 1M events/sec."
+          }
+        },
+        {
+          "key": "postgres-at-scale",
+          "score": 5,
+          "confidence": 0.97,
+          "evidence": {
+            "startOffset": 465,
+            "endOffset": 541,
+            "quotedText": "Ran a PostgreSQL fleet of 40 nodes; designed sharding for a payments ledger."
+          }
+        },
+        {
+          "key": "distributed-systems",
+          "score": 5,
+          "confidence": 0.94,
+          "evidence": {
+            "startOffset": 125,
+            "endOffset": 192,
+            "quotedText": "Architected a multi-region event pipeline processing 1M events/sec."
+          }
+        },
+        {
+          "key": "reliability-ops",
+          "score": 4,
+          "confidence": 0.96,
+          "evidence": {
+            "startOffset": 272,
+            "endOffset": 348,
+            "quotedText": "Owned incident response process; wrote the company's chaos-testing playbook."
+          }
+        },
+        {
+          "key": "fintech-payments",
+          "score": 5,
+          "confidence": 0.93,
+          "evidence": {
+            "startOffset": 544,
+            "endOffset": 608,
+            "quotedText": "Built fraud-detection rules engine processing 10k decisions/sec."
+          }
+        },
+        {
+          "key": "platform-tooling",
+          "score": 1,
+          "confidence": 0.6,
+          "evidence": {
+            "startOffset": 646,
+            "endOffset": 667,
+            "quotedText": "Kubernetes, Terraform"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sophia-nguyen",
+      "overall": 45,
+      "needsAdjudication": false,
+      "criteria": [
+        {
+          "key": "event-driven-systems",
+          "score": 5,
+          "confidence": 0.9,
+          "evidence": {
+            "startOffset": 222,
+            "endOffset": 298,
+            "quotedText": "Implemented exactly-once processing with deduplication keys and idempotency."
+          }
+        },
+        {
+          "key": "postgres-at-scale",
+          "score": 2,
+          "confidence": 0.85,
+          "evidence": {
+            "startOffset": 422,
+            "endOffset": 488,
+            "quotedText": "Payments ledger services; PostgreSQL schema design and migrations."
+          }
+        },
+        {
+          "key": "distributed-systems",
+          "score": 2,
+          "confidence": 0.8,
+          "evidence": {
+            "startOffset": 491,
+            "endOffset": 565,
+            "quotedText": "Built retry and dead-letter infrastructure for external bank integrations."
+          }
+        },
+        {
+          "key": "reliability-ops",
+          "score": 0,
+          "confidence": 0.99,
+          "evidence": null
+        },
+        {
+          "key": "fintech-payments",
+          "score": 4,
+          "confidence": 0.85,
+          "evidence": {
+            "startOffset": 141,
+            "endOffset": 219,
+            "quotedText": "Built settlement services in Java/Spring and Node.js handling daily transfers."
+          }
+        },
+        {
+          "key": "platform-tooling",
+          "score": 0,
+          "confidence": 0.99,
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "david-okafor",
+      "overall": 19,
+      "needsAdjudication": false,
+      "criteria": [
+        {
+          "key": "event-driven-systems",
+          "score": 0,
+          "confidence": 0.99,
+          "evidence": null
+        },
+        {
+          "key": "postgres-at-scale",
+          "score": 0,
+          "confidence": 0.99,
+          "evidence": null
+        },
+        {
+          "key": "distributed-systems",
+          "score": 1,
+          "confidence": 0.8,
+          "evidence": {
+            "startOffset": 132,
+            "endOffset": 202,
+            "quotedText": "Managed Kubernetes clusters for production workloads across 3 regions."
+          }
+        },
+        {
+          "key": "reliability-ops",
+          "score": 1,
+          "confidence": 0.9,
+          "evidence": {
+            "startOffset": 432,
+            "endOffset": 490,
+            "quotedText": "CI/CD pipelines, monitoring, and on-call for web services."
+          }
+        },
+        {
+          "key": "fintech-payments",
+          "score": 0,
+          "confidence": 0.99,
+          "evidence": null
+        },
+        {
+          "key": "platform-tooling",
+          "score": 5,
+          "confidence": 0.95,
+          "evidence": {
+            "startOffset": 270,
+            "endOffset": 334,
+            "quotedText": "Built internal developer platform with self-service deployments."
+          }
+        }
+      ]
+    },
+    {
+      "id": "emily-chen",
+      "overall": 19,
+      "needsAdjudication": false,
+      "criteria": [
+        {
+          "key": "event-driven-systems",
+          "score": 1,
+          "confidence": 0.6,
+          "evidence": {
+            "startOffset": 465,
+            "endOffset": 470,
+            "quotedText": "Kafka"
+          }
+        },
+        {
+          "key": "postgres-at-scale",
+          "score": 3,
+          "confidence": 0.8,
+          "evidence": {
+            "startOffset": 194,
+            "endOffset": 263,
+            "quotedText": "Designed star schemas in PostgreSQL and Redshift for analytics teams."
+          }
+        },
+        {
+          "key": "distributed-systems",
+          "score": 1,
+          "confidence": 0.6,
+          "evidence": {
+            "startOffset": 127,
+            "endOffset": 191,
+            "quotedText": "Built streaming pipelines in Python and Spark ingesting 5TB/day."
+          }
+        },
+        {
+          "key": "reliability-ops",
+          "score": 0,
+          "confidence": 0.95,
+          "evidence": null
+        },
+        {
+          "key": "fintech-payments",
+          "score": 0,
+          "confidence": 0.95,
+          "evidence": null
+        },
+        {
+          "key": "platform-tooling",
+          "score": 0,
+          "confidence": 0.95,
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "liam-murphy",
+      "overall": 4,
+      "needsAdjudication": false,
+      "criteria": [
+        {
+          "key": "event-driven-systems",
+          "score": 0,
+          "confidence": 0.99,
+          "evidence": null
+        },
+        {
+          "key": "postgres-at-scale",
+          "score": 1,
+          "confidence": 0.7,
+          "evidence": {
+            "startOffset": 465,
+            "endOffset": 483,
+            "quotedText": "PostgreSQL (basic)"
+          }
+        },
+        {
+          "key": "distributed-systems",
+          "score": 0,
+          "confidence": 0.99,
+          "evidence": null
+        },
+        {
+          "key": "reliability-ops",
+          "score": 0,
+          "confidence": 0.99,
+          "evidence": null
+        },
+        {
+          "key": "fintech-payments",
+          "score": 0,
+          "confidence": 0.99,
+          "evidence": null
+        },
+        {
+          "key": "platform-tooling",
+          "score": 0,
+          "confidence": 0.99,
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "olivia-brown",
+      "overall": 64,
+      "needsAdjudication": false,
+      "criteria": [
+        {
+          "key": "event-driven-systems",
+          "score": 1,
+          "confidence": 0.8,
+          "evidence": {
+            "startOffset": 247,
+            "endOffset": 310,
+            "quotedText": "Built chaos experiments on Kafka and PostgreSQL failover paths."
+          }
+        },
+        {
+          "key": "postgres-at-scale",
+          "score": 4,
+          "confidence": 0.7,
+          "evidence": {
+            "startOffset": 247,
+            "endOffset": 310,
+            "quotedText": "Built chaos experiments on Kafka and PostgreSQL failover paths."
+          }
+        },
+        {
+          "key": "distributed-systems",
+          "score": 4,
+          "confidence": 0.75,
+          "evidence": {
+            "startOffset": 128,
+            "endOffset": 191,
+            "quotedText": "Owned reliability for a payments API serving 200M requests/day."
+          }
+        },
+        {
+          "key": "reliability-ops",
+          "score": 4,
+          "confidence": 0.9,
+          "evidence": {
+            "startOffset": 194,
+            "endOffset": 244,
+            "quotedText": "Wrote SLOs and error budgets; drove MTTR down 60%."
+          }
+        },
+        {
+          "key": "fintech-payments",
+          "score": 3,
+          "confidence": 0.85,
+          "evidence": {
+            "startOffset": 128,
+            "endOffset": 191,
+            "quotedText": "Owned reliability for a payments API serving 200M requests/day."
+          }
+        },
+        {
+          "key": "platform-tooling",
+          "score": 3,
+          "confidence": 0.8,
+          "evidence": {
+            "startOffset": 483,
+            "endOffset": 548,
+            "quotedText": "Kubernetes, Terraform, Prometheus, Grafana, PostgreSQL, Kafka, Go"
+          }
+        }
+      ]
+    },
+    {
+      "id": "noah-williams",
+      "overall": 21,
+      "needsAdjudication": false,
+      "criteria": [
+        {
+          "key": "event-driven-systems",
+          "score": 2,
+          "confidence": 0.9,
+          "evidence": {
+            "startOffset": 244,
+            "endOffset": 290,
+            "quotedText": "Implemented background jobs with a task queue."
+          }
+        },
+        {
+          "key": "postgres-at-scale",
+          "score": 2,
+          "confidence": 0.9,
+          "evidence": {
+            "startOffset": 194,
+            "endOffset": 241,
+            "quotedText": "Wrote PostgreSQL queries and simple migrations."
+          }
+        },
+        {
+          "key": "distributed-systems",
+          "score": 1,
+          "confidence": 0.7,
+          "evidence": {
+            "startOffset": 244,
+            "endOffset": 290,
+            "quotedText": "Implemented background jobs with a task queue."
+          }
+        },
+        {
+          "key": "reliability-ops",
+          "score": 0,
+          "confidence": 1,
+          "evidence": null
+        },
+        {
+          "key": "fintech-payments",
+          "score": 0,
+          "confidence": 1,
+          "evidence": null
+        },
+        {
+          "key": "platform-tooling",
+          "score": 1,
+          "confidence": 0.8,
+          "evidence": {
+            "startOffset": 424,
+            "endOffset": 439,
+            "quotedText": "Docker (basics)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "amelia-carter",
+      "overall": 39,
+      "needsAdjudication": false,
+      "criteria": [
+        {
+          "key": "event-driven-systems",
+          "score": 3,
+          "confidence": 0.8,
+          "evidence": {
+            "startOffset": 192,
+            "endOffset": 258,
+            "quotedText": "Introduced idempotency keys and retry semantics across 6 services."
+          }
+        },
+        {
+          "key": "postgres-at-scale",
+          "score": 3,
+          "confidence": 0.9,
+          "evidence": {
+            "startOffset": 261,
+            "endOffset": 335,
+            "quotedText": "PostgreSQL query tuning; reduced deadlocks with better transaction design."
+          }
+        },
+        {
+          "key": "distributed-systems",
+          "score": 2,
+          "confidence": 0.75,
+          "evidence": {
+            "startOffset": 192,
+            "endOffset": 258,
+            "quotedText": "Introduced idempotency keys and retry semantics across 6 services."
+          }
+        },
+        {
+          "key": "reliability-ops",
+          "score": 0,
+          "confidence": 0.95,
+          "evidence": null
+        },
+        {
+          "key": "fintech-payments",
+          "score": 3,
+          "confidence": 0.85,
+          "evidence": {
+            "startOffset": 130,
+            "endOffset": 189,
+            "quotedText": "Payments reconciliation services in Node.js and TypeScript."
+          }
+        },
+        {
+          "key": "platform-tooling",
+          "score": 0,
+          "confidence": 0.9,
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "ethan-patel",
+      "overall": 23,
+      "needsAdjudication": false,
+      "criteria": [
+        {
+          "key": "event-driven-systems",
+          "score": 3,
+          "confidence": 0.95,
+          "evidence": {
+            "startOffset": 187,
+            "endOffset": 249,
+            "quotedText": "Designed a queue-based retry system for payment notifications."
+          }
+        },
+        {
+          "key": "postgres-at-scale",
+          "score": 1,
+          "confidence": 0.9,
+          "evidence": {
+            "startOffset": 252,
+            "endOffset": 304,
+            "quotedText": "Worked with PostgreSQL for transactional order data."
+          }
+        },
+        {
+          "key": "distributed-systems",
+          "score": 0,
+          "confidence": 1,
+          "evidence": null
+        },
+        {
+          "key": "reliability-ops",
+          "score": 0,
+          "confidence": 1,
+          "evidence": null
+        },
+        {
+          "key": "fintech-payments",
+          "score": 2,
+          "confidence": 0.85,
+          "evidence": {
+            "startOffset": 187,
+            "endOffset": 249,
+            "quotedText": "Designed a queue-based retry system for payment notifications."
+          }
+        },
+        {
+          "key": "platform-tooling",
+          "score": 1,
+          "confidence": 0.9,
+          "evidence": {
+            "startOffset": 432,
+            "endOffset": 438,
+            "quotedText": "Docker"
+          }
+        }
+      ]
+    },
+    {
+      "id": "isabella-rossi",
+      "overall": 0,
+      "needsAdjudication": false,
+      "criteria": [
+        {
+          "key": "event-driven-systems",
+          "score": 0,
+          "confidence": 1,
+          "evidence": null
+        },
+        {
+          "key": "postgres-at-scale",
+          "score": 0,
+          "confidence": 1,
+          "evidence": null
+        },
+        {
+          "key": "distributed-systems",
+          "score": 0,
+          "confidence": 1,
+          "evidence": null
+        },
+        {
+          "key": "reliability-ops",
+          "score": 0,
+          "confidence": 1,
+          "evidence": null
+        },
+        {
+          "key": "fintech-payments",
+          "score": 0,
+          "confidence": 1,
+          "evidence": null
+        },
+        {
+          "key": "platform-tooling",
+          "score": 0,
+          "confidence": 1,
+          "evidence": null
+        }
+      ]
+    }
+  ]
+}
