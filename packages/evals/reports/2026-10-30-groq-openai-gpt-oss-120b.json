@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-30",
+  "provider": "groq",
+  "model": "openai/gpt-oss-120b",
+  "seed": 42,
+  "modelId": "openai/gpt-oss-120b",
+  "rubricVersion": 1,
+  "resumes": 6,
+  "accuracy": {
+    "accuracy": 0.9666666666666667,
+    "agreed": 29,
+    "total": 30
+  },
+  "selfConsistency": {
+    "meanStdev": 2.309,
+    "maxRange": 16,
+    "repeats": 3
+  },
+  "positionBias": {
+    "meanTau": 0.867,
+    "orderings": 2
+  },
+  "nameSwapBias": {
+    "meanAbsDelta": 2.67,
+    "maxAbsDelta": 7,
+    "flaggedShare": 0.33,
+    "tolerance": 5
+  },
+  "rankAgreement": 1
+}

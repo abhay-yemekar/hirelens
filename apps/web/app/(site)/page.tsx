@@ -331,9 +331,9 @@ export default function LandingPage() {
             </h2>
             <p className="mt-4 text-base leading-7" style={{ color: "var(--hl-mist)" }}>
               A seeded benchmark runs through the same engine the product uses, and checks four
-              things. Real-model results aren&apos;t published yet — when they are, they&apos;ll
-              ship here with the model, date, and sample size. Until then you can run the harness
-              yourself with your own key.
+              things. A first real-model run is published with its model, date, and sample size — a
+              small benchmark, so read it as a first data point. You can run the harness yourself
+              with your own key.
             </p>
             <Link
               href="/evaluation"

@@ -42,7 +42,7 @@ A pnpm + Turborepo monorepo shipping the full product:
 15. **CLI** — `hirelens login / org / jobs / rubric derive / score` — the whole pipeline from a terminal, zero runtime dependencies.
 16. **Self-host** — `docker compose up --build -d` brings up web + API + Postgres with migrations applied automatically.
 17. **Observability** — structured logging always on; Sentry, Langfuse LLM tracing, and privacy-first PostHog behind env flags.
-18. **Eval harness** — seeded benchmark measuring direction accuracy, self-consistency, position bias, and name-swap bias, with a mock-model plumbing test in CI; real-model numbers not published yet ([details below](#evaluation-harness--an-unevaluated-ranker-is-a-liability)).
+18. **Eval harness** — seeded benchmark measuring direction accuracy, self-consistency, position bias, and name-swap bias, with a mock-model plumbing test in CI and a first real-model run published ([details below](#evaluation-harness--an-unevaluated-ranker-is-a-liability)).
 19. **Talent-pool rediscovery (v1.4)** — one org-wide search across every candidate from every job: identity search, skill facet chips, latest-stage filter, and a rubric-weighted minimum-score filter; shortlisting writes a regular, audited decision so rediscovered people re-enter the pipeline. Blind review honored.
 20. **Public parser API (v1.4)** — `POST /api/public/parse`: stateless resume → JSON-Resume-compatible profile with a Bearer org API token (multipart file or raw text), SHA-256 content hash for dedupe, per-token rate limiting, and nothing stored server-side.
 21. **ATS format check (v1.4)** — a deterministic parse simulation (`pass | warn | fail` + 0–100 score + actionable findings) run on every upload: catches scanned pages, table/multi-column layouts, mojibake encoding, and missing sections _before_ a scoring run is spent on a mangled resume. Also returned by the public parser API as `formatCheck`.
@@ -199,7 +199,7 @@ Deployment is a single Vercel project from the repo root (root directory `apps/w
 - **Position bias** — Kendall τ between the ranking from the original input order and from the reversed order (1.0 = order made no difference)
 - **Name-swap bias** — score movement when only the name changes (0 = invariant); movement above 5 points is flagged
 
-Latest committed numbers (`packages/eval-report.json`) — **this is the offline mock-model run, a plumbing check: the mock scores every criterion 3, so 0.47 is just the share of expected-strong labels and the σ/τ/Δ values are trivially perfect. Real-model results: not measured yet.** Run them yourself with `pnpm --filter @hirelens/evals run evals` and your own key:
+Latest committed numbers (`packages/eval-report.json`) — **this is the offline mock-model run, a plumbing check: the mock scores every criterion 3, so 0.47 is just the share of expected-strong labels and the σ/τ/Δ values are trivially perfect. A first real-model run (Groq `openai/gpt-oss-120b`, 30 Oct 2026: 29/30 direction accuracy on a 6-resume benchmark, with caveats) is on the [evaluation page](https://hirelens-rosy.vercel.app/evaluation) and in `packages/evals/reports/`.** Run them yourself with `pnpm --filter @hirelens/evals run evals` and your own key:
 
 | Metric                                | Value           |
 | ------------------------------------- | --------------- |
