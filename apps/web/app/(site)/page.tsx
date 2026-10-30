@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BiasAuditShot, EvidenceShot, RankedQueueShot } from "@/components/product-shots";
-import evalReport from "../../../../packages/eval-report.json";
 
 export const metadata: Metadata = {
   title: "HireLens — AI screening that shows its work",
@@ -164,10 +163,6 @@ const FAQ = [
 ];
 
 export default function LandingPage() {
-  const acc = Math.round((evalReport.accuracy?.accuracy ?? 0) * 100);
-  const sigma = evalReport.selfConsistency?.meanStdev ?? 0;
-  const tau = evalReport.positionBias?.meanTau ?? 0;
-
   return (
     <main>
       {/* ── Hero ─────────────────────────────────────────────── */}
@@ -332,37 +327,39 @@ export default function LandingPage() {
               Accuracy
             </p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-              An evaluated ranker, not a promise.
+              Measured in the open, not promised.
             </h2>
             <p className="mt-4 text-base leading-7" style={{ color: "var(--hl-mist)" }}>
-              Every PR runs a seeded benchmark through the same engine the product uses. The numbers
-              ship in the repo — and on this page. Currently the plumbing run against the offline
-              mock model; regenerate live with your key.
+              A seeded benchmark runs through the same engine the product uses, and checks four
+              things. A first real-model run is published with its model, date, and sample size — a
+              small benchmark, so read it as a first data point. You can run the harness yourself
+              with your own key.
             </p>
             <Link
-              href="https://github.com/abhay-yemekar/hirelens/tree/main/packages/evals"
+              href="/evaluation"
               className="mt-6 inline-block text-sm font-semibold"
               style={{ color: "var(--hl-accent)" }}
             >
-              Read the harness source →
+              See the method →
             </Link>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {[
               {
                 label: "Direction accuracy",
-                value: `${acc}%`,
-                note: "agreement with expected strong/weak per criterion",
+                note: "Does a strong resume score strong, criterion by criterion?",
               },
               {
-                label: "Self-consistency (σ)",
-                value: `${sigma}σ`,
-                note: "σ (sigma) = score wobble across identical reruns — 0 means the same resume always gets the same score",
+                label: "Self-consistency",
+                note: "Does the same resume get the same score on a rerun?",
               },
               {
-                label: "Order fairness (τ)",
-                value: `τ ${tau}`,
-                note: "τ (tau) = rank agreement when resume order is shuffled — 1.0 means order never changes the ranking",
+                label: "Order fairness",
+                note: "Does shuffling the candidate pool change the ranking?",
+              },
+              {
+                label: "Name-swap bias",
+                note: "Does changing only the name change the score?",
               },
             ].map((m) => (
               <div
@@ -370,14 +367,13 @@ export default function LandingPage() {
                 className="rounded-2xl border p-5"
                 style={{ borderColor: "var(--hl-border)", background: "var(--hl-card)" }}
               >
-                <p className="text-3xl font-bold tracking-tight">{m.value}</p>
                 <p
-                  className="mt-1 text-xs font-semibold uppercase tracking-wider"
+                  className="text-xs font-semibold uppercase tracking-wider"
                   style={{ color: "var(--hl-accent)" }}
                 >
                   {m.label}
                 </p>
-                <p className="mt-2 text-xs leading-5" style={{ color: "var(--hl-muted)" }}>
+                <p className="mt-2 text-sm leading-6" style={{ color: "var(--hl-mist)" }}>
                   {m.note}
                 </p>
               </div>

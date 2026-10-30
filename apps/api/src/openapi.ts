@@ -604,7 +604,7 @@ export const openApiDocument = {
         tags: ["Integrations"],
         summary: "Inbound ATS webhook: screen one candidate from an ATS event.",
         description:
-          "Bearer token (API token, org-scoped). Body: { jobId, candidate: { resumeUrl, name?, email? } }. HireLens fetches the HTTPS resume, ingests it into the job (idempotent per text hash — safe to retry), and the review queue fills in. Read results back via the API or CLI.",
+          "Bearer token (API token, org-scoped). Body: { jobId, candidate: { resumeUrl, name?, email? } }. HireLens fetches the resume (HTTPS on a public host only; redirects are re-checked, max 10 MiB), ingests it into the job (idempotent per text hash — safe to retry), and the review queue fills in. Read results back via the API or CLI.",
         responses: { 200: ok({ type: "object" }), 201: ok({ type: "object" }) },
       },
     },

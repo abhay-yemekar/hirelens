@@ -34,7 +34,7 @@ A pnpm + Turborepo monorepo shipping the full product:
 8. **Interview kits** — every scored candidate gets a printable debrief pack: probe questions derived from the rubric's anchored scale, plus the exact evidence quotes as a listen-for list. No extra LLM call.
 9. **Candidate portal** — a one-shot token link lets a candidate opt in to a demographics self-report (no account), feeding the same bias audit. Data policy stated on the page, every step hash-chain audited.
 10. **Teams & sharing** — invite teammates with roles (owner / recruiter / hiring manager / viewer); publish a read-only scored report behind a revocable public link; export the hash-chained audit log as verifiable CSV.
-10b. **Candidates table** — server-side pagination (25/page with true totals) and identity search across uploaded filename, email, and phone; blind mode disables search so queries can't reveal who exists.
+    10b. **Candidates table** — server-side pagination (25/page with true totals) and identity search across uploaded filename, email, and phone; blind mode disables search so queries can't reveal who exists.
 11. **Semantic search & ask** — pgvector embeddings over every resume; keyword fallback keeps search alive before indexing; Ask answers with server-verified citations.
 12. **Rubric editor** — criteria, weights, anchored 0–5 scales, JSON power mode, AI draft, version pills.
 13. **Audit log** — immutable, hash-chained; tampering breaks the chain visibly.
@@ -42,10 +42,10 @@ A pnpm + Turborepo monorepo shipping the full product:
 15. **CLI** — `hirelens login / org / jobs / rubric derive / score` — the whole pipeline from a terminal, zero runtime dependencies.
 16. **Self-host** — `docker compose up --build -d` brings up web + API + Postgres with migrations applied automatically.
 17. **Observability** — structured logging always on; Sentry, Langfuse LLM tracing, and privacy-first PostHog behind env flags.
-18. **Eval harness** — seeded benchmark measuring direction accuracy, self-consistency, position bias, and name-swap bias, wired into CI ([numbers below](#evaluation-harness--an-unevaluated-ranker-is-a-liability)).
+18. **Eval harness** — seeded benchmark measuring direction accuracy, self-consistency, position bias, and name-swap bias, with a mock-model plumbing test in CI and a first real-model run published ([details below](#evaluation-harness--an-unevaluated-ranker-is-a-liability)).
 19. **Talent-pool rediscovery (v1.4)** — one org-wide search across every candidate from every job: identity search, skill facet chips, latest-stage filter, and a rubric-weighted minimum-score filter; shortlisting writes a regular, audited decision so rediscovered people re-enter the pipeline. Blind review honored.
 20. **Public parser API (v1.4)** — `POST /api/public/parse`: stateless resume → JSON-Resume-compatible profile with a Bearer org API token (multipart file or raw text), SHA-256 content hash for dedupe, per-token rate limiting, and nothing stored server-side.
-21. **ATS format check (v1.4)** — a deterministic parse simulation (`pass | warn | fail` + 0–100 score + actionable findings) run on every upload: catches scanned pages, table/multi-column layouts, mojibake encoding, and missing sections *before* a scoring run is spent on a mangled resume. Also returned by the public parser API as `formatCheck`.
+21. **ATS format check (v1.4)** — a deterministic parse simulation (`pass | warn | fail` + 0–100 score + actionable findings) run on every upload: catches scanned pages, table/multi-column layouts, mojibake encoding, and missing sections _before_ a scoring run is spent on a mangled resume. Also returned by the public parser API as `formatCheck`.
 
 Everything is model-agnostic: bring your own key (**Google, Anthropic, Groq, OpenRouter**) or run fully local via **Ollama** — resumes never have to leave your machine. Providers that reject complex JSON schemas (e.g. Gemini's nested-array limits) are handled automatically by a validated JSON-text fallback.
 
@@ -64,15 +64,15 @@ The landing page's [/demo](apps/web/app/demo/page.tsx) runs the **same scoring e
 
 The [docs site](apps/docs) (Fumadocs) builds with the repo:
 
-| Page | Contents |
-|---|---|
-| [Quickstart](docs/project_execution.md) | Clean machine → first scored candidate, with expected output |
-| [CLI](docs/project_execution.md#6-run-the-applications) | Full command reference |
-| [Self-hosting](apps/docs/content/docs/guides/self-hosting.mdx) | Docker Compose, env vars, backups, upgrades |
-| [Blind review & bias audits](apps/docs/content/docs/guides/blind-review-and-bias-audits.mdx) | Methodology and what we deliberately don't do |
-| [API reference](apps/docs/content/docs/reference/api.mdx) | The OpenAPI contract and auth flow |
-| [Evaluation harness](apps/docs/content/docs/reference/evaluation-harness.mdx) | Metrics and how to run them |
-| [Troubleshooting](docs/project_execution.md#8-troubleshooting--real-errors-real-fixes) | Real errors from development, with fixes |
+| Page                                                                                         | Contents                                                     |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| [Quickstart](docs/project_execution.md)                                                      | Clean machine → first scored candidate, with expected output |
+| [CLI](docs/project_execution.md#6-run-the-applications)                                      | Full command reference                                       |
+| [Self-hosting](apps/docs/content/docs/guides/self-hosting.mdx)                               | Docker Compose, env vars, backups, upgrades                  |
+| [Blind review & bias audits](apps/docs/content/docs/guides/blind-review-and-bias-audits.mdx) | Methodology and what we deliberately don't do                |
+| [API reference](apps/docs/content/docs/reference/api.mdx)                                    | The OpenAPI contract and auth flow                           |
+| [Evaluation harness](apps/docs/content/docs/reference/evaluation-harness.mdx)                | Metrics and how to run them                                  |
+| [Troubleshooting](docs/project_execution.md#8-troubleshooting--real-errors-real-fixes)       | Real errors from development, with fixes                     |
 
 ## Repository layout
 
@@ -154,19 +154,19 @@ The full public API is described by an **OpenAPI 3.1** document served live at [
 
 One `.env` per package that needs secrets, with `.env.example` documenting every variable: `packages/db/.env.example`, `apps/api/.env.example`, `apps/web/.env.example`, and the root `.env.example` for the self-host stack.
 
-| Variable | Purpose |
-|---|---|
-| `DATABASE_URL` | Postgres connection (local: `postgres://postgres:postgres@localhost:5433/hirelens`) |
-| `BETTER_AUTH_SECRET` | Better Auth secret — generate: `openssl rand -base64 32` |
-| `BETTER_AUTH_URL` | Public origin of the app (e.g. `https://hirelens-rosy.vercel.app`) — auth callbacks are built from it |
-| `TRUSTED_ORIGINS` / `CORS_ORIGINS` | Comma-separated origins allowed to initiate auth / call the API |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth sign-in (redirect: `<origin>/api/auth/callback/google`) |
-| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth sign-in (redirect: `<origin>/api/auth/callback/github`) |
-| `NEXT_PUBLIC_SITE_URL` | Canonical site URL used by sitemap/robots/metadata |
-| `NEXT_PUBLIC_API_URL` | Leave **empty** on Vercel (same-origin API mount at `/api/*`); set only for split-origin self-hosts |
-| `HIRELENS_LLM_PROVIDER` + `HIRELENS_LLM_MODEL` (+ `_API_KEY`, `_BASE_URL`) | Enables LLM routes (google/anthropic/groq/openrouter/mistral/cerebras/ollama) |
-| `HIRELENS_LLM_FALLBACKS` | Comma-separated **failover chain**, e.g. `groq,openrouter`. Fallbacks are tried only when the primary is overloaded/rate-limited. **Required for every fallback:** `HIRELENS_LLM_<ID>_MODEL` — a fallback never inherits the primary's model id (boot fails otherwise, because providers cannot serve each other's model names). Also per-provider: `HIRELENS_LLM_<ID>_API_KEY`, `_BASE_URL`. Example: `HIRELENS_LLM_FALLBACKS=groq` + `HIRELENS_LLM_GROQ_API_KEY=…` + `HIRELENS_LLM_GROQ_MODEL=openai/gpt-oss-120b`. |
-| `HIRELENS_LLM_DEADLINE_MS` | Optional overall retry/failover deadline (default 120000 ms, capped at 600000). Guarantees the 5s→20s retry ladder plus failover cannot outlive a serverless function limit. |
+| Variable                                                                   | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                                             | Postgres connection (local: `postgres://postgres:postgres@localhost:5433/hirelens`)                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `BETTER_AUTH_SECRET`                                                       | Better Auth secret — generate: `openssl rand -base64 32`                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `BETTER_AUTH_URL`                                                          | Public origin of the app (e.g. `https://hirelens-rosy.vercel.app`) — auth callbacks are built from it                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `TRUSTED_ORIGINS` / `CORS_ORIGINS`                                         | Comma-separated origins allowed to initiate auth / call the API                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`                                | Google OAuth sign-in (redirect: `<origin>/api/auth/callback/google`)                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`                                | GitHub OAuth sign-in (redirect: `<origin>/api/auth/callback/github`)                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `NEXT_PUBLIC_SITE_URL`                                                     | Canonical site URL used by sitemap/robots/metadata                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `NEXT_PUBLIC_API_URL`                                                      | Leave **empty** on Vercel (same-origin API mount at `/api/*`); set only for split-origin self-hosts                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `HIRELENS_LLM_PROVIDER` + `HIRELENS_LLM_MODEL` (+ `_API_KEY`, `_BASE_URL`) | Enables LLM routes (google/anthropic/groq/openrouter/mistral/cerebras/ollama)                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `HIRELENS_LLM_FALLBACKS`                                                   | Comma-separated **failover chain**, e.g. `groq,openrouter`. Fallbacks are tried only when the primary is overloaded/rate-limited. **Required for every fallback:** `HIRELENS_LLM_<ID>_MODEL` — a fallback never inherits the primary's model id (boot fails otherwise, because providers cannot serve each other's model names). Also per-provider: `HIRELENS_LLM_<ID>_API_KEY`, `_BASE_URL`. Example: `HIRELENS_LLM_FALLBACKS=groq` + `HIRELENS_LLM_GROQ_API_KEY=…` + `HIRELENS_LLM_GROQ_MODEL=openai/gpt-oss-120b`. |
+| `HIRELENS_LLM_DEADLINE_MS`                                                 | Optional overall retry/failover deadline (default 120000 ms, capped at 600000). Guarantees the 5s→20s retry ladder plus failover cannot outlive a serverless function limit.                                                                                                                                                                                                                                                                                                                                          |
 
 **Deployment note (Vercel):** environment-variable changes only reach **new deployments** — after adding or editing any `HIRELENS_LLM_*` variable, redeploy. If the database schema is behind the code, `/api/health?db=1` returns `503 migrations_pending` with the migration command in the message instead of opaque 500s on org routes. |
 | `SENTRY_DSN` | Error tracking (optional) |
@@ -178,15 +178,15 @@ One `.env` per package that needs secrets, with `.env.example` documenting every
 
 The production deployment runs entirely on free tiers — deliberate choices, documented so you can reproduce or audit them:
 
-| Need | Service (free tier) | Why this one |
-|---|---|---|
-| Web + API hosting | **Vercel** (Hobby) | Next.js-native with per-PR preview deploys. The **Hono API is embedded in the same deployment** (same-origin mount at `/api/*`), so auth cookies stay first-party and there's no second service to run |
-| Database | **Neon** (Free plan) | Serverless Postgres with scale-to-zero (idle costs nothing), built-in connection pooling for serverless, and pgvector in the same database |
-| LLM | **Google Gemini** (free tier) | Generous free quota on `gemini-2.5-flash`; the engine is model-agnostic — Anthropic, Groq, OpenRouter, or local Ollama swap in via one env var |
-| Errors | **Sentry** (Developer plan) | Wired and active when `SENTRY_DSN` is set — nothing phones home until you opt in |
-| Product analytics | **PostHog** (free tier) | Privacy-first configuration: explicit events only, autocapture off — matches the product's data-minimization stance |
-| LLM tracing | **Langfuse** (free tier) | Traces every prompt/score for eval reproducibility; no-op until keys exist |
-| CI | **GitHub Actions** | Free for public repos — lint, typecheck, tests, eval harness, CodeQL, and secrets scanning on every PR |
+| Need              | Service (free tier)           | Why this one                                                                                                                                                                                           |
+| ----------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Web + API hosting | **Vercel** (Hobby)            | Next.js-native with per-PR preview deploys. The **Hono API is embedded in the same deployment** (same-origin mount at `/api/*`), so auth cookies stay first-party and there's no second service to run |
+| Database          | **Neon** (Free plan)          | Serverless Postgres with scale-to-zero (idle costs nothing), built-in connection pooling for serverless, and pgvector in the same database                                                             |
+| LLM               | **Google Gemini** (free tier) | Generous free quota on `gemini-2.5-flash`; the engine is model-agnostic — Anthropic, Groq, OpenRouter, or local Ollama swap in via one env var                                                         |
+| Errors            | **Sentry** (Developer plan)   | Wired and active when `SENTRY_DSN` is set — nothing phones home until you opt in                                                                                                                       |
+| Product analytics | **PostHog** (free tier)       | Privacy-first configuration: explicit events only, autocapture off — matches the product's data-minimization stance                                                                                    |
+| LLM tracing       | **Langfuse** (free tier)      | Traces every prompt/score for eval reproducibility; no-op until keys exist                                                                                                                             |
+| CI                | **GitHub Actions**            | Free for public repos — lint, typecheck, tests (incl. the eval harness mock run), CodeQL, and secrets scanning on every PR                                                                             |
 
 Deployment is a single Vercel project from the repo root (root directory `apps/web`); migrations run with `pnpm --filter @hirelens/db db:migrate` against the Neon pooled connection string. Self-hosters use the Docker path above instead — same app, your infrastructure.
 
@@ -196,18 +196,18 @@ Deployment is a single Vercel project from the repo root (root directory `apps/w
 
 - **Direction accuracy** — agreement with expected strong/weak per criterion
 - **Self-consistency** — score variance across repeated runs (lower is better)
-- **Position bias** — Kendall τ between rank orderings when input order is shuffled (1.0 = order-invariant)
+- **Position bias** — Kendall τ between the ranking from the original input order and from the reversed order (1.0 = order made no difference)
 - **Name-swap bias** — score movement when only the name changes (0 = invariant); movement above 5 points is flagged
 
-Latest committed numbers (`packages/eval-report.json`) — **important caveat: this is the offline mock-model run. It validates that the harness plumbing works end-to-end; the 0.47 accuracy is the mock baseline, NOT real model performance.** Regenerate live with `pnpm --filter @hirelens/evals run evals` and a billing-enabled key:
+Latest committed numbers (`packages/eval-report.json`) — **this is the offline mock-model run, a plumbing check: the mock scores every criterion 3, so 0.47 is just the share of expected-strong labels and the σ/τ/Δ values are trivially perfect. A first real-model run (Groq `openai/gpt-oss-120b`, 30 Oct 2026: 29/30 direction accuracy on a 6-resume benchmark, with caveats) is on the [evaluation page](https://hirelens-rosy.vercel.app/evaluation) and in `packages/evals/reports/`.** Run them yourself with `pnpm --filter @hirelens/evals run evals` and your own key:
 
-| Metric | Value |
-|---|---|
-| Accuracy (vs. mock expectation) | 14/30 · 0.47 |
-| Self-consistency (mean σ) | 0.0 |
-| Position bias (mean τ) | 1.0 |
-| Name-swap bias (mean Δ) | 0.0 (0 flagged) |
-| Rank agreement (τ vs. expected order) | 1.0 |
+| Metric                                | Value           |
+| ------------------------------------- | --------------- |
+| Accuracy (vs. mock expectation)       | 14/30 · 0.47    |
+| Self-consistency (mean σ)             | 0.0             |
+| Position bias (mean τ)                | 1.0             |
+| Name-swap bias (mean Δ)               | 0.0 (0 flagged) |
+| Rank agreement (τ vs. expected order) | 1.0             |
 
 Run it yourself: `pnpm --filter @hirelens/evals run evals:mock` (offline, CI) or `evals` (live). The unit suite runs on every PR.
 
@@ -217,15 +217,15 @@ Most hiring AI is a black box: a number with no justification. That is a liabili
 
 ## Comparison
 
-| | HireLens | Commercial AI screeners | OpenATS |
-|---|---|---|---|
-| Open source | ✅ MIT | ❌ | ✅ |
-| Self-host / local LLM mode | ✅ | ❌ | ✅ |
-| Score justification | evidence spans with character offsets | black box | none (no AI) |
-| Bias auditing | ✅ four-fifths-rule report with export | opaque | n/a |
-| Blind review | ✅ identity masking with aligned spans | rare | ❌ |
-| Modern UX | ✅ | ✅ | ❌ |
-| Cost | your own LLM key | per-seat + per-resume fees | free |
+|                            | HireLens                               | Commercial AI screeners    | OpenATS      |
+| -------------------------- | -------------------------------------- | -------------------------- | ------------ |
+| Open source                | ✅ MIT                                 | ❌                         | ✅           |
+| Self-host / local LLM mode | ✅                                     | ❌                         | ✅           |
+| Score justification        | evidence spans with character offsets  | black box                  | none (no AI) |
+| Bias auditing              | ✅ four-fifths-rule report with export | opaque                     | n/a          |
+| Blind review               | ✅ identity masking with aligned spans | rare                       | ❌           |
+| Modern UX                  | ✅                                     | ✅                         | ❌           |
+| Cost                       | your own LLM key                       | per-seat + per-resume fees | free         |
 
 ## Roadmap
 

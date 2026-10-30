@@ -16,7 +16,7 @@ import { randomBytes } from "node:crypto";
 import { buildInterviewKit, renderKitHtml } from "@hirelens/core";
 import { candidates, demographics, jobs, portalLinks, rubrics } from "@hirelens/db";
 import { appendAudit } from "@hirelens/orchestrator";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { ROLE_MIN, requireAuth } from "../auth.js";
@@ -229,26 +229,28 @@ export function portalRoutes(): Hono<AppEnv> {
     const job = await loadOrgJob(db, c.req.param("jobId"), auth.orgId);
     if (!job) return c.json({ ok: false, error: "not_found" }, 404);
 
-    // Resolve the link through the job's candidates — org scoping in one step.
-    const jobCandidates = await db
-      .select({ id: candidates.id })
-      .from(candidates)
-      .where(eq(candidates.jobId, job.id));
-    const ids = jobCandidates.map((r) => r.id);
-    const [fallback] = await db
+    // Scope the write itself to this job's candidates: a link id from
+    // another org matches no row, so nothing is revoked before the 404.
+    const [revoked] = await db
       .update(portalLinks)
       .set({ revokedAt: new Date() })
-      .where(eq(portalLinks.id, c.req.param("linkId") ?? ""))
-      .returning({ id: portalLinks.id, candidateId: portalLinks.candidateId });
-    if (!fallback || !ids.includes(fallback.candidateId)) {
-      return c.json({ ok: false, error: "not_found" }, 404);
-    }
+      .where(
+        and(
+          eq(portalLinks.id, c.req.param("linkId") ?? ""),
+          inArray(
+            portalLinks.candidateId,
+            db.select({ id: candidates.id }).from(candidates).where(eq(candidates.jobId, job.id)),
+          ),
+        ),
+      )
+      .returning({ id: portalLinks.id });
+    if (!revoked) return c.json({ ok: false, error: "not_found" }, 404);
 
     await appendAudit(db, {
       orgId: auth.orgId,
       actorId: auth.userId,
       action: "portal.revoked",
-      payload: { jobId: job.id, linkId: fallback.id },
+      payload: { jobId: job.id, linkId: revoked.id },
     });
     return c.json({ ok: true });
   });

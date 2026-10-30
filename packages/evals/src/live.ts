@@ -1,6 +1,7 @@
 /**
  * Live-model eval entry point. Gated on LLM env vars; prints the report
- * and optionally writes eval-report.json for the README pipeline.
+ * and writes it to reports/<date>-<provider>-<model>.json with provenance.
+ * packages/eval-report.json stays the offline mock run (evals:mock).
  *
  *   pnpm --filter @hirelens/evals run evals          # with HIRELENS_LLM_* set
  *   pnpm --filter @hirelens/evals run evals:mock     # offline, mock model
@@ -47,12 +48,16 @@ async function main(): Promise<void> {
 
   console.log(JSON.stringify(report, null, 2));
 
-  const { writeFileSync } = await import("node:fs");
+  const { mkdirSync, writeFileSync } = await import("node:fs");
+  const date = new Date().toISOString().slice(0, 10);
+  const slug = `${provider}-${model}`.replace(/[^a-z0-9.-]+/gi, "-");
+  const dir = new URL("../reports/", import.meta.url);
+  mkdirSync(dir, { recursive: true });
   writeFileSync(
-    new URL("../../eval-report.json", import.meta.url),
-    JSON.stringify(report, null, 2),
+    new URL(`${date}-${slug}.json`, dir),
+    `${JSON.stringify({ date, provider, model, ...report }, null, 2)}\n`,
   );
-  console.error("Wrote eval-report.json");
+  console.error(`Wrote reports/${date}-${slug}.json`);
 }
 
 main().catch((err) => {

@@ -5,6 +5,8 @@ export interface MockModelCall {
   prompt: string;
   temperature: number | undefined;
   seed: number | undefined;
+  /** JSON schema sent as the structured-output response format, if any. */
+  responseSchema: unknown;
 }
 
 export interface MockModelOptions {
@@ -40,6 +42,7 @@ export function createMockModel(options: MockModelOptions): {
       prompt: unknown;
       temperature: number | undefined;
       seed: number | undefined;
+      responseFormat?: { type: string; schema?: unknown };
     }) {
       const sys = extractSystem(opts.prompt);
       calls.push({
@@ -47,6 +50,7 @@ export function createMockModel(options: MockModelOptions): {
         prompt: lastUserText(opts.prompt),
         temperature: opts.temperature,
         seed: opts.seed,
+        responseSchema: opts.responseFormat?.schema,
       });
       if (options.failWithOnce && n === 0) {
         n += 1;
@@ -92,4 +96,32 @@ function lastUserText(prompt: unknown): string {
     }
   }
   return "";
+}
+
+/**
+ * Paths of object properties a JSON schema leaves out of `required`.
+ * Strict structured-output providers (Groq, OpenAI strict mode) reject any
+ * such schema, so a provider-facing schema must return an empty list.
+ */
+export function optionalSchemaProperties(schema: unknown, path = "$"): string[] {
+  if (schema === null || typeof schema !== "object") return [];
+  const node = schema as Record<string, unknown>;
+  const found: string[] = [];
+  const props = node["properties"];
+  if (props !== null && typeof props === "object") {
+    const required = new Set(Array.isArray(node["required"]) ? (node["required"] as string[]) : []);
+    for (const key of Object.keys(props)) {
+      if (!required.has(key)) found.push(`${path}.${key}`);
+    }
+  }
+  for (const [key, value] of Object.entries(node)) {
+    if (Array.isArray(value)) {
+      for (const [i, item] of value.entries()) {
+        found.push(...optionalSchemaProperties(item, `${path}.${key}[${i}]`));
+      }
+    } else if (value !== null && typeof value === "object") {
+      found.push(...optionalSchemaProperties(value, `${path}.${key}`));
+    }
+  }
+  return found;
 }
