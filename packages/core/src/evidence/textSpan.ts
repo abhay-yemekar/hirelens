@@ -8,12 +8,27 @@ function collapse(text: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
-/** Locate a quoted span in document text; whitespace-tolerant fallback. */
-export function locateEvidenceSpan(documentText: string, quote: string): TextSpan | null {
+/**
+ * Fold typographic variants to ASCII for matching only. Models often quote
+ * "on-call" with a non-breaking hyphen (U+2011) or swap straight and curly
+ * quotes. Every replacement is one UTF-16 unit for one, so offsets into
+ * the folded text are offsets into the original.
+ */
+function fold(text: string): string {
+  return text
+    .replace(/[\u2010-\u2015\u2212]/g, "-")
+    .replace(/[\u2018\u2019\u201B]/g, "'")
+    .replace(/[\u201C\u201D\u201F]/g, '"');
+}
+
+/** Locate a quoted span in document text; whitespace- and dash-tolerant. */
+export function locateEvidenceSpan(documentText: string, rawQuote: string): TextSpan | null {
+  const quote = fold(rawQuote);
   const q = collapse(quote);
   if (q.length === 0) return null;
 
-  const exact = documentText.indexOf(quote);
+  const folded = fold(documentText);
+  const exact = folded.indexOf(quote);
   if (exact !== -1) {
     return {
       startOffset: exact,
@@ -23,7 +38,7 @@ export function locateEvidenceSpan(documentText: string, quote: string): TextSpa
   }
 
   // Fallback: match on whitespace-collapsed text, then map offsets back.
-  const doc = collapse(documentText);
+  const doc = collapse(folded);
   const hit = doc.indexOf(q);
   if (hit === -1) return null;
 
