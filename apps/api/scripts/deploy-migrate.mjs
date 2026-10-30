@@ -15,16 +15,11 @@
  */
 import { execFileSync } from "node:child_process";
 import path from "node:path";
+import { migrationSkipReason } from "./deploy-migrate-policy.mjs";
 
-const LOCAL_DEFAULT = "postgres://postgres:postgres@localhost:5433/hirelens";
-const url = process.env["DATABASE_URL"]?.trim() ?? "";
-
-if (url === "") {
-  console.log("deploy-migrate: DATABASE_URL not set at build time — skipping migrations");
-  process.exit(0);
-}
-if (url === LOCAL_DEFAULT) {
-  console.log("deploy-migrate: local compose default database — skipping migrations");
+const skip = migrationSkipReason(process.env);
+if (skip !== null) {
+  console.log(`deploy-migrate: ${skip} — skipping migrations`);
   process.exit(0);
 }
 
