@@ -36,13 +36,15 @@ const ProposalSchema = z.object({
   title: z.string().min(1).max(120),
   weight: z.number().positive(),
   scale: LevelsSchema,
-  doNotUse: z.array(z.string()).default([]),
+  // Required (may be empty): strict JSON-schema providers reject optional
+  // properties, and a default makes a property optional in the schema.
+  doNotUse: z.array(z.string()),
 });
 
 const DerivationSchema = z.object({
   title: z.string().min(1).max(200),
   criteria: z.array(ProposalSchema).min(5).max(8),
-  exclusions: z.array(z.string()).default([]),
+  exclusions: z.array(z.string()),
 });
 
 export interface DerivationAudit {
