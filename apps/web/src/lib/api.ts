@@ -514,6 +514,65 @@ export const runBiasAudit = (
     ...init,
   });
 
+/* ---------- Resume Doctor (phase 2) ---------- */
+
+export interface DoctorFinding {
+  code: string;
+  category: string;
+  severity: "fail" | "warn" | "info";
+  title: string;
+  detail: string;
+  startOffset: number | null;
+  endOffset: number | null;
+  line: number | null;
+  penalty: number;
+}
+
+export interface DoctorReport {
+  score: number;
+  band: "excellent" | "good" | "needs_work";
+  findings: DoctorFinding[];
+  nextSteps: string[];
+  aiContent: { level: string; lines: Array<{ text: string; signal: string }> } | null;
+}
+
+export interface DoctorHistoryRow {
+  id: string;
+  textHash: string;
+  score: number;
+  band: string;
+  createdAt: string;
+  findingCount: number;
+}
+
+/** Run the deterministic doctor on raw resume text and record history. */
+export const runDoctor = (text: string, init?: RequestInit & { serverCookie?: string | null }) =>
+  apiFetch<{ ok: true; report: DoctorReport; history: DoctorHistoryRow[] }>("/api/doctor", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ text }),
+    ...init,
+  });
+
+/** Score history (optionally narrowed to one text hash). */
+export const listDoctorHistory = (
+  hash?: string,
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{
+    ok: true;
+    history: Array<DoctorHistoryRow & { createdBy: string | null }>;
+  }>(`/api/doctor${hash ? `?hash=${encodeURIComponent(hash)}` : ""}`, { ...init });
+
+export const deleteDoctorReport = (
+  id: string,
+  init?: RequestInit & { serverCookie?: string | null },
+) =>
+  apiFetch<{ ok: true; removed: string }>(`/api/doctor/${id}`, {
+    method: "DELETE",
+    ...init,
+  });
+
 /* ---------- Sharing (Wave 3) ---------- */
 
 export interface ShareLinkRow {

@@ -3,7 +3,7 @@
  * Source of truth: drizzle/meta/_journal.json
  * Regenerate with: pnpm --filter @hirelens/db gen:migrations
  *
- * Snapshot of the migration journal at 2026-10-14T09:42:51.663Z
+ * Snapshot of the migration journal at 2026-10-15T03:45:30.413Z
  */
 export interface MigrationSnapshotEntry {
   tag: string;
@@ -63,5 +63,9 @@ export const MIGRATION_SNAPSHOT: readonly MigrationSnapshotEntry[] = [
   {
     tag: "0012_org_settings",
     when: 1791628800000,
+  },
+  {
+    tag: "0013_doctor_reports",
+    when: 1791715200000,
   },
 ];

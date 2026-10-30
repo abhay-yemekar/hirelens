@@ -608,6 +608,40 @@ export const openApiDocument = {
         responses: { 200: ok({ type: "object" }), 201: ok({ type: "object" }) },
       },
     },
+    "/api/doctor": {
+      post: {
+        tags: ["Resume Doctor"],
+        summary: "Check a resume: deterministic findings, a 0–100 score and a band.",
+        description:
+          "Session required; an organization is not (candidates use this too). Body: { text } (at least 120 non-whitespace characters, at most 200,000). No LLM and no network fetches: the same text always gets the same report, with every finding pinned to a character span. Inside an organization the score is saved to its history (only a hash of the text is stored) and that text's history is returned; without one, history is empty.",
+        responses: { 200: ok({ type: "object" }) },
+      },
+      get: {
+        tags: ["Resume Doctor"],
+        summary: "Saved Resume Doctor scores for the active organization, newest first.",
+        description:
+          "Org members (viewer role or above). Optional ?hash= narrows to one resume text's history.",
+        parameters: [
+          {
+            name: "hash",
+            in: "query",
+            required: false,
+            schema: { type: "string" },
+            description: "Text hash returned by a previous check.",
+          },
+        ],
+        responses: { 200: ok({ type: "object" }) },
+      },
+    },
+    "/api/doctor/{id}": {
+      delete: {
+        tags: ["Resume Doctor"],
+        summary: "Delete one saved Resume Doctor score from the organization's history.",
+        description: "Org members with edit rights (recruiter or above).",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: { 200: ok({ type: "object" }) },
+      },
+    },
     "/api/analytics": {
       get: {
         tags: ["Analytics"],
