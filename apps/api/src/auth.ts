@@ -35,6 +35,12 @@ interface SessionLike {
   session?: { activeOrganizationId?: string | null } | null;
 }
 
+/** The signed-in user's id, with or without an active organization. */
+export function sessionUserId(session: unknown): string | null {
+  const userId = (session as SessionLike | null)?.user?.id;
+  return typeof userId === "string" && userId !== "" ? userId : null;
+}
+
 /**
  * Resolve the caller's (userId, orgId, role) from the better-auth session.
  * The organization plugin stores the active org on the session; role comes

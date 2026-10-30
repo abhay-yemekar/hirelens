@@ -19,7 +19,7 @@ import { doctorReports } from "@hirelens/db";
 import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import { ROLE_MIN, requireAuth } from "../auth.js";
+import { ROLE_MIN, requireAuth, resolveAuthContext, sessionUserId } from "../auth.js";
 import { readJson } from "../http.js";
 import type { AppEnv } from "../types.js";
 
@@ -42,9 +42,14 @@ interface DoctorHistoryRow {
 export function doctorRoutes() {
   const routes = new Hono<AppEnv>();
 
-  routes.post("/doctor", requireAuth(ROLE_MIN.view), async (c) => {
+  // Candidates use the Doctor without a workspace: any signed-in user gets a
+  // report, and history is saved and returned only inside an organization.
+  routes.post("/doctor", async (c) => {
     const db = c.get("db");
-    const authc = c.get("auth");
+    if (sessionUserId(c.get("session")) === null) {
+      return c.json({ ok: false, error: "unauthorized" }, 401);
+    }
+    const authc = await resolveAuthContext(db, c.get("session"));
 
     const parsed = AnalyzeSchema.safeParse(await readJson(c).catch(() => null));
     if (!parsed.success) {
@@ -74,6 +79,7 @@ export function doctorRoutes() {
     // a failed history write cannot alter an already-computed report.
     const report = runResumeDoctor(text);
     const hash = textHash(text);
+    if (authc === null) return c.json({ ok: true, report, history: [] });
 
     // History row: informational only. Never blocks the response.
     await db

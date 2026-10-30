@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
-import { type DoctorHistoryRow, type DoctorReport, runDoctor } from "@/lib/api";
+import { ApiRequestError, type DoctorHistoryRow, type DoctorReport, runDoctor } from "@/lib/api";
 
 /**
  * Resume Doctor (phase 2 flagship, candidate-side).
@@ -107,7 +107,11 @@ export default function DoctorPage() {
       setReport(res.report);
       setHistory(res.history);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong — is the API running?");
+      if (err instanceof ApiRequestError && err.code === "unauthorized") {
+        setError("Sign in to run the Resume Doctor.");
+      } else {
+        setError(err instanceof Error ? err.message : "Something went wrong — is the API running?");
+      }
     } finally {
       setPending(false);
     }

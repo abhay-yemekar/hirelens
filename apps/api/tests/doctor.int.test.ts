@@ -101,6 +101,33 @@ describe.skipIf(!available && allowSkip)("doctor route", () => {
     expect(empty.status).toBe(400);
   });
 
+  // Regression: the Doctor is candidate-side, but the route demanded an
+  // active organization, so every signed-in candidate got a 401.
+  it("serves a signed-in candidate without an organization and saves nothing", async () => {
+    const email = `doctor-candidate-${STAMP}@example.com`;
+    const signUp = await auth.api.signUpEmail({
+      body: { name: "Doctor Candidate", email, password: "Str0ng-Passw0rd!123" },
+      returnHeaders: true,
+    });
+    const cookie = signUp.headers.get("set-cookie")?.split(";")[0] ?? "";
+    const res = await app.request("/api/doctor", {
+      method: "POST",
+      headers: { cookie, "content-type": "application/json" },
+      body: JSON.stringify({ text: GOOD_RESUME }),
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { ok: boolean; report: DoctorReport; history: unknown[] };
+    expect(body.ok).toBe(true);
+    expect(body.report.score).toBeGreaterThan(0);
+    expect(body.history).toEqual([]);
+    const userId = signUp.response.user.id;
+    const saved = await db
+      .select({ id: doctorReports.id })
+      .from(doctorReports)
+      .where(eq(doctorReports.createdBy, userId));
+    expect(saved).toHaveLength(0);
+  });
+
   it("returns a deterministic report, scores and persists history", async () => {
     const res = await app.request("/api/doctor", {
       method: "POST",
