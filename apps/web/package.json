@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "node ../api/scripts/deploy-migrate.mjs && node ../api/scripts/build-embed.mjs && next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "landing-sample": "tsx scripts/record-landing-sample.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.71",
@@ -43,6 +45,8 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "axe-core": "^4.13.0",
-    "typescript": "~5.9.3"
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.3"
   }
 }

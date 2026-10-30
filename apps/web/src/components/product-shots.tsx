@@ -1,10 +1,19 @@
 /**
- * Hero product mockups. Faithful recreations of the actual product UI
- * populated with REAL data from a live scoring run (9 synthetic
- * candidates scored by Gemini through the real pipeline, decisions and
- * demographics recorded, bias audit computed) — styled to sit on the
- * dark marketing canvas.
+ * Hero product mockups: faithful recreations of the product UI, styled to
+ * sit on the dark marketing canvas. Every number is derived from a
+ * recorded real-model run over the fictional demo resumes (see
+ * src/lib/landing-sample.ts); stages and gender are synthetic decisions.
  */
+
+import {
+  excerptAround,
+  groupLabel,
+  SAMPLE_AUDIT,
+  SAMPLE_CANDIDATES,
+  SAMPLE_RUN,
+  type SampleCandidate,
+  topCriteria,
+} from "@/lib/landing-sample";
 
 const STAGE_STYLE: Record<string, { bg: string; fg: string }> = {
   advanced: { bg: "#e8f7ee", fg: "#147d43" },
@@ -13,51 +22,33 @@ const STAGE_STYLE: Record<string, { bg: string; fg: string }> = {
   rejected: { bg: "#fdecec", fg: "#b42318" },
 };
 
-const RANKED: Array<{ name: string; overall: number; stage: string }> = [
-  { name: "Olivia Brown", overall: 43, stage: "shortlisted" },
-  { name: "Ethan Patel", overall: 30, stage: "rejected" },
-  { name: "Emily Chen", overall: 26, stage: "shortlisted" },
-  { name: "David Okafor", overall: 21, stage: "advanced" },
-  { name: "Priya Sharma", overall: 19, stage: "shortlisted" },
-];
+const QUEUE_ROWS = 5;
+const RANKED = SAMPLE_CANDIDATES.slice(0, QUEUE_ROWS);
 
-const CRITERIA: Array<{ title: string; score: number; quote: string; start: number; end: number }> =
-  [
-    {
-      title: "Reliability & incident response",
-      score: 5,
-      quote: "Owned reliability for a payments API serving 200M requests/day",
-      start: 214,
-      end: 278,
-    },
-    {
-      title: "Event-driven & queue architecture",
-      score: 4,
-      quote: "Built chaos experiments on Kafka and PostgreSQL failover paths",
-      start: 340,
-      end: 400,
-    },
-    {
-      title: "Fintech / payments context",
-      score: 4,
-      quote: "Wrote SLOs and error budgets; drove MTTR down 60%",
-      start: 285,
-      end: 334,
-    },
-  ];
+/** The evidence card shows the top-ranked candidate, so it matches row 1. */
+const FEATURED = SAMPLE_CANDIDATES[0] as SampleCandidate;
+const CRITERIA = topCriteria(FEATURED, 3);
+const HIGHLIGHT = CRITERIA[0]?.evidence
+  ? excerptAround(FEATURED.text, CRITERIA[0].evidence)
+  : { before: "", marked: "", after: "" };
 
-const AUDIT_ROWS: Array<{
-  group: string;
-  considered: number;
-  selected: number;
-  rate: string;
-  ratio: string;
-  flag: boolean;
-}> = [
-  { group: "Women", considered: 5, selected: 3, rate: "60%", ratio: "0.60", flag: true },
-  { group: "Men", considered: 6, selected: 1, rate: "17%", ratio: "0.17", flag: true },
-  { group: "Undisclosed", considered: 1, selected: 1, rate: "100%", ratio: "1.00", flag: false },
-];
+const totalConsidered = SAMPLE_AUDIT.rows.reduce((n, r) => n + r.considered, 0);
+
+/** No comparable group means nothing was tested, which is not a pass. */
+const AUDIT_BADGE =
+  SAMPLE_AUDIT.referenceGroup === ""
+    ? { text: "NOT ENOUGH DATA", bg: "#eef1f8", fg: "#5a6488" }
+    : SAMPLE_AUDIT.allPass
+      ? { text: "PASS", bg: "#e8f7ee", fg: "#147d43" }
+      : { text: "FLAGGED", bg: "#fdecec", fg: "#b42318" };
+
+/** Four-fifths verdict for one row, worded like the product's audit view. */
+function verdict(row: (typeof SAMPLE_AUDIT.rows)[number]): { text: string; color: string } {
+  if (row.adverseImpact === true) return { text: "flag", color: "#b42318" };
+  if (row.adverseImpact === false) return { text: "pass", color: "#147d43" };
+  if (row.group === SAMPLE_AUDIT.referenceGroup) return { text: "ref", color: "#7d86a8" };
+  return { text: "n/a", color: "#7d86a8" };
+}
 
 function BrowserChrome({ title }: { title: string }) {
   return (
@@ -87,7 +78,8 @@ export function RankedQueueShot() {
         <div>
           <p className="text-[13px] font-semibold">Review queue</p>
           <p className="text-[11px]" style={{ color: "#7d86a8" }}>
-            9 candidates · scored by gemini-2.5-flash · rubric v1
+            {SAMPLE_CANDIDATES.length} candidates · scored by {SAMPLE_RUN.model} · rubric v
+            {SAMPLE_RUN.rubricVersion}
           </p>
         </div>
         <span
@@ -123,9 +115,9 @@ export function RankedQueueShot() {
                     <span
                       className="block h-full rounded-full"
                       style={{
-                        width: `${(row.overall / 50) * 100}%`,
+                        width: `${row.overall}%`,
                         background:
-                          row.overall >= 30 ? "#10b981" : row.overall > 0 ? "#f59e0b" : "#f87171",
+                          row.overall >= 60 ? "#10b981" : row.overall > 0 ? "#f59e0b" : "#f87171",
                       }}
                     />
                   </span>
@@ -146,8 +138,12 @@ export function RankedQueueShot() {
           ))}
         </tbody>
       </table>
-      <p className="px-5 pb-3 pt-2 text-[10px]" style={{ color: "#7d86a8" }}>
-        4 more candidates →
+      <p
+        className="flex justify-between gap-3 px-5 pb-3 pt-2 text-[10px]"
+        style={{ color: "#7d86a8" }}
+      >
+        <span>Score from the model · stage set by the recruiter</span>
+        <span className="shrink-0">{SAMPLE_CANDIDATES.length - RANKED.length} more →</span>
       </p>
     </div>
   );
@@ -164,7 +160,7 @@ export function RankedQueueShot() {
 export function EvidenceShot() {
   return (
     <div className="hl-shot overflow-hidden">
-      <BrowserChrome title="hirelens · Olivia Brown — evidence" />
+      <BrowserChrome title={`hirelens · ${FEATURED.name} — evidence`} />
       <div className="p-4">
         <p
           className="text-[10px] font-semibold uppercase tracking-wider"
@@ -173,10 +169,10 @@ export function EvidenceShot() {
           Resume
         </p>
         <p className="mt-2 text-[12px] leading-6" style={{ color: "#3c4568" }}>
-          Olivia Brown — Site Reliability Engineer
-          <br />
-          FintechScale · 2020–present
-          <br />
+          {FEATURED.name} — {FEATURED.role}
+        </p>
+        <p className="whitespace-pre-line text-[12px] leading-6" style={{ color: "#3c4568" }}>
+          {HIGHLIGHT.before}
           <mark
             className="hl-evidence-mark rounded px-0.5"
             style={{
@@ -184,10 +180,9 @@ export function EvidenceShot() {
               boxShadow: "0 0 0 2px rgba(255,107,87,0.35)",
             }}
           >
-            Owned reliability for a payments API serving 200M requests/day
+            {HIGHLIGHT.marked}
           </mark>
-          . Wrote SLOs and error budgets; drove MTTR down 60%. Built chaos experiments on Kafka and
-          PostgreSQL failover paths.
+          {HIGHLIGHT.after}
         </p>
 
         <p
@@ -208,9 +203,9 @@ export function EvidenceShot() {
                 <span
                   className="mt-1 block truncate text-[10px] font-normal"
                   style={{ color: "#7d86a8" }}
-                  title={`“${c.quote}”`}
+                  title={`“${c.evidence?.quotedText}”`}
                 >
-                  “{c.quote}”
+                  “{c.evidence?.quotedText}”
                 </span>
               </span>
               <span
@@ -226,8 +221,12 @@ export function EvidenceShot() {
           className="mt-3 flex items-center justify-between gap-2 rounded-lg px-2.5 py-2"
           style={{ background: "rgba(28,35,64,0.04)" }}
         >
-          <span className="shrink-0 text-[11px] font-medium">Overall</span>
-          <span className="shrink-0 whitespace-nowrap text-[15px] font-bold">43/100</span>
+          <span className="shrink-0 text-[11px] font-medium">
+            Overall · all {FEATURED.criteria.length} criteria
+          </span>
+          <span className="shrink-0 whitespace-nowrap text-[15px] font-bold">
+            {FEATURED.overall}/100
+          </span>
         </div>
       </div>
     </div>
@@ -244,14 +243,14 @@ export function BiasAuditShot() {
           <div>
             <p className="text-[13px] font-semibold">Adverse-impact report</p>
             <p className="text-[11px]" style={{ color: "#7d86a8" }}>
-              Dimension: gender · four-fifths rule · 12 considered
+              Dimension: gender · four-fifths rule · {totalConsidered} considered
             </p>
           </div>
           <span
             className="rounded-full px-2.5 py-1 text-[10px] font-bold"
-            style={{ background: "#fdecec", color: "#b42318" }}
+            style={{ background: AUDIT_BADGE.bg, color: AUDIT_BADGE.fg }}
           >
-            FLAGGED
+            {AUDIT_BADGE.text}
           </span>
         </div>
         <table className="mt-4 w-full text-[12px]">
@@ -266,33 +265,35 @@ export function BiasAuditShot() {
             </tr>
           </thead>
           <tbody>
-            {AUDIT_ROWS.map((row) => (
-              <tr
-                key={row.group}
-                className="border-t"
-                style={{ borderColor: "rgba(28,35,64,0.06)" }}
-              >
-                <td className="py-2.5 font-medium">{row.group}</td>
-                <td className="py-2.5 text-right">{row.considered}</td>
-                <td className="py-2.5 text-right">{row.selected}</td>
-                <td className="py-2.5 text-right">{row.rate}</td>
-                <td className="py-2.5 text-right">{row.ratio}</td>
-                <td className="py-2.5 text-right">
-                  {row.flag ? (
-                    <span className="font-bold" style={{ color: "#b42318" }}>
-                      flag
-                    </span>
-                  ) : (
-                    <span style={{ color: "#147d43" }}>pass</span>
-                  )}
-                </td>
-              </tr>
-            ))}
+            {SAMPLE_AUDIT.rows.map((row) => {
+              const v = verdict(row);
+              return (
+                <tr
+                  key={row.group}
+                  className="border-t"
+                  style={{ borderColor: "rgba(28,35,64,0.06)" }}
+                >
+                  <td className="py-2.5 font-medium">{groupLabel(row.group)}</td>
+                  <td className="py-2.5 text-right">{row.considered}</td>
+                  <td className="py-2.5 text-right">{row.selected}</td>
+                  <td className="py-2.5 text-right">{Math.round(row.selectionRate * 100)}%</td>
+                  <td className="py-2.5 text-right">
+                    {row.impactRatio === null ? "—" : row.impactRatio.toFixed(2)}
+                  </td>
+                  <td
+                    className={`py-2.5 text-right${v.text === "flag" ? " font-bold" : ""}`}
+                    style={{ color: v.color }}
+                  >
+                    {v.text}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         <p className="mt-3 text-[10px] leading-4" style={{ color: "#7d86a8" }}>
-          Statistical screen for further inquiry — not proof of discrimination. Exported JSON is
-          written to the hash-chained audit log.
+          Synthetic decisions. Groups under 4 and Undisclosed are reported, not compared.
+          Statistical screen for further inquiry — not proof of discrimination.
         </p>
       </div>
     </div>
