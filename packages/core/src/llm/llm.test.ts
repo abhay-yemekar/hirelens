@@ -101,6 +101,27 @@ describe("generateStructured", () => {
     expect(calls[1]?.system).toContain("JSON Schema");
   });
 
+  // Regression: Groq (OpenAI-compatible strict structured output) rejects a
+  // schema it can't enforce with "invalid JSON schema for response_format".
+  // That must fall back to JSON-text mode too, not fail the scoring call.
+  it("falls back to JSON-text mode on Groq's strict-schema rejection", async () => {
+    const { model, calls } = createMockModel({
+      provider: "groq",
+      failWithOnce: new Error(
+        "invalid JSON schema for response_format: 'response': /properties/criteria/items/required: `required` is required to be supplied and to be an array including every key in properties.",
+      ),
+      args: { title: "t", score: 80 },
+    });
+    const res = await generateStructured(
+      model as LanguageModel,
+      { system: "s", prompt: "p" },
+      Reply,
+    );
+    expect(res.object).toEqual({ title: "t", score: 80 });
+    expect(calls).toHaveLength(2);
+    expect(calls[1]?.system).toContain("JSON Schema");
+  });
+
   // Phase 0: provider overload (“high demand”) gets its own transient retry
   // ladder before the error escapes — the free-tier spike case.
   it("retries transient provider overload and succeeds within the ladder", async () => {

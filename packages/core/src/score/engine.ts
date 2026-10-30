@@ -45,7 +45,10 @@ const ScoredSchema = z.object({
         score: z.number().int().min(0).max(5),
         confidence: z.number().min(0).max(1),
         rationale: z.string().min(1),
-        quote: z.string().default(""),
+        // Required (empty when there is no evidence, per the prompt): strict
+        // JSON-schema providers such as Groq reject any property that is
+        // not listed in `required`, and a default makes it optional.
+        quote: z.string(),
       }),
     )
     .min(1),

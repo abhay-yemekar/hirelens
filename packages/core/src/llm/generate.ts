@@ -196,6 +196,10 @@ export function extractJsonObject(
  *   converter (`items: [...]` in an array's schema). The AI SDK's
  *   JSON-schema→OpenAPI conversion produces that shape for Zod tuples.
  *
+ * OpenAI-compatible strict structured output (Groq) rejects schemas it can't
+ * enforce with "invalid JSON schema for response_format: …" (e.g. a property
+ * missing from `required`, or tuple items).
+ *
  * Anything matching is treated as "the provider can't take this schema
  * natively" → fall back to JSON-text mode (schema embedded in the prompt)
  * rather than surfacing a raw SDK error to the user.
@@ -209,7 +213,8 @@ function isSchemaUnsupportedError(err: unknown): boolean {
     // boolean or an object", "must be a valid schema", etc. — robust to
     // varied path wording by matching the stable prefix and clause.
     (message.includes("schema at ") && message.includes("must be a")) ||
-    (message.includes("Invalid JSON payload received") && message.includes("Unknown name"))
+    (message.includes("Invalid JSON payload received") && message.includes("Unknown name")) ||
+    message.includes("invalid JSON schema for response_format")
   );
 }
 
