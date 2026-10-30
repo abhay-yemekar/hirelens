@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createMockModel, type LanguageModel } from "../llm/index.js";
+import { createMockModel, type LanguageModel, optionalSchemaProperties } from "../llm/index.js";
 import type { AnchoredLevel, Rubric } from "../rubric/schema.js";
 import { MAX_RESUME_CHARS, scoreResume } from "./engine.js";
 import { percentileRank, poolMean } from "./pool.js";
@@ -71,6 +71,16 @@ function mockScores(overrides: Record<string, Partial<Record<string, unknown>>> 
 }
 
 describe("scoreResume", () => {
+  // Groq's strict structured output rejected the scoring schema because
+  // `quote` (then defaulted to "") was not listed in `required`.
+  it("sends a schema strict structured-output providers accept", async () => {
+    const { model, calls } = createMockModel({ args: mockScores() });
+    await scoreResume(model as LanguageModel, makeRubric(), RESUME);
+    const schema = calls[0]?.responseSchema;
+    expect(schema).toBeDefined();
+    expect(optionalSchemaProperties(schema)).toEqual([]);
+  });
+
   it("scores all criteria with located evidence spans", async () => {
     const { model } = createMockModel({ args: mockScores() });
     const rubric = makeRubric();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createMockModel, type LanguageModel } from "../llm/index.js";
+import { createMockModel, type LanguageModel, optionalSchemaProperties } from "../llm/index.js";
 import { deriveRubric, MAX_JD_CHARS, slugifyKey } from "./derive.js";
 import { RubricSchema } from "./schema.js";
 
@@ -89,6 +89,14 @@ describe("slugifyKey", () => {
 });
 
 describe("deriveRubric", () => {
+  it("sends a schema strict structured-output providers accept", async () => {
+    const { model, calls } = createMockModel({ args: GoodDerivation });
+    await deriveRubric(model as LanguageModel, "Hiring a backend engineer");
+    const schema = calls[0]?.responseSchema;
+    expect(schema).toBeDefined();
+    expect(optionalSchemaProperties(schema)).toEqual([]);
+  });
+
   it("derives a schema-valid rubric with normalized keys", async () => {
     const { model } = createMockModel({ args: GoodDerivation });
     const { rubric, audit } = await deriveRubric(
