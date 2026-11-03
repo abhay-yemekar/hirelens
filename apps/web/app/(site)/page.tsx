@@ -18,7 +18,13 @@ export const metadata: Metadata = {
     // A page-level openGraph replaces the inherited one, so name the shared
     // image (app/opengraph-image.tsx) explicitly.
     images: [
-      { url: "/opengraph-image", width: 1200, height: 630, alt: `${BRAND.name}: ${BRAND.tagline}` },
+      {
+        url: "/opengraph-image",
+        type: "image/png",
+        width: 1200,
+        height: 630,
+        alt: `${BRAND.name}: ${BRAND.tagline}`,
+      },
     ],
   },
 };

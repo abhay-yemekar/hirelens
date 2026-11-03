@@ -6,7 +6,10 @@
  * small sizes and dark backgrounds are in docs/brand.
  */
 
-/** The product name in one place, so a rename touches only these strings. */
+/**
+ * The product name for the wordmark and the link-preview image. Page copy
+ * still names the product inline; the rename (#114) updates both.
+ */
 export const BRAND = {
   name: "HireLens",
   /** The wordmark's two halves; the second is set in coral. */
