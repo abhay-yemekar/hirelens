@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   },
   description: "RAG + LLM powered resume screening with auditable evidence.",
   metadataBase: new URL(normalizeOrigin(process.env["NEXT_PUBLIC_SITE_URL"])),
+  // Large link previews on X; the image itself is app/opengraph-image.tsx.
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
