@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BRAND } from "@/components/brand";
 import { BiasAuditShot, EvidenceShot, RankedQueueShot } from "@/components/product-shots";
 
 export const metadata: Metadata = {
@@ -14,6 +15,11 @@ export const metadata: Metadata = {
     // Resolved against metadataBase (NEXT_PUBLIC_SITE_URL) — always the
     // live site, never a hardcoded domain.
     url: "/",
+    // A page-level openGraph replaces the inherited one, so name the shared
+    // image (app/opengraph-image.tsx) explicitly.
+    images: [
+      { url: "/opengraph-image", width: 1200, height: 630, alt: `${BRAND.name}: ${BRAND.tagline}` },
+    ],
   },
 };
 
