@@ -10,7 +10,10 @@
  * is on) use the exact same masking.
  */
 
-const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
+// Bounded to email's own limits (local part ≤ 64, domain ≤ 253, TLD ≤ 63)
+// so matching stays linear: unbounded `+` let a long run such as "%%%…"
+// start a full scan at every character, quadratic in the text length.
+const EMAIL_RE = /[A-Z0-9._%+-]{1,64}@[A-Z0-9.-]{1,253}\.[A-Z]{2,63}/gi;
 const PHONE_RE = /(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{2,4}\)?[\s.-]?){2,4}\d{2,4}/g;
 const URL_RE = /\b(?:https?:\/\/|www\.)[^\s]+/gi;
 
