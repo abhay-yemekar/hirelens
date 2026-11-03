@@ -4,13 +4,13 @@ import type { LlmEnv } from "./env.js";
 
 /**
  * Build the app-wide LanguageModel from parsed env. Returns null when
- * HIRELENS_LLM_* is unset (LLM routes respond 503 llm_not_configured).
+ * CANDIDLENS_LLM_* is unset (LLM routes respond 503 llm_not_configured).
  *
- * With HIRELENS_LLM_FALLBACKS set, the model is a failover chain: the
+ * With CANDIDLENS_LLM_FALLBACKS set, the model is a failover chain: the
  * primary serves every call; fallbacks are tried only on transient
  * provider failures (overload / rate limit). Every fallback has its own
  * model id by construction — readLlmEnv rejects a fallback without
- * HIRELENS_LLM_<ID>_MODEL at boot, so no cross-provider inheritance can
+ * CANDIDLENS_LLM_<ID>_MODEL at boot, so no cross-provider inheritance can
  * reach this module.
  */
 export function modelFromEnv(llm: LlmEnv | null): LanguageModel | null {

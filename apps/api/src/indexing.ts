@@ -14,6 +14,7 @@ import {
   EMBEDDING_MODEL_ID,
   embedChunkTexts,
   embedQuery,
+  readSetting,
 } from "@candidlens/core";
 import type { Database } from "@candidlens/db";
 import { chunks } from "@candidlens/db";
@@ -70,7 +71,8 @@ export function createIndexer(db: Database, embeddingModel: EmbeddingModel): Hir
 
 /** Resolve the embedding model from env. Null → keyword-search fallback. */
 export function embeddingModelFromEnv(env: NodeJS.ProcessEnv): EmbeddingModel | null {
-  const apiKey = env["HIRELENS_EMBEDDING_API_KEY"]?.trim() || env["HIRELENS_LLM_API_KEY"]?.trim();
+  const apiKey =
+    readSetting("EMBEDDING_API_KEY", env)?.trim() || readSetting("LLM_API_KEY", env)?.trim();
   if (!apiKey) return null;
   return createEmbeddingModel(apiKey);
 }

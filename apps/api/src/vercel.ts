@@ -22,7 +22,7 @@ import { flushSentry, initSentry } from "./observability.js";
  * - DATABASE_URL — Neon *pooled* connection string (…-pooler…); serverless
  *   opens many short-lived connections and would exhaust a direct one.
  * - BETTER_AUTH_URL / BETTER_AUTH_SECRET / CORS_ORIGINS / TRUSTED_ORIGINS
- * - HIRELENS_LLM_PROVIDER / _MODEL / _API_KEY
+ * - CANDIDLENS_LLM_PROVIDER / _MODEL / _API_KEY
  * - SENTRY_DSN / LANGFUSE_* (optional; no-ops without them)
  */
 
@@ -41,7 +41,7 @@ async function buildApp(): Promise<HonoLikeApp> {
   }
   const db = createDb(databaseUrl);
   const embedding = embeddingModelFromEnv(process.env);
-  // Serverless degrade-loudly rule: a bad HIRELENS_LLM_* config must not
+  // Serverless degrade-loudly rule: a bad CANDIDLENS_LLM_* config must not
   // kill every route (a throw here takes the whole function down — as the
   // "groq fallback without a model id" incident showed, when the strict
   // boot validation fired at cold start and even /api/health 500'd).

@@ -129,6 +129,7 @@ export {
   synthesizeAnswer,
   type TextChunk,
 } from "./search/index.js";
+export { LEGACY_SETTING_PREFIX, readSetting, SETTING_PREFIX } from "./settings.js";
 export {
   candidateFamilies,
   knownSkills,

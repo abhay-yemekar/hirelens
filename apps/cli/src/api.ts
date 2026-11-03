@@ -4,7 +4,7 @@
  * saved profile, and forwards the session cookie on every call.
  */
 
-import type { CliConfig } from "./config.ts";
+import { type CliConfig, setting } from "./config.ts";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -40,8 +40,8 @@ async function request(
   if (config.cookie) headers["cookie"] = config.cookie;
   // Better Auth validates the Origin header against its configured base
   // URL. Non-browser clients must present the deployment's web origin —
-  // overridable with HIRELENS_ORIGIN for exotic setups.
-  headers["origin"] = process.env["HIRELENS_ORIGIN"] ?? "http://localhost:3000";
+  // overridable with CANDIDLENS_ORIGIN for exotic setups.
+  headers["origin"] = setting("ORIGIN") ?? "http://localhost:3000";
 
   const init: RequestInit = { method: opts.method ?? "GET", headers };
   if (body !== undefined) init.body = body;
@@ -81,7 +81,7 @@ export async function login(
     headers: {
       "content-type": "application/json",
       accept: "application/json",
-      origin: process.env["HIRELENS_ORIGIN"] ?? "http://localhost:3000",
+      origin: setting("ORIGIN") ?? "http://localhost:3000",
     },
     body: JSON.stringify({ email, password }),
   });

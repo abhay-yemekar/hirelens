@@ -1,5 +1,7 @@
 /**
- * Unit tests for HIRELENS_LLM_* env parsing. Regression suite for the
+ * Unit tests for LLM env parsing. Most cases use the old HIRELENS_* names
+ * on purpose, so they also prove those still work after the rename to
+ * CANDIDLENS_*. Regression suite for the
  * production incident where a Groq fallback without HIRELENS_LLM_GROQ_MODEL
  * inherited the primary's model id ("gemini-2.5-flash") and Groq rejected
  * it with "model does not exist" — masking the primary's real overload
@@ -10,6 +12,38 @@ import { readLlmEnv } from "../src/env.js";
 import { ApiInputError } from "../src/errors.js";
 import { isLlmMisconfiguredError, llmRouteError } from "../src/llm-error.js";
 import { modelFromEnv } from "../src/model.js";
+
+describe("readLlmEnv setting names", () => {
+  it("reads the new CANDIDLENS_ names", () => {
+    const llm = readLlmEnv({
+      CANDIDLENS_LLM_PROVIDER: "groq",
+      CANDIDLENS_LLM_MODEL: "openai/gpt-oss-120b",
+      CANDIDLENS_LLM_API_KEY: "q-key",
+      CANDIDLENS_LLM_FALLBACKS: "google",
+      CANDIDLENS_LLM_GOOGLE_API_KEY: "g-key",
+      CANDIDLENS_LLM_GOOGLE_MODEL: "gemini-2.5-flash",
+    });
+    expect(llm?.provider).toBe("groq");
+    expect(llm?.model).toBe("openai/gpt-oss-120b");
+    expect(llm?.fallbacks).toEqual([
+      { provider: "google", model: "gemini-2.5-flash", apiKey: "g-key" },
+    ]);
+  });
+
+  it("prefers a new name over the old one, setting by setting", () => {
+    const llm = readLlmEnv({
+      CANDIDLENS_LLM_PROVIDER: "groq",
+      HIRELENS_LLM_PROVIDER: "google",
+      HIRELENS_LLM_MODEL: "openai/gpt-oss-120b",
+      CANDIDLENS_LLM_MODEL: "",
+      HIRELENS_LLM_API_KEY: "q-key",
+    });
+    expect(llm?.provider).toBe("groq");
+    // An empty new value (as Docker Compose passes unset ones) falls back.
+    expect(llm?.model).toBe("openai/gpt-oss-120b");
+    expect(llm?.apiKey).toBe("q-key");
+  });
+});
 
 describe("readLlmEnv fallback validation", () => {
   it("returns null when no LLM env is set at all", () => {
@@ -45,7 +79,7 @@ describe("readLlmEnv fallback validation", () => {
         HIRELENS_LLM_GROQ_API_KEY: "q-key",
         // HIRELENS_LLM_GROQ_MODEL deliberately missing
       }),
-    ).toThrow(/HIRELENS_LLM_GROQ_MODEL is required/);
+    ).toThrow(/CANDIDLENS_LLM_GROQ_MODEL is required/);
   });
 
   it("the error message names the primary's model it must NOT inherit", () => {
@@ -103,7 +137,7 @@ describe("llm error classification", () => {
     expect(err).toBeInstanceOf(ApiInputError);
     expect(err.code).toBe("llm_misconfigured");
     expect(err.status).toBe(503);
-    expect(err.message).toContain("HIRELENS_LLM");
+    expect(err.message).toContain("CANDIDLENS_LLM");
   });
 
   it("maps invalid api keys to typed llm_misconfigured", () => {

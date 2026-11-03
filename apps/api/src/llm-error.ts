@@ -55,7 +55,7 @@ export function classifyAttempt(message: string): AttemptClassification {
 
 /** Human-readable per-attempt label for the breakdown shown to users. */
 const CLASSIFICATION_LABELS: Record<AttemptClassification, string> = {
-  misconfigured: "configuration invalid — check HIRELENS_LLM_<PROVIDER>_MODEL / _API_KEY",
+  misconfigured: "configuration invalid — check CANDIDLENS_LLM_<PROVIDER>_MODEL / _API_KEY",
   transient: "transient (rate limit or outage) — retrying or failover is sensible",
   failed: "provider returned an error",
 };
@@ -98,7 +98,7 @@ export function requireLlmModel(c: Context<AppEnv>): LanguageModel {
   }
   throw new ApiInputError(
     "llm_not_configured",
-    "No LLM provider is configured in the environment. Set HIRELENS_LLM_PROVIDER and HIRELENS_LLM_MODEL.",
+    "No LLM provider is configured in the environment. Set CANDIDLENS_LLM_PROVIDER and CANDIDLENS_LLM_MODEL.",
     503,
   );
 }
@@ -125,8 +125,8 @@ export function llmRouteError(context: string, err: unknown): ApiInputError {
       return new ApiInputError(
         "llm_misconfigured",
         `${context}: the provider configuration is invalid. Per-provider: ${breakdown}. ` +
-          "Check HIRELENS_LLM_PROVIDER, HIRELENS_LLM_MODEL, and any per-provider " +
-          "HIRELENS_LLM_<ID>_MODEL / HIRELENS_LLM_<ID>_API_KEY in the server environment.",
+          "Check CANDIDLENS_LLM_PROVIDER, CANDIDLENS_LLM_MODEL, and any per-provider " +
+          "CANDIDLENS_LLM_<ID>_MODEL / CANDIDLENS_LLM_<ID>_API_KEY in the server environment.",
         503,
       );
     }
@@ -140,8 +140,8 @@ export function llmRouteError(context: string, err: unknown): ApiInputError {
     return new ApiInputError(
       "llm_misconfigured",
       `${context}: the provider configuration is invalid (unknown model id, rejected API key, or denied access). ` +
-        "Check HIRELENS_LLM_PROVIDER, HIRELENS_LLM_MODEL, and any per-provider " +
-        "HIRELENS_LLM_<ID>_MODEL / HIRELENS_LLM_<ID>_API_KEY in the server environment.",
+        "Check CANDIDLENS_LLM_PROVIDER, CANDIDLENS_LLM_MODEL, and any per-provider " +
+        "CANDIDLENS_LLM_<ID>_MODEL / CANDIDLENS_LLM_<ID>_API_KEY in the server environment.",
       503,
     );
   }

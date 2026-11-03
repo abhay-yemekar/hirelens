@@ -80,7 +80,7 @@ export function settingsRoutes(): Hono<AppEnv> {
       /** org_settings table missing — the operator hasn't run migrations. */
       migrationsPending,
       /**
-       * HIRELENS_LLM_* was set but invalid — degraded mode's actual reason,
+       * CANDIDLENS_LLM_* was set but invalid — degraded mode's actual reason,
        * shown as a banner so "no providers listed" is never mysterious.
        */
       ...(llmConfigError !== null

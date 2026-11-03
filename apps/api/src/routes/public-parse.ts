@@ -9,7 +9,7 @@
  * token's lastUsedAt.
  *
  * Rate limited per token (fixed 60-second window, per warm instance —
- * HIRELENS_PARSE_RATE_LIMIT, default 60/min). 429 responses carry
+ * CANDIDLENS_PARSE_RATE_LIMIT, default 60/min). 429 responses carry
  * Retry-After plus X-RateLimit-* headers.
  *
  * Privacy posture: the caller's document is processed in memory and
@@ -25,6 +25,7 @@ import {
   extractDocument,
   MAX_DOCUMENT_BYTES,
   parseCandidate,
+  readSetting,
   textHash,
 } from "@candidlens/core";
 import { Hono } from "hono";
@@ -39,7 +40,7 @@ const buckets = new Map<string, { count: number; resetAt: number }>();
 const WINDOW_MS = 60_000;
 
 function rateLimit(tokenId: string): { ok: boolean; retryAfter: number; limit: number } {
-  const limit = Number(process.env["HIRELENS_PARSE_RATE_LIMIT"] ?? "") || 60;
+  const limit = Number(readSetting("PARSE_RATE_LIMIT") ?? "") || 60;
   const now = Date.now();
   const bucket = buckets.get(tokenId);
   if (!bucket || bucket.resetAt <= now) {

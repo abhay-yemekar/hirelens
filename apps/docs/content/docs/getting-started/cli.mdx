@@ -8,11 +8,11 @@ The CLI is published on npm as `hirelens` (zero runtime dependencies, **Node ≥
 ## Setup
 
 ```bash
-export HIRELENS_API_URL=http://localhost:4000   # where the API runs
-export HIRELENS_PASSWORD=...                    # optional; else you are prompted
+export CANDIDLENS_API_URL=http://localhost:4000   # where the API runs
+export CANDIDLENS_PASSWORD=...                    # optional; else you are prompted
 ```
 
-Sessions persist to `~/.hirelens/` (override with `HIRELENS_CONFIG_DIR`). Accounts are created in the web UI or via the auth API — the CLI signs an **existing** account in.
+Sessions persist to `~/.hirelens/` (override with `CANDIDLENS_CONFIG_DIR`). Accounts are created in the web UI or via the auth API — the CLI signs an **existing** account in.
 
 ## The pipeline
 
@@ -48,4 +48,4 @@ Add `--breakdown` for per-criterion scores with quoted evidence, or `--json` for
 | `rubric import <jobId> --file r.json` | Import a rubric JSON |
 | `logout` | Clear the local session |
 
-For CI, set `HIRELENS_COOKIE` to a session cookie instead of storing credentials.
+For CI, set `CANDIDLENS_COOKIE` to a session cookie instead of storing credentials.

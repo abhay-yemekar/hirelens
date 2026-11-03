@@ -12,7 +12,7 @@
  *   hirelens score <jobId> ./resumes/      # upload + score + ranked output
  *
  * Configuration lives in ~/.hirelens/config.json (override the dir with
- * HIRELENS_CONFIG_DIR, the URL with HIRELENS_API_URL).
+ * CANDIDLENS_CONFIG_DIR, the URL with CANDIDLENS_API_URL).
  */
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -20,7 +20,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { ApiError, get, login, post, upload } from "./api.ts";
-import { type CliConfig, clearSession, loadConfig, saveConfig } from "./config.ts";
+import { type CliConfig, clearSession, loadConfig, saveConfig, setting } from "./config.ts";
 import { table } from "./output.ts";
 
 const MIME: Record<string, string> = {
@@ -73,7 +73,7 @@ function fail(message: string): never {
 async function requireAuth(): Promise<CliConfig> {
   const config = loadConfig();
   if (!config.cookie) {
-    fail("not signed in — run `hirelens login <email>` first (or set HIRELENS_COOKIE for CI).");
+    fail("not signed in — run `hirelens login <email>` first (or set CANDIDLENS_COOKIE for CI).");
   }
   return config;
 }
@@ -135,7 +135,7 @@ async function cmdLogin(args: ParsedArgs): Promise<void> {
   const plain =
     typeof password === "string"
       ? password
-      : (process.env["HIRELENS_PASSWORD"] ?? (await promptHidden("Password: ")));
+      : (setting("PASSWORD") ?? (await promptHidden("Password: ")));
   const config = await login(loadConfig(), email, plain);
   saveConfig(config);
   console.log(`Signed in as ${email} (session saved locally).`);
@@ -423,8 +423,8 @@ Usage:
       --json                                 Machine-readable ranked output
   hirelens version                           Print the version
 
-Environment: HIRELENS_API_URL, HIRELENS_COOKIE, HIRELENS_PASSWORD,
-HIRELENS_CONFIG_DIR.`;
+Environment: CANDIDLENS_API_URL, CANDIDLENS_COOKIE, CANDIDLENS_PASSWORD,
+CANDIDLENS_CONFIG_DIR.`;
 
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);

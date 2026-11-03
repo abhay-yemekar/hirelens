@@ -5,7 +5,7 @@
  * the server — only ids, labels, and ping outcomes.
  *
  * All provider configuration comes from readLlmEnv() — the single source
- * of truth for HIRELENS_LLM_* parsing. This module no longer re-parses
+ * of truth for CANDIDLENS_LLM_* parsing. This module no longer re-parses
  * the env (that duplication is how the "Groq called with the primary's
  * model id" bug happened).
  */
@@ -39,7 +39,7 @@ export function configuredProviderInfos(source: NodeJS.ProcessEnv = process.env)
   try {
     llm = readLlmEnv(source);
   } catch {
-    // A misconfigured HIRELENS_LLM_* env must not 500 the settings page —
+    // A misconfigured CANDIDLENS_LLM_* env must not 500 the settings page —
     // the picker works (empty), and boot/other routes surface the error.
     return [];
   }

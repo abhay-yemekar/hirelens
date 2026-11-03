@@ -28,6 +28,9 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Changed
 
+- Settings are renamed from `HIRELENS_*` to `CANDIDLENS_*` for the
+  CandidLens rename. The old names still work, so existing deployments and
+  `.env` files need no changes; when both are set, the new name wins.
 - The landing page's product shots render from a recorded real-model run
   over the demo resumes, so every number comes from the engine (#144).
 - `/api/health?db=1` compares applied migrations with the checked-in

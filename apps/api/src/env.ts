@@ -1,3 +1,4 @@
+import { readSetting } from "@candidlens/core";
 import { z } from "zod";
 
 /**
@@ -30,7 +31,7 @@ export interface LlmEnv {
   /**
    * Ordered fallback providers tried only when the primary is overloaded
    * or rate-limited. EVERY fallback must carry its own model id
-   * (HIRELENS_LLM_<PROVIDER>_MODEL) — a provider never inherits another
+   * (CANDIDLENS_LLM_<PROVIDER>_MODEL) — a provider never inherits another
    * provider's model id, because providers cannot serve each other's
    * model names (Groq returning "model gemini-2.5-flash does not exist"
    * was exactly that bug).
@@ -54,7 +55,7 @@ const LLM_PROVIDER_IDS = [
 ] as const;
 
 /**
- * Read HIRELENS_LLM_* variables. Returns null when none are set so the
+ * Read CANDIDLENS_LLM_* variables. Returns null when none are set so the
  * app can start without LLM features (scoring/derivation routes 503).
  * A PARTIAL config (provider without model, unknown provider) throws —
  * misconfiguration must fail loudly, not silently disable features.
@@ -63,47 +64,47 @@ export function readLlmEnv(source: NodeJS.ProcessEnv = process.env): LlmEnv | nu
   // Empty strings count as unset — compose files commonly pass `${VAR:-}`
   // defaults, and a self-hoster without LLM config must get the no-model
   // mode (scoring/derive 503), not a boot crash.
-  const provider = source["HIRELENS_LLM_PROVIDER"]?.trim() || undefined;
-  const model = source["HIRELENS_LLM_MODEL"]?.trim() || undefined;
+  const provider = readSetting("LLM_PROVIDER", source)?.trim() || undefined;
+  const model = readSetting("LLM_MODEL", source)?.trim() || undefined;
   if (provider === undefined && model === undefined) return null;
   if (provider === undefined || model === undefined) {
-    throw new Error("HIRELENS_LLM_PROVIDER and HIRELENS_LLM_MODEL must be set together");
+    throw new Error("CANDIDLENS_LLM_PROVIDER and CANDIDLENS_LLM_MODEL must be set together");
   }
   if (!(LLM_PROVIDER_IDS as readonly string[]).includes(provider)) {
     throw new Error(
-      `Unknown HIRELENS_LLM_PROVIDER "${provider}" (expected one of: ${LLM_PROVIDER_IDS.join(", ")})`,
+      `Unknown CANDIDLENS_LLM_PROVIDER "${provider}" (expected one of: ${LLM_PROVIDER_IDS.join(", ")})`,
     );
   }
-  const apiKey = source["HIRELENS_LLM_API_KEY"];
-  const baseUrl = source["HIRELENS_LLM_BASE_URL"];
+  const apiKey = readSetting("LLM_API_KEY", source);
+  const baseUrl = readSetting("LLM_BASE_URL", source);
 
   // Fallback chain: comma-separated provider ids. Each may override its
-  // model/key/base URL via HIRELENS_LLM_<ID>_MODEL / _API_KEY / _BASE_URL
-  // (uppercase provider id in the var name, e.g. HIRELENS_LLM_GROQ_API_KEY).
+  // model/key/base URL via CANDIDLENS_LLM_<ID>_MODEL / _API_KEY / _BASE_URL
+  // (uppercase provider id in the var name, e.g. CANDIDLENS_LLM_GROQ_API_KEY).
   const fallbacks: LlmEnv["fallbacks"] = [];
-  const rawFallbacks = source["HIRELENS_LLM_FALLBACKS"]?.trim() ?? "";
+  const rawFallbacks = readSetting("LLM_FALLBACKS", source)?.trim() ?? "";
   if (rawFallbacks !== "") {
     for (const part of rawFallbacks.split(",")) {
       const fp = part.trim().toLowerCase();
       if (fp === "") continue;
       if (!(LLM_PROVIDER_IDS as readonly string[]).includes(fp)) {
         throw new Error(
-          `Unknown HIRELENS_LLM_FALLBACKS provider "${fp}" (expected one of: ${LLM_PROVIDER_IDS.join(", ")})`,
+          `Unknown CANDIDLENS_LLM_FALLBACKS provider "${fp}" (expected one of: ${LLM_PROVIDER_IDS.join(", ")})`,
         );
       }
       if (fp === provider) continue; // dedupe: primary already tried first
       const upper = fp.toUpperCase().replaceAll("-", "_");
-      const fModel = source[`HIRELENS_LLM_${upper}_MODEL`]?.trim() || undefined;
+      const fModel = readSetting(`LLM_${upper}_MODEL`, source)?.trim() || undefined;
       if (fModel === undefined) {
         throw new Error(
-          `HIRELENS_LLM_${upper}_MODEL is required when "${fp}" appears in HIRELENS_LLM_FALLBACKS. ` +
+          `CANDIDLENS_LLM_${upper}_MODEL is required when "${fp}" appears in CANDIDLENS_LLM_FALLBACKS. ` +
             `Fallback providers never inherit the primary's model id (${model}) — each provider ` +
-            `serves its own model names. Set HIRELENS_LLM_${upper}_MODEL to a model id listed by ` +
+            `serves its own model names. Set CANDIDLENS_LLM_${upper}_MODEL to a model id listed by ` +
             `this provider (its /models endpoint is authoritative).`,
         );
       }
-      const fKey = source[`HIRELENS_LLM_${upper}_API_KEY`]?.trim() || undefined;
-      const fBase = source[`HIRELENS_LLM_${upper}_BASE_URL`]?.trim() || undefined;
+      const fKey = readSetting(`LLM_${upper}_API_KEY`, source)?.trim() || undefined;
+      const fBase = readSetting(`LLM_${upper}_BASE_URL`, source)?.trim() || undefined;
       fallbacks.push({
         provider: fp as LlmEnv["provider"],
         model: fModel,

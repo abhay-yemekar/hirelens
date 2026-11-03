@@ -25,7 +25,7 @@ interface LlmSettings {
   providerLabels: Record<string, string>;
   /** org_settings table missing — server migrations haven't run. */
   migrationsPending?: boolean;
-  /** HIRELENS_LLM_* is set but invalid — degraded mode's actual reason (sanitised, env-var names only). */
+  /** CANDIDLENS_LLM_* is set but invalid — degraded mode's actual reason (sanitised, env-var names only). */
   llmConfigError?: string;
 }
 
@@ -120,7 +120,7 @@ export function LlmProvidersCard() {
           <NoticeBanner
             descriptor={{
               tone: "error",
-              text: `The server's HIRELENS_LLM_* environment is set but invalid, so scoring and derivation are degraded. Operator fix: ${data.llmConfigError}`,
+              text: `The server's CANDIDLENS_LLM_* environment is set but invalid, so scoring and derivation are degraded. Operator fix: ${data.llmConfigError}`,
             }}
           />
         ) : null}
@@ -140,8 +140,9 @@ export function LlmProvidersCard() {
           </p>
         ) : data.configured.length === 0 ? (
           <p className="text-sm" style={{ color: "var(--hl-muted)" }}>
-            No AI providers are configured on this server. Self-hosters: set HIRELENS_LLM_PROVIDER,
-            HIRELENS_LLM_MODEL and HIRELENS_LLM_API_KEY — see the self-hosting guide.
+            No AI providers are configured on this server. Self-hosters: set
+            CANDIDLENS_LLM_PROVIDER, CANDIDLENS_LLM_MODEL and CANDIDLENS_LLM_API_KEY — see the
+            self-hosting guide.
           </p>
         ) : (
           <>
@@ -238,7 +239,7 @@ export function LlmProvidersCard() {
             <p className="text-xs" style={{ color: "var(--hl-muted)" }}>
               Errors picking a provider? The server may lack a key for it — the
               "provider_not_configured" message names which. Fallbacks for busy moments come from
-              the server's HIRELENS_LLM_FALLBACKS setting; ask your operator to add more.
+              the server's CANDIDLENS_LLM_FALLBACKS setting; ask your operator to add more.
             </p>
           </>
         )}

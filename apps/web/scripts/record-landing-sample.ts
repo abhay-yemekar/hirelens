@@ -5,25 +5,30 @@
  * recording at render time (src/lib/landing-sample.ts), so the shots can
  * never drift from what the engine produces.
  *
- *   HIRELENS_LLM_PROVIDER=groq HIRELENS_LLM_MODEL=openai/gpt-oss-120b \
- *   HIRELENS_LLM_API_KEY=... pnpm --filter @candidlens/web run landing-sample
+ *   CANDIDLENS_LLM_PROVIDER=groq CANDIDLENS_LLM_MODEL=openai/gpt-oss-120b \
+ *   CANDIDLENS_LLM_API_KEY=... pnpm --filter @candidlens/web run landing-sample
  *
  * Build @candidlens/core first: this imports its dist.
  */
 
 import { writeFileSync } from "node:fs";
-import { type LlmProviderId, resolveLanguageModel, scoreResume } from "@candidlens/core";
+import {
+  type LlmProviderId,
+  readSetting,
+  resolveLanguageModel,
+  scoreResume,
+} from "@candidlens/core";
 import { DEMO_RESUMES, DEMO_RUBRIC } from "../src/lib/demo-data";
 
 /** Free-tier providers allow a few requests per minute. */
 const PACING_MS = 8000;
 
 async function main(): Promise<void> {
-  const provider = process.env["HIRELENS_LLM_PROVIDER"];
-  const model = process.env["HIRELENS_LLM_MODEL"];
-  const apiKey = process.env["HIRELENS_LLM_API_KEY"];
+  const provider = readSetting("LLM_PROVIDER");
+  const model = readSetting("LLM_MODEL");
+  const apiKey = readSetting("LLM_API_KEY");
   if (!provider || !model) {
-    console.error("Set HIRELENS_LLM_PROVIDER + HIRELENS_LLM_MODEL (+ HIRELENS_LLM_API_KEY).");
+    console.error("Set CANDIDLENS_LLM_PROVIDER + CANDIDLENS_LLM_MODEL (+ CANDIDLENS_LLM_API_KEY).");
     process.exit(2);
   }
   const llm = resolveLanguageModel({

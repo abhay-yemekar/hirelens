@@ -1,7 +1,7 @@
 /**
  * CLI configuration: connection profile persisted to disk so commands
  * after `hirelens login` reuse the session cookie. Location is
- * overridable via HIRELENS_CONFIG_DIR (used by tests and CI).
+ * overridable via CANDIDLENS_CONFIG_DIR (used by tests and CI).
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -16,10 +16,19 @@ export interface CliConfig {
   email?: string | undefined;
 }
 
+/**
+ * A setting by its name without the prefix. Settings were renamed from
+ * HIRELENS_* to CANDIDLENS_*; the old names still work. An empty new value
+ * counts as unset. (Mirrors readSetting in core: the CLI has no runtime
+ * dependencies.)
+ */
+export function setting(name: string): string | undefined {
+  const current = process.env[`CANDIDLENS_${name}`];
+  return current !== undefined && current !== "" ? current : process.env[`HIRELENS_${name}`];
+}
+
 function configDir(): string {
-  return (
-    process.env["HIRELENS_CONFIG_DIR"] ?? join(process.env["HOME"] ?? process.cwd(), ".hirelens")
-  );
+  return setting("CONFIG_DIR") ?? join(process.env["HOME"] ?? process.cwd(), ".hirelens");
 }
 
 function configFile(): string {
@@ -27,13 +36,13 @@ function configFile(): string {
 }
 
 export function defaultBaseUrl(): string {
-  return process.env["HIRELENS_API_URL"] ?? "http://localhost:4000";
+  return setting("API_URL") ?? "http://localhost:4000";
 }
 
 export function loadConfig(): CliConfig {
   // CI / one-shot usage: cookie straight from the environment wins.
-  const envCookie = process.env["HIRELENS_COOKIE"];
-  const envUrl = process.env["HIRELENS_API_URL"];
+  const envCookie = setting("COOKIE");
+  const envUrl = setting("API_URL");
   const file: CliConfig = existsSync(configFile())
     ? (JSON.parse(readFileSync(configFile(), "utf8")) as CliConfig)
     : { baseUrl: defaultBaseUrl() };
