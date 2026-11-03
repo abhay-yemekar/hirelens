@@ -149,7 +149,7 @@ docker compose up --build -d`}</code>
       <pre>
         <code>{`HIRELENS_LLM_PROVIDER=ollama
 HIRELENS_LLM_MODEL=llama3.1
-HIRELENS_LLM_BASE_URL=http://host.docker.internal:11434`}</code>
+HIRELENS_LLM_BASE_URL=http://host.docker.internal:11434/v1`}</code>
       </pre>
       <p>
         With this configuration the entire pipeline — parsing, rubric derivation, scoring, evidence

@@ -51,7 +51,7 @@ Everything is model-agnostic: bring your own key (**Google, Anthropic, Groq, Ope
 
 ## Live demo — no signup
 
-The landing page's [/demo](apps/web/app/demo/page.tsx) runs the **same scoring engine, rubric schema, and evidence-span machinery as the product** against 12 synthetic resumes and one sample JD:
+The landing page's [/demo](apps/web/app/(site)/demo/page.tsx) runs the **same scoring engine, rubric schema, and evidence-span machinery as the product** against 12 synthetic resumes and one sample JD:
 
 - Pick a resume, press score, watch per-criterion scores arrive with rationales.
 - Every point highlights the exact quoted text it came from — at its exact character offset.
@@ -235,7 +235,7 @@ Most hiring AI is a black box: a number with no justification. That is a liabili
 - ✅ **Post-launch waves 1–4** — recruiter essentials (resume viewer, contacts, job lifecycle, org settings), semantic search + rubric editor + compare view, teams/sharing (members, public report links, audit CSV), interview kits + candidate portal.
 - ✅ **v1.1 — the candidate side, at equal level** — [candidate reports](https://hirelens-rosy.vercel.app/for-candidates) (recruiters share an evidence-backed score report with each candidate via a once-only, revocable token link) and [Score my resume](https://hirelens-rosy.vercel.app/self-check) (candidates score their resume against any job description with the same rubric engine — free, no signup).
 - ✅ **v1.2** — skill-graph adjacency (matched/adjacent/missing skills per candidate), org analytics dashboard, scheduled four-fifths audit snapshots, deterministic writing-style signals.
-- ✅ **v1.4.0 — shipped 6 October 2026** — [talent-pool rediscovery](https://hirelens-rosy.vercel.app/talent-pool) (org-wide candidate search + audited shortlist), the [public parser API](https://hirelens-rosy.vercel.app/docs/api-reference) (`POST /api/public/parse`, token-gated, stateless, rate-limited), and the ATS format check (deterministic parse simulation surfaced on every candidate + as `formatCheck` on the parser API). Full notes in the [changelog](CHANGELOG.md).
+- ✅ **v1.4.0 — shipped 6 October 2026** — [talent-pool rediscovery](https://hirelens-rosy.vercel.app/talent-pool) (org-wide candidate search + audited shortlist), the [public parser API](https://hirelens-rosy.vercel.app/api-reference) (`POST /api/public/parse`, token-gated, stateless, rate-limited), and the ATS format check (deterministic parse simulation surfaced on every candidate + as `formatCheck` on the parser API). Full notes in the [changelog](CHANGELOG.md).
 - ✅ **Post-1.4 backlog** — parser heuristic hardening (compact resumes, inline `Skills:` headers) and talent-pool "add to job" ([push a rediscovered candidate into any open job](https://hirelens-rosy.vercel.app/talent-pool)), shipped in [#100](https://github.com/abhay-yemekar/hirelens/pull/100).
 - **Next** — v1.3 (i18n, SSO/SAML, advanced RBAC) per the [roadmap](https://hirelens-rosy.vercel.app/roadmap).
 

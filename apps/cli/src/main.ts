@@ -2,9 +2,9 @@
 /**
  * hirelens — the HireLens CLI.
  *
- * Ships as pure TypeScript (Node ≥ 22.6 runs it via native type
- * stripping), zero runtime dependencies. Engineers embed HireLens in
- * any pipeline:
+ * Zero runtime dependencies; published to npm as a bundled build that
+ * runs on Node ≥ 20 (from source, Node ≥ 22.6 runs this file via native
+ * type stripping). Engineers embed HireLens in any pipeline:
  *
  *   hirelens login you@corp.com            # password via prompt/env
  *   hirelens jobs create "Backend Eng" --jd jd.md

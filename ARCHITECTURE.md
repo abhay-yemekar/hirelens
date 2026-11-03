@@ -1,101 +1,105 @@
 # Architecture
 
-HireLens is a pnpm + Turborepo monorepo. The scoring engines are built and battle-tested; the product UI is being built on top of them. This document describes how the system works **today**, then the target architecture it is evolving into.
+HireLens is a pnpm + Turborepo monorepo. This page describes the system as it runs on `main`. Known gaps and the plan for them are in the [October 2026 audit](docs/audit/2026-10-audit.md).
 
-## Current system (monorepo)
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  packages/core — framework-free engines (THE PRODUCT)        │
-│                                                              │
-│  extract/   PDF (unpdf) · DOCX (mammoth) · TXT/MD            │
-│             magic-byte sniffing, scanned-PDF detection       │
-│  parse/     text → Zod-validated Candidate (JSON-Resume-ish) │
-│  dedupe/    sha256 content hash + fuzzy name/email matching  │
-│  rubric/    JD → 5–8 weighted criteria, anchored 0–5 scales; │
-│             versioned, forkable, exportable JSON artifacts   │
-│  score/     rubric + resume → per-criterion scores with      │
-│             evidence spans (character offsets), confidence,  │
-│             rationale, pool stats, consistency guard         │
-│  llm/       provider-agnostic structured output over AI SDK: │
-│             Google/Anthropic/Groq/OpenRouter/Ollama,         │
-│             Zod validation + automatic repair round          │
-│  audit/     hash-chained append-only decision log            │
-│  zip/       safe batch expansion for bulk uploads            │
-└──────────┬───────────────────────────────────────┬───────────┘
-           │                                       │
-┌──────────▼────────────────┐   ┌──────────────────▼──────────┐
-│  packages/db              │   │  packages/orchestrator      │
-│  Drizzle schema + migra-  │◄──│  runBatch: fan-out scoring  │
-│  tions (Postgres+pgvector)│   │  with bounded concurrency,  │
-│  identity/org/jobs/candi- │   │  retries, progress stream;  │
-│  dates/rubrics/runs/scores│   │  persists runs, scores,     │
-│  /evidence/audit_log      │   │  evidence + audit records   │
-└───────────────────────────┘   └─────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────┐
-│  Surfaces: apps/api (Hono, /api/health today) · apps/web     │
-│  (Next.js, product UI in progress) · apps/cli · packages/ui  │
-│  (OKLCH design system + Storybook)                           │
-└──────────────────────────────────────────────────────────────┘
-```
-
-Quality posture: ~89 tests (unit + component + DB-backed integration), strict TypeScript, Biome clean, CodeQL clean on every PR, DB migrations applied in CI before integration tests run.
-
-## Provider layer
-
-`packages/core/llm` abstracts the model behind `ProviderConfig` (id, model, apiKey, baseUrl) over the Vercel AI SDK:
-
-| Provider       | Selected by                                          |
-| -------------- | ---------------------------------------------------- |
-| Google Gemini  | `apiKey` + model id                                  |
-| Anthropic      | `apiKey` + model id                                  |
-| Groq           | `apiKey` + model id                                  |
-| OpenRouter     | `apiKey` + model id                                  |
-| Ollama (local) | `baseUrl` — no key, resumes never leave your machine |
-
-`generateStructured` forces a tool-call, validates with Zod, runs one automatic repair round on violation, and raises typed errors (`LlmConfigError`, `LlmRuntimeError`, `SchemaViolationError`) — there is no silent `JSON.parse` fallback anywhere. Every call yields a deterministic `promptHash` for the audit trail.
-
-## Target architecture (v1.0.0)
-
-The prototype becomes a pnpm + Turborepo monorepo:
+## Packages
 
 ```
 apps/
-  web/          Next.js — product UI + Route Handlers
-  api/          Hono server — same routes, for self-hosters
-  cli/          npx hirelens
+  web/           Next.js 16: marketing site, product UI, candidate tools.
+                 Serves the API on the same origin by embedding apps/api
+                 (@hirelens/api/embed) in a catch-all route handler.
+  api/           Hono REST API. Runs standalone for self-hosters (Docker).
+  cli/           `hirelens` on npm: jobs, rubrics, uploads and scoring
+                 from a terminal.
+  docs/          Documentation site (Fumadocs).
 packages/
-  core/         THE PRODUCT. Framework-free, pure TypeScript:
-                  extract/   PDF/DOCX/TXT → normalized text, magic-byte sniffing
-                  parse/     text → structured, Zod-validated Candidate schema
-                  dedupe/    content hashes + fuzzy identity matching
-                  rubric/    JD → criteria; rubric versioning & validation
-                  score/     rubric + candidate → scores + evidence spans
-                  evidence/  span location, offset mapping, quote extraction
-                  llm/       provider abstraction, structured output, retry/repair
-                  audit/     hash-chained append-only decision log
-                  bias/      adverse impact, selection-rate ratios (next phase)
-  db/           Drizzle schema + migrations (Postgres + pgvector)
-  ui/           shadcn-based design system
-  evals/        benchmark dataset + accuracy/consistency/bias harness
-  config/       shared tsconfig, biome, tailwind preset
+  core/          Framework-free engines (see below). THE PRODUCT.
+  db/            Drizzle schema + migrations (Postgres 16 + pgvector) and
+                 the Better Auth configuration.
+  orchestrator/  Batch scoring runs, audit-log appends, org purge.
+  evals/         Eval harness: direction accuracy, self-consistency,
+                 position bias, name-swap bias.
+  ui/            Design system: OKLCH tokens, components, Storybook.
+  config/        Shared TypeScript configs.
 ```
 
-**Rule:** `packages/core` has zero dependencies on Next.js, React, or any hosting SDK. It is usable from the CLI, the API, a Lambda, or someone else's codebase — that is what makes HireLens a platform rather than an app.
+**Rule:** `packages/core` has zero dependencies on Next.js, React, or any hosting SDK. It is usable from the CLI, the API, a serverless function, or someone else's codebase.
 
-### Scoring pipeline (target)
+### `packages/core` modules
+
+| Module       | What it does                                                                                                                                                           |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `extract/`   | PDF (unpdf), DOCX (mammoth), TXT and MD to text; magic-byte sniffing; detects scanned PDFs (there is no OCR, so they are rejected with a clear message)                |
+| `parse/`     | Text to a Zod-validated `Candidate`; the ATS format check (a deterministic parse simulation); writing-style signals                                                    |
+| `dedupe/`    | SHA-256 content hash; fuzzy name and email matching (in core, not yet used by uploads)                                                                                 |
+| `rubric/`    | Job description to weighted criteria with anchored 0–5 scales; versioned, forkable JSON rubrics                                                                        |
+| `score/`     | Rubric + resume to per-criterion scores with evidence; weighted overall; the four-fifths adverse-impact audit; pool statistics (in core, not yet shown in the product) |
+| `evidence/`  | Locates each quoted passage in the resume text, tolerating whitespace and typographic differences                                                                      |
+| `llm/`       | Provider registry, failover chain, structured output with a repair round, prompt hashing                                                                               |
+| `mask/`      | Blind review: identity masking that keeps evidence offsets aligned                                                                                                     |
+| `search/`    | Chunking and embeddings for semantic search and "ask" over resumes                                                                                                     |
+| `skills/`    | Skill graph: matched, adjacent and missing skills per candidate                                                                                                        |
+| `interview/` | Interview kits built from a scored candidate                                                                                                                           |
+| `doctor/`    | Resume Doctor: deterministic resume checks and a 0–100 score, no model involved                                                                                        |
+| `audit/`     | Hash-chained, append-only decision log                                                                                                                                 |
+| `zip/`       | Safe zip expansion for bulk uploads                                                                                                                                    |
+
+## How a request reaches the API
+
+- **Hosted (Vercel):** the browser talks to the Next.js app, and `/api/*` is handled in the same deployment by the embedded Hono app (`apps/web/app/api/[[...route]]/route.ts`). Sessions are Better Auth cookies on one origin.
+- **Self-hosted (Docker Compose):** the web app on `:3000` calls the standalone API on `:4000`; Postgres runs on `:5433`.
+
+## Scoring pipeline (as built)
 
 ```
-Upload → size/type check → content hash → dedupe
-  → extract text + layout → OCR fallback if text density is too low
-  → structured parse → Candidate record
-  → fan-out (concurrency-limited background jobs)
-      → per criterion: score 0–5 with evidence spans (structured output, temp 0)
-      → consistency guard: N samples, flag if variance > threshold
-  → weighted aggregate → pool percentile
-  → append-only, hash-chained audit entry
-  → stream progress to UI
+Upload → size and type check → magic-byte sniff → extract text
+  → reject scanned or empty documents (no OCR)
+  → parse → Candidate record, content hash, ATS format check
+  → same text already in this job? skip (idempotent re-upload)
+  → scoring run (runBatch): bounded concurrency (default 2), rate-limit-aware
+    retries (default 5 attempts), per-candidate failures recorded on the run
+      → one structured-output call per candidate, temperature 0:
+        every criterion gets a 0–5 score, confidence, rationale and a quote
+      → each quote is located in the resume; a positive score whose quote
+        is not found is set to 0 and the run is flagged for adjudication
+  → weighted overall (0–100)
+  → hash-chained audit entry
 ```
 
-Every score is reconstructible from the run record alone: same model, same version, same prompt hash, same seed, temperature 0 → same output. That is the defensibility guarantee.
+Runs execute inside the API request. There is no durable job queue yet (audit item A1, planned for Phase 4).
+
+## Determinism and the audit trail
+
+Every run records the rubric version, the model id and a prompt hash over the system prompt, prompt, schema id, temperature, seed and model. Each score stores the character offsets of its evidence. Product runs use temperature 0 and send no seed. Providers do not guarantee identical output at temperature 0, so a re-run can differ; the eval harness measures how much (self-consistency on [/evaluation](https://hirelens-rosy.vercel.app/evaluation)).
+
+What the audit trail guarantees is traceability: every stored score can be tied to the exact rubric, model, prompt and quoted evidence that produced it, and the hash chain shows whether any recorded decision was altered.
+
+## Provider layer
+
+`packages/core/llm` resolves a `ProviderConfig` (id, model, apiKey, baseUrl) to a Vercel AI SDK model:
+
+| Provider       | Selected by                                                                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Google Gemini  | `apiKey` + model id                                                                                                                   |
+| Anthropic      | `apiKey` + model id                                                                                                                   |
+| Groq           | `apiKey` + model id                                                                                                                   |
+| Mistral        | `apiKey` + model id                                                                                                                   |
+| Cerebras       | `apiKey` + model id                                                                                                                   |
+| OpenRouter     | `apiKey` + model id                                                                                                                   |
+| Ollama (local) | `baseUrl` (required): Ollama's OpenAI-compatible endpoint, e.g. `http://localhost:11434/v1`; no key, resumes never leave your machine |
+- **Failover:** a chain of providers is tried in order when one fails with a transient error. Organizations can choose their provider in settings.
+- **Structured output:** `generateStructured` uses the AI SDK's `generateObject` first. Providers that cannot express a schema fall back to JSON-text mode with the schema in the prompt. A schema violation gets one repair round.
+- **Errors are typed:** `LlmConfigError`, `LlmRuntimeError`, `SchemaViolationError` and `AllProvidersFailedError`. There is no silent `JSON.parse` fallback.
+
+## Quality gates
+
+Every pull request runs:
+- Biome lint;
+- typecheck;
+- unit tests, plus integration tests against Postgres 16 + pgvector, with migrations applied first;
+- the production build;
+- a secrets scan;
+- CodeQL.
+
+`main` is protected: squash merges only, and those checks must pass. The eval harness needs a model key, so it does not run in CI; its published results are on [/evaluation](https://hirelens-rosy.vercel.app/evaluation).
