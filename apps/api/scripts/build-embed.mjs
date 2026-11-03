@@ -1,5 +1,5 @@
 /**
- * Bundle the HireLens API into a single ESM file that the Next.js app
+ * Bundle the CandidLens API into a single ESM file that the Next.js app
  * imports from the catch-all Route Handler (apps/web/app/api/[[...route]]).
  *
  * Why a bundle: the workspace packages are TS-first with NodeNext

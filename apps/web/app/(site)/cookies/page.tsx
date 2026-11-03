@@ -2,16 +2,16 @@ import type { Metadata } from "next";
 import { ProsePage } from "@/components/prose-page";
 
 export const metadata: Metadata = {
-  title: "Cookies — HireLens",
+  title: "Cookies — CandidLens",
   description:
-    "The complete cookie inventory for HireLens: one essential session cookie, optional opt-in analytics, and nothing else.",
+    "The complete cookie inventory for CandidLens: one essential session cookie, optional opt-in analytics, and nothing else.",
 };
 
 export default function CookiesPage() {
   return (
     <ProsePage eyebrow="Legal" title="Cookie Policy" updated="Last updated: September 2026">
       <p>
-        Most sites bury a hundred trackers behind a consent wall. HireLens has so few cookies that
+        Most sites bury a hundred trackers behind a consent wall. CandidLens has so few cookies that
         we can just list them.
       </p>
 

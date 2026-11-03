@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { ProsePage } from "@/components/prose-page";
 
 export const metadata: Metadata = {
-  title: "Contact & Support — HireLens",
+  title: "Contact & Support — CandidLens",
   description:
-    "How to get help with HireLens: GitHub issues for bugs and features, SECURITY.md for private disclosure, and the maintainer behind the project.",
+    "How to get help with CandidLens: GitHub issues for bugs and features, SECURITY.md for private disclosure, and the maintainer behind the project.",
 };
 
 const CHANNELS = [
@@ -34,7 +34,7 @@ export default function ContactPage() {
     <ProsePage
       eyebrow="Support"
       title="Contact"
-      lede="HireLens is maintained in the open. The fastest way to get help is a public GitHub issue — it's searchable, and the answer helps the next person too."
+      lede="CandidLens is maintained in the open. The fastest way to get help is a public GitHub issue — it's searchable, and the answer helps the next person too."
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
         {CHANNELS.map((c) => (
@@ -80,7 +80,7 @@ export default function ContactPage() {
           Abhay Yemekar
         </p>
         <p style={{ marginTop: "0.35rem", fontSize: "0.9rem" }}>
-          HireLens is created and maintained by Abhay Yemekar — design, architecture, and every
+          CandidLens is created and maintained by Abhay Yemekar — design, architecture, and every
           commit happen in the open on GitHub.
         </p>
         <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">

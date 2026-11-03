@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { SideGate } from "@/components/side-gate";
 
 export const metadata: Metadata = {
-  title: "Candidate hub — HireLens",
+  title: "Candidate hub — CandidLens",
 };
 
 /**

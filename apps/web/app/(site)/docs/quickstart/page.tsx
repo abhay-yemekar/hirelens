@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ProsePage } from "@/components/prose-page";
 
 export const metadata: Metadata = {
-  title: "Quickstart — HireLens Docs",
+  title: "Quickstart — CandidLens Docs",
   description:
     "From a clean machine to your first scored candidate: install, database, migrations, verification, and running the apps.",
 };

@@ -73,7 +73,7 @@ function BrowserChrome({ title }: { title: string }) {
 export function RankedQueueShot() {
   return (
     <div className="hl-shot overflow-hidden">
-      <BrowserChrome title="hirelens · Senior Backend Engineer — Payments" />
+      <BrowserChrome title="candidlens · Senior Backend Engineer — Payments" />
       <div className="flex items-center justify-between px-5 py-3">
         <div>
           <p className="text-[13px] font-semibold">Review queue</p>
@@ -160,7 +160,7 @@ export function RankedQueueShot() {
 export function EvidenceShot() {
   return (
     <div className="hl-shot overflow-hidden">
-      <BrowserChrome title={`hirelens · ${FEATURED.name} — evidence`} />
+      <BrowserChrome title={`candidlens · ${FEATURED.name} — evidence`} />
       <div className="p-4">
         <p
           className="text-[10px] font-semibold uppercase tracking-wider"
@@ -237,7 +237,7 @@ export function EvidenceShot() {
 export function BiasAuditShot() {
   return (
     <div className="hl-shot overflow-hidden">
-      <BrowserChrome title="hirelens · bias audit — gender" />
+      <BrowserChrome title="candidlens · bias audit — gender" />
       <div className="p-5">
         <div className="flex items-center justify-between">
           <div>

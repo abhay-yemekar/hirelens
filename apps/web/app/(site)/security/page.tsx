@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { ProsePage } from "@/components/prose-page";
 
 export const metadata: Metadata = {
-  title: "Security — HireLens",
+  title: "Security — CandidLens",
   description:
-    "How to report a security vulnerability in HireLens privately, what to include, and the project's security posture.",
+    "How to report a security vulnerability in CandidLens privately, what to include, and the project's security posture.",
 };
 
 export default function SecurityPage() {
@@ -56,7 +56,7 @@ export default function SecurityPage() {
 
       <h2>Data handling expectation</h2>
       <p>
-        HireLens is self-hosted: candidate data lives in your database, under your controls. The
+        CandidLens is self-hosted: candidate data lives in your database, under your controls. The
         project's own surface holds none of it. If your deployment must not send resume text to any
         third party, use the local Ollama mode — the entire pipeline then runs inside your network.
       </p>

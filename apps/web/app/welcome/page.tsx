@@ -24,7 +24,7 @@ const STEPS = [
   },
   {
     title: "Post a job",
-    text: "Describe the role in plain language; HireLens drafts a scoring rubric from it.",
+    text: "Describe the role in plain language; CandidLens drafts a scoring rubric from it.",
   },
   {
     title: "Upload resumes & score",

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { ProsePage } from "@/components/prose-page";
 
 export const metadata: Metadata = {
-  title: "Code of Conduct — HireLens",
+  title: "Code of Conduct — CandidLens",
   description:
-    "The HireLens community standard, based on the Contributor Covenant: expected behavior, unacceptable behavior, and enforcement.",
+    "The CandidLens community standard, based on the Contributor Covenant: expected behavior, unacceptable behavior, and enforcement.",
 };
 
 export default function CodeOfConductPage() {

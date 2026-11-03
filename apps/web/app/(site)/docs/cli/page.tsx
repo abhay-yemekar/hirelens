@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ProsePage } from "@/components/prose-page";
 
 export const metadata: Metadata = {
-  title: "CLI reference — HireLens Docs",
+  title: "CLI reference — CandidLens Docs",
   description:
     "The hirelens CLI: login, organizations, jobs, rubric derivation, and the score pipeline from your terminal. Zero runtime dependencies.",
 };

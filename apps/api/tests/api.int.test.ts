@@ -72,7 +72,7 @@ describe.skipIf(!available && allowSkip)("API routes", () => {
     expect(res.status).toBe(200);
     const body = (await res.json()) as { ok: boolean; service: string };
     expect(body.ok).toBe(true);
-    expect(body.service).toBe("hirelens-api");
+    expect(body.service).toBe("candidlens-api");
   });
 
   it("rejects unauthenticated /api/jobs", async () => {

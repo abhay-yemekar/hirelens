@@ -17,7 +17,7 @@ async function main(): Promise<void> {
     .insert(authSchema.organization)
     .values({
       id: randomUUID(),
-      name: "HireLens Demo",
+      name: "CandidLens Demo",
       slug: "hirelens-demo",
       createdAt: new Date(),
     })

@@ -79,7 +79,7 @@ export default function TrackPage() {
             className="mx-auto mt-3 max-w-xl text-sm leading-6"
             style={{ color: "var(--hl-mist)" }}
           >
-            HireLens works for both. Pick your starting point — you can always use the other side
+            CandidLens works for both. Pick your starting point — you can always use the other side
             later.
           </p>
         </div>
@@ -135,7 +135,7 @@ export default function TrackPage() {
             </h2>
             <p className="mt-2 text-sm leading-6" style={{ color: "var(--hl-mist)" }}>
               Score your resume against any job description — free. And if a recruiter uses
-              HireLens, you can receive your evidence-backed report as a private link.
+              CandidLens, you can receive your evidence-backed report as a private link.
             </p>
             <span
               className="mt-4 inline-block text-sm font-medium transition-colors"

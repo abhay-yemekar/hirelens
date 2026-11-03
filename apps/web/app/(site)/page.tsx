@@ -4,11 +4,11 @@ import { BRAND } from "@/components/brand";
 import { BiasAuditShot, EvidenceShot, RankedQueueShot } from "@/components/product-shots";
 
 export const metadata: Metadata = {
-  title: "HireLens — AI screening that shows its work",
+  title: "CandidLens — AI screening that shows its work",
   description:
     "Open-source, glass-box resume screening: evidence-linked scores, rubrics you control, tamper-evident audit trails, and one-click adverse-impact audits. Self-host with one command.",
   openGraph: {
-    title: "HireLens — AI screening that shows its work",
+    title: "CandidLens — AI screening that shows its work",
     description:
       "Evidence-linked resume scoring, bias audits, and a tamper-evident decision trail. MIT, self-hostable, model-agnostic.",
     type: "website",
@@ -114,39 +114,39 @@ const PIPELINE = [
   },
 ];
 
-const COMPARISON: Array<{ feature: string; hirelens: string; blackbox: string; ats: string }> = [
+const COMPARISON: Array<{ feature: string; candidlens: string; blackbox: string; ats: string }> = [
   {
     feature: "Why this score?",
-    hirelens: "Quoted evidence at exact offsets",
+    candidlens: "Quoted evidence at exact offsets",
     blackbox: "Opaque",
     ats: "—",
   },
   {
     feature: "Rubric control",
-    hirelens: "Versioned JSON you own",
+    candidlens: "Versioned JSON you own",
     blackbox: "Hidden weights",
     ats: "—",
   },
   {
     feature: "Bias auditing",
-    hirelens: "Four-fifths rule, one click",
+    candidlens: "Four-fifths rule, one click",
     blackbox: "Marketing page only",
     ats: "—",
   },
   {
     feature: "Decision trail",
-    hirelens: "Hash-chained, tamper-evident",
+    candidlens: "Hash-chained, tamper-evident",
     blackbox: "None",
     ats: "Basic logs",
   },
-  { feature: "Self-host", hirelens: "docker compose up", blackbox: "SaaS only", ats: "Varies" },
-  { feature: "License", hirelens: "MIT", blackbox: "Proprietary", ats: "Open core" },
+  { feature: "Self-host", candidlens: "docker compose up", blackbox: "SaaS only", ats: "Varies" },
+  { feature: "License", candidlens: "MIT", blackbox: "Proprietary", ats: "Open core" },
 ];
 
 const FAQ = [
   {
     q: "Is this another black-box AI screener?",
-    a: "The opposite. HireLens refuses to output a score it cannot justify: every criterion score carries the quoted resume text and its character offset. If the model can't ground a score in the document, the score doesn't ship.",
+    a: "The opposite. CandidLens refuses to output a score it cannot justify: every criterion score carries the quoted resume text and its character offset. If the model can't ground a score in the document, the score doesn't ship.",
   },
   {
     q: "Which LLMs does it support?",
@@ -157,7 +157,7 @@ const FAQ = [
     a: "Candidates may self-report demographics, per dimension, opt-in only. The audit computes selection rates per group, applies the EEOC four-fifths (80%) rule with exact integer math (so 0.8 passes), and reports demographic parity difference. People who didn't report are bucketed as 'undisclosed' — because not knowing who you rejected is itself an audit finding. It's a statistical screen for further inquiry, not proof of discrimination.",
   },
   {
-    q: "Does HireLens make hiring decisions?",
+    q: "Does CandidLens make hiring decisions?",
     a: "Never. It ranks, explains, and audits. Humans make every decision, and every decision requires a stated reason that lands in the tamper-evident audit log. An AI score is a screening aid, not a hiring decision.",
   },
   {
@@ -166,7 +166,7 @@ const FAQ = [
   },
   {
     q: "Can it fit into the tools I already use?",
-    a: "Three doors: a public parser API (POST /api/public/parse — Bearer-token, stateless, rate-limited), an inbound ATS webhook that screens a candidate on an event, and the zero-dependency CLI. Whatever your stack looks like, the evidence trail stays in HireLens.",
+    a: "Three doors: a public parser API (POST /api/public/parse — Bearer-token, stateless, rate-limited), an inbound ATS webhook that screens a candidate on an event, and the zero-dependency CLI. Whatever your stack looks like, the evidence trail stays in CandidLens.",
   },
   {
     q: "What's the license?",
@@ -202,10 +202,10 @@ export default function LandingPage() {
               its <span style={{ color: "var(--hl-accent)" }}>work.</span>
             </h1>
             <p className="mt-5 max-w-xl text-base leading-7" style={{ color: "var(--hl-mist)" }}>
-              HireLens scores candidates against a rubric you control, quotes the exact resume text
-              behind every point, logs every decision to a tamper-evident chain, and audits itself
-              for adverse impact. No black box. No hidden weights — for recruiters or the candidates
-              they screen.
+              CandidLens scores candidates against a rubric you control, quotes the exact resume
+              text behind every point, logs every decision to a tamper-evident chain, and audits
+              itself for adverse impact. No black box. No hidden weights — for recruiters or the
+              candidates they screen.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <Link
@@ -255,15 +255,15 @@ export default function LandingPage() {
           className="text-xs font-semibold uppercase tracking-widest"
           style={{ color: "var(--hl-accent)" }}
         >
-          Why HireLens
+          Why CandidLens
         </p>
         <h2 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">
           A hiring AI with a paper trail.
         </h2>
         <p className="mt-4 max-w-2xl text-base leading-7" style={{ color: "var(--hl-mist)" }}>
           Screeners that can't explain themselves are a liability — to candidates, to recruiters,
-          and under NYC LL144 and the EU AI Act. HireLens is built around one contract: every score
-          must link to the exact evidence that produced it.
+          and under NYC LL144 and the EU AI Act. CandidLens is built around one contract: every
+          score must link to the exact evidence that produced it.
         </p>
         <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
@@ -417,7 +417,7 @@ export default function LandingPage() {
                   <th className="p-4 text-left font-medium">
                     <span className="sr-only">Feature</span>
                   </th>
-                  <th className="p-4 text-left font-semibold text-[var(--hl-cream)]">HireLens</th>
+                  <th className="p-4 text-left font-semibold text-[var(--hl-cream)]">CandidLens</th>
                   <th className="p-4 text-left font-medium">Black-box AI screeners</th>
                   <th className="p-4 text-left font-medium">Legacy ATS</th>
                 </tr>
@@ -431,7 +431,7 @@ export default function LandingPage() {
                   >
                     <td className="p-4 font-medium">{row.feature}</td>
                     <td className="p-4 font-medium" style={{ color: "var(--hl-good)" }}>
-                      {row.hirelens}
+                      {row.candidlens}
                     </td>
                     <td className="p-4" style={{ color: "var(--hl-muted)" }}>
                       {row.blackbox}

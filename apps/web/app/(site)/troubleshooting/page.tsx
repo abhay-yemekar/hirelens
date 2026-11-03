@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { ProsePage } from "@/components/prose-page";
 
 export const metadata: Metadata = {
-  title: "Troubleshooting — HireLens",
+  title: "Troubleshooting — CandidLens",
   description:
-    "Real errors hit during HireLens development, with verified fixes: Docker, migrations, ports, auth, LLM providers, and more.",
+    "Real errors hit during CandidLens development, with verified fixes: Docker, migrations, ports, auth, LLM providers, and more.",
 };
 
 const ROWS: Array<{ symptom: string; cause: string; fix: string }> = [

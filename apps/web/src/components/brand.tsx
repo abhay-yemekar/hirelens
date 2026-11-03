@@ -8,12 +8,12 @@
 
 /**
  * The product name for the wordmark and the link-preview image. Page copy
- * still names the product inline; the rename (#114) updates both.
+ * names the product inline too, so a future rename touches both.
  */
 export const BRAND = {
-  name: "HireLens",
+  name: "CandidLens",
   /** The wordmark's two halves; the second is set in coral. */
-  lead: "Hire",
+  lead: "Candid",
   accent: "Lens",
   tagline: "See why, not just who",
 } as const;
@@ -69,7 +69,7 @@ export function Logo({ compact = false }: { compact?: boolean }) {
     <span className="inline-flex items-center gap-2">
       <LogoMark size={compact ? 24 : 28} />
       {!compact && (
-        /* One text node: a flex gap between two spans is how "Hire Lens"
+        /* One text node: a flex gap between two spans is how "Candid Lens"
            once rendered with a stray space between the words. */
         <span className="text-lg font-semibold tracking-tight">
           {BRAND.lead}

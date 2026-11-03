@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ProsePage } from "@/components/prose-page";
 
 export const metadata: Metadata = {
-  title: "Roadmap — HireLens",
+  title: "Roadmap — CandidLens",
   description: "What's shipped, what's on main since v1.4.0, and what comes next.",
 };
 

@@ -1,4 +1,4 @@
-# HireLens Web — multi-stage build for the self-host stack.
+# CandidLens Web — multi-stage build for the self-host stack.
 # NEXT_PUBLIC_* vars are inlined into the client bundle at BUILD time,
 # so they are build args here (override: docker build --build-arg).
 

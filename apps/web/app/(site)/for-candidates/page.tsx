@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "For candidates — HireLens",
+  title: "For candidates — CandidLens",
   description:
     "What transparent AI screening means for you: a free resume score against any job description, evidence-backed reports, and control over your demographics data.",
 };
@@ -15,7 +15,7 @@ const PILLARS = [
   },
   {
     title: "Your report, your evidence",
-    body: "When a recruiter uses HireLens and shares your report, you get your own outcome — per-criterion scores, the quoted resume passages behind them, and what each level of the scale means. Not a silent reject: the actual reasoning.",
+    body: "When a recruiter uses CandidLens and shares your report, you get your own outcome — per-criterion scores, the quoted resume passages behind them, and what each level of the scale means. Not a silent reject: the actual reasoning.",
     cta: null,
   },
   {
@@ -28,7 +28,7 @@ const PILLARS = [
 const FAQ = [
   {
     q: "Does an AI reject my resume?",
-    a: "No. In HireLens the AI only drafts a score against a rubric — a human recruiter reviews every candidate and makes the actual decision, and their overrides are logged too. A low score is a signal to improve specific things, not an automatic rejection.",
+    a: "No. In CandidLens the AI only drafts a score against a rubric — a human recruiter reviews every candidate and makes the actual decision, and their overrides are logged too. A low score is a signal to improve specific things, not an automatic rejection.",
   },
   {
     q: "What does the score actually mean?",
@@ -40,7 +40,7 @@ const FAQ = [
   },
   {
     q: "Can I see why a company rejected me?",
-    a: "If the recruiter shares your HireLens report (increasingly common with HireLens users), you'll see your own evidence-backed result. Ask them — the feature exists so screening can be explained to you.",
+    a: "If the recruiter shares your CandidLens report (increasingly common with CandidLens users), you'll see your own evidence-backed result. Ask them — the feature exists so screening can be explained to you.",
   },
 ];
 
@@ -72,9 +72,9 @@ export default function ForCandidatesPage() {
             className="mx-auto mt-5 max-w-2xl text-base leading-7"
             style={{ color: "var(--hl-mist)" }}
           >
-            Most AI screeners judge your resume and stay silent. HireLens is built glass-box on both
-            sides: score your resume for free, and if a recruiter shares your report, read the exact
-            evidence behind your result.
+            Most AI screeners judge your resume and stay silent. CandidLens is built glass-box on
+            both sides: score your resume for free, and if a recruiter shares your report, read the
+            exact evidence behind your result.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link

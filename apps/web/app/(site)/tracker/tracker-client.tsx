@@ -140,7 +140,7 @@ export default function TrackerClient() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "hirelens-applications.csv";
+    a.download = "candidlens-applications.csv";
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -159,8 +159,8 @@ export default function TrackerClient() {
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Application tracker</h1>
         <p className="mx-auto mt-3 max-w-xl text-[var(--hl-mist)]">
-          Every application in one list — role, company, status, and your HireLens score. Stored on
-          this device only (never on our servers), exportable as CSV.
+          Every application in one list — role, company, status, and your CandidLens score. Stored
+          on this device only (never on our servers), exportable as CSV.
         </p>
       </header>
 

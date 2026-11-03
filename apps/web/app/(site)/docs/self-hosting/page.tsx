@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { ProsePage } from "@/components/prose-page";
 
 export const metadata: Metadata = {
-  title: "Self-hosting — HireLens Docs",
+  title: "Self-hosting — CandidLens Docs",
   description:
-    "Run HireLens entirely on your infrastructure: Docker Compose stack, environment variables, LLM providers including local Ollama, backups, and upgrades.",
+    "Run CandidLens entirely on your infrastructure: Docker Compose stack, environment variables, LLM providers including local Ollama, backups, and upgrades.",
 };
 
 export default function SelfHostingPage() {

@@ -28,6 +28,10 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Changed
 
+- **HireLens is now CandidLens.** The app, the site, the link-preview
+  image and the API's name use the new name, with a "formerly HireLens"
+  note in the site footer. The CLI and Docker images keep their names
+  until their next release.
 - Settings are renamed from `HIRELENS_*` to `CANDIDLENS_*` for the
   CandidLens rename. The old names still work, so existing deployments and
   `.env` files need no changes; when both are set, the new name wins.

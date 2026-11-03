@@ -54,13 +54,13 @@ export async function indexDocument(
 }
 
 /** A tiny handle the routes/ingest use without importing the AI SDK. */
-export interface HireLensIndexer {
+export interface CandidLensIndexer {
   modelId: string;
   indexDocument(documentId: string, rawText: string): Promise<number>;
   embedQuery(text: string): Promise<number[]>;
 }
 
-export function createIndexer(db: Database, embeddingModel: EmbeddingModel): HireLensIndexer {
+export function createIndexer(db: Database, embeddingModel: EmbeddingModel): CandidLensIndexer {
   return {
     modelId: EMBEDDING_MODEL_ID,
     indexDocument: (documentId: string, rawText: string) =>

@@ -155,7 +155,7 @@ export function AuthForm() {
       <CardHeader>
         {/* h1: the page's top heading (axe heading-order). */}
         <CardTitle asChild className="text-xl" style={{ color: "var(--hl-cream)" }}>
-          <h1>{mode === "signin" ? "Sign in to HireLens" : "Create your account"}</h1>
+          <h1>{mode === "signin" ? "Sign in to CandidLens" : "Create your account"}</h1>
         </CardTitle>
         <CardDescription style={{ color: "var(--hl-mist)" }}>
           {mode === "signin"

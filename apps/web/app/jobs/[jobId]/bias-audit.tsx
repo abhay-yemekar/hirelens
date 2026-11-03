@@ -42,7 +42,7 @@ export function BiasAuditCard({ jobId }: { jobId: string }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `hirelens-bias-audit-${jobId.slice(0, 8)}-${report.dimension}.json`;
+    a.download = `candidlens-bias-audit-${jobId.slice(0, 8)}-${report.dimension}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
