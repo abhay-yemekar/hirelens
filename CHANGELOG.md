@@ -34,6 +34,9 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Changed
 
+- Every password field has a show/hide button. Sign-up says passwords
+  need 8 characters, and messages in Settings → Sign-in & security show
+  next to the part of the card they belong to (#164).
 - **HireLens is now CandidLens.** The app, the site, the link-preview
   image and the API's name use the new name, with a "formerly HireLens"
   note in the site footer. The CLI and Docker images keep their names

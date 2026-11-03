@@ -1,7 +1,8 @@
 "use client";
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@candidlens/ui";
-import { useState } from "react";
+import { useId, useState } from "react";
+import { PasswordInput } from "@/components/password-input";
 import { authClient, userTrack } from "@/lib/auth-client";
 
 /**
@@ -114,6 +115,8 @@ export function AuthForm() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [socialBusy, setSocialBusy] = useState<"google" | "github" | null>(null);
+  const passwordId = useId();
+  const passwordHintId = useId();
 
   async function social(provider: "google" | "github") {
     setError(null);
@@ -147,20 +150,20 @@ export function AuthForm() {
           email,
           password,
         });
-        if (res.error) throw new Error(authErrorText(res.error, "Sign-up failed"));
+        if (res.error) throw new Error(authErrorText(res.error, "Sign-up failed. Try again."));
         // Hard navigation, already reading the fresh session cookie.
         // track is unset for new users, so this lands on the chooser.
         await landOnSideHome();
         return;
       } else {
         const res = await authClient.signIn.email({ email, password });
-        if (res.error) throw new Error(authErrorText(res.error, "Sign-in failed"));
+        if (res.error) throw new Error(authErrorText(res.error, "Sign-in failed. Try again."));
         // Hard navigation, already reading the fresh session cookie.
         await landOnSideHome();
         return;
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
     } finally {
       setBusy(false);
     }
@@ -247,6 +250,7 @@ export function AuthForm() {
               <span style={{ color: "var(--hl-mist)" }}>Name</span>
               <input
                 type="text"
+                name="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoComplete="name"
@@ -259,27 +263,39 @@ export function AuthForm() {
             <span style={{ color: "var(--hl-mist)" }}>Email</span>
             <input
               type="email"
+              name="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
+              spellCheck={false}
               className={inputClass}
               style={inputStyle}
             />
           </label>
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span style={{ color: "var(--hl-mist)" }}>Password</span>
-            <input
-              type="password"
+          <div className="flex flex-col gap-1.5 text-sm">
+            <label htmlFor={passwordId} style={{ color: "var(--hl-mist)" }}>
+              Password
+            </label>
+            <PasswordInput
+              id={passwordId}
+              name="password"
               required
               minLength={8}
+              maxLength={128}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
+              aria-describedby={mode === "signup" ? passwordHintId : undefined}
               className={inputClass}
               style={inputStyle}
             />
-          </label>
+            {mode === "signup" && (
+              <p id={passwordHintId} className="text-xs" style={{ color: "var(--hl-muted)" }}>
+                At least 8 characters.
+              </p>
+            )}
+          </div>
 
           {error && (
             <p role="alert" className="text-sm" style={{ color: "var(--hl-bad)" }}>
@@ -292,7 +308,13 @@ export function AuthForm() {
             disabled={busy}
             className="h-11 bg-white text-[0.95rem] font-semibold text-[#0d1226] hover:bg-[#eef0fa]"
           >
-            {busy ? "Working…" : mode === "signin" ? "Sign in" : "Create account"}
+            {busy
+              ? mode === "signin"
+                ? "Signing in…"
+                : "Creating account…"
+              : mode === "signin"
+                ? "Sign in"
+                : "Create account"}
           </Button>
         </form>
         <p className="mt-4 text-center text-sm" style={{ color: "var(--hl-mist)" }}>
