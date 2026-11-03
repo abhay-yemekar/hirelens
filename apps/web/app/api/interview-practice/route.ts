@@ -13,7 +13,12 @@
  * clearly labeled, never passed off as AI judgment.
  */
 
-import { type ProviderConfig, resolveLanguageModel, skillsInText } from "@candidlens/core";
+import {
+  type ProviderConfig,
+  readSetting,
+  resolveLanguageModel,
+  skillsInText,
+} from "@candidlens/core";
 import { generateText } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 
@@ -48,11 +53,11 @@ function clientIp(req: NextRequest): string {
 }
 
 function readLlmConfig(): ProviderConfig | null {
-  const provider = process.env["HIRELENS_LLM_PROVIDER"]?.trim();
-  const model = process.env["HIRELENS_LLM_MODEL"]?.trim();
+  const provider = readSetting("LLM_PROVIDER")?.trim();
+  const model = readSetting("LLM_MODEL")?.trim();
   if (!provider || !model) return null;
-  const apiKey = process.env["HIRELENS_LLM_API_KEY"];
-  const baseUrl = process.env["HIRELENS_LLM_BASE_URL"];
+  const apiKey = readSetting("LLM_API_KEY");
+  const baseUrl = readSetting("LLM_BASE_URL");
   return {
     id: provider as ProviderConfig["id"],
     model,

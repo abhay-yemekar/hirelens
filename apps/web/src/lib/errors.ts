@@ -17,7 +17,7 @@ export function describeError(err: unknown): ErrorDescriptor {
       case "llm_not_configured":
         return {
           tone: "warning",
-          text: "Scoring and rubric derivation need an LLM key. Add HIRELENS_LLM_PROVIDER, HIRELENS_LLM_MODEL and HIRELENS_LLM_API_KEY to the root .env that Docker Compose reads, then run: docker compose up -d api. Everything else works without a key.",
+          text: "Scoring and rubric derivation need an LLM key. Add CANDIDLENS_LLM_PROVIDER, CANDIDLENS_LLM_MODEL and CANDIDLENS_LLM_API_KEY to the root .env that Docker Compose reads, then run: docker compose up -d api. Everything else works without a key.",
           cta: { label: "Self-hosting guide", href: "/docs/self-hosting" },
         };
       case "llm_misconfigured": {
@@ -30,7 +30,7 @@ export function describeError(err: unknown): ErrorDescriptor {
           tone: "error",
           text: hasDetail
             ? `The AI provider configuration is invalid — retyping won't fix this. ${raw}`
-            : "The AI provider configuration is invalid — check the provider's model id and API key env vars (HIRELENS_LLM_*). This needs an operator, not a retry.",
+            : "The AI provider configuration is invalid — check the provider's model id and API key env vars (CANDIDLENS_LLM_*). This needs an operator, not a retry.",
           cta: { label: "Self-hosting guide", href: "/docs/self-hosting" },
         };
       }

@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
  * Same-origin mount of the Hono API inside the Next.js app.
  *
  * maxDuration: scoring/failover may take up to the 120 s LLM deadline
- * (HIRELENS_LLM_DEADLINE_MS default), so the serverless function must be
+ * (CANDIDLENS_LLM_DEADLINE_MS default), so the serverless function must be
  * allowed at least that. Hobby-plan deployments cap at 60 s — lower this
  * constant there, or shorten the deadline to match.
  */

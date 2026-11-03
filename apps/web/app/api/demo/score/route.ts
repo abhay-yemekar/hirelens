@@ -10,7 +10,12 @@
  * public API): 20 runs/hour/IP, 400/hour globally. Results are cached
  * per resume so repeat plays are instant and cheap.
  */
-import { type ProviderConfig, resolveLanguageModel, scoreResume } from "@candidlens/core";
+import {
+  type ProviderConfig,
+  readSetting,
+  resolveLanguageModel,
+  scoreResume,
+} from "@candidlens/core";
 import { type NextRequest, NextResponse } from "next/server";
 import { DEMO_RESUMES, DEMO_RUBRIC } from "@/lib/demo-data";
 
@@ -48,11 +53,11 @@ function clientIp(req: NextRequest): string {
 }
 
 function readLlmConfig(): ProviderConfig | null {
-  const provider = process.env["HIRELENS_LLM_PROVIDER"]?.trim();
-  const model = process.env["HIRELENS_LLM_MODEL"]?.trim();
+  const provider = readSetting("LLM_PROVIDER")?.trim();
+  const model = readSetting("LLM_MODEL")?.trim();
   if (!provider || !model) return null;
-  const apiKey = process.env["HIRELENS_LLM_API_KEY"];
-  const baseUrl = process.env["HIRELENS_LLM_BASE_URL"];
+  const apiKey = readSetting("LLM_API_KEY");
+  const baseUrl = readSetting("LLM_BASE_URL");
   return {
     id: provider as ProviderConfig["id"],
     model,

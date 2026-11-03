@@ -335,7 +335,7 @@ export function searchRoutes(): Hono<AppEnv> {
           ok: false,
           error: "embedding_not_configured",
           message:
-            "Set HIRELENS_EMBEDDING_API_KEY (or reuse the LLM key — Google embeddings are used automatically) to enable semantic indexing.",
+            "Set CANDIDLENS_EMBEDDING_API_KEY (or reuse the LLM key — Google embeddings are used automatically) to enable semantic indexing.",
         },
         503,
       );

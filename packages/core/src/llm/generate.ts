@@ -1,5 +1,6 @@
 import { generateObject, generateText, jsonSchema, NoObjectGeneratedError } from "ai";
 import { z } from "zod";
+import { readSetting } from "../settings.js";
 import type { LanguageModel } from "./config.js";
 import type { GenerationRequest, StructuredResult, UsageInfo } from "./types.js";
 import { AllProvidersFailedError, LlmRuntimeError, SchemaViolationError } from "./types.js";
@@ -33,12 +34,12 @@ export function setTransientRetryDelayForTests(ms: number | undefined): void {
  * burn the budget then time out opaquely.
  *
  * Default 120s covers Vercel's default function max duration with headroom.
- * Self-hosters can raise it via HIRELENS_LLM_DEADLINE_MS.
+ * Self-hosters can raise it via CANDIDLENS_LLM_DEADLINE_MS.
  */
 const DEFAULT_RETRY_DEADLINE_MS = 120_000;
 
 function deadlineMs(): number {
-  const raw = process.env["HIRELENS_LLM_DEADLINE_MS"];
+  const raw = readSetting("LLM_DEADLINE_MS");
   if (raw === undefined || raw.trim() === "") return DEFAULT_RETRY_DEADLINE_MS;
   const n = Number(raw);
   return Number.isFinite(n) && n >= 1_000 ? Math.min(n, 600_000) : DEFAULT_RETRY_DEADLINE_MS;

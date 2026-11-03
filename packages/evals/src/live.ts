@@ -3,22 +3,22 @@
  * and writes it to reports/<date>-<provider>-<model>.json with provenance.
  * packages/eval-report.json stays the offline mock run (evals:mock).
  *
- *   pnpm --filter @candidlens/evals run evals          # with HIRELENS_LLM_* set
+ *   pnpm --filter @candidlens/evals run evals          # with CANDIDLENS_LLM_* set
  *   pnpm --filter @candidlens/evals run evals:mock     # offline, mock model
  */
 
-import { resolveLanguageModel } from "@candidlens/core";
+import { readSetting, resolveLanguageModel } from "@candidlens/core";
 import { runEvals } from "./harness.js";
 
 async function main(): Promise<void> {
-  const provider = process.env["HIRELENS_LLM_PROVIDER"];
-  const model = process.env["HIRELENS_LLM_MODEL"];
-  const apiKey = process.env["HIRELENS_LLM_API_KEY"];
-  const baseUrl = process.env["HIRELENS_LLM_BASE_URL"];
+  const provider = readSetting("LLM_PROVIDER");
+  const model = readSetting("LLM_MODEL");
+  const apiKey = readSetting("LLM_API_KEY");
+  const baseUrl = readSetting("LLM_BASE_URL");
 
   if (!provider || !model) {
     console.error(
-      "Set HIRELENS_LLM_PROVIDER + HIRELENS_LLM_MODEL (+ HIRELENS_LLM_API_KEY) to run live evals.",
+      "Set CANDIDLENS_LLM_PROVIDER + CANDIDLENS_LLM_MODEL (+ CANDIDLENS_LLM_API_KEY) to run live evals.",
     );
     process.exit(2);
   }

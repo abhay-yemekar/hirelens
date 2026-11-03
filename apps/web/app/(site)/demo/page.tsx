@@ -203,7 +203,7 @@ export default function DemoPage() {
           <span className="text-xs" style={{ color: "var(--color-fg-muted)" }}>
             {result.mode === "llm"
               ? `Scored by ${result.modelId}`
-              : "Heuristic mode (no LLM key on this server) — add HIRELENS_LLM_* for real scoring"}
+              : "Heuristic mode (no LLM key on this server) — add CANDIDLENS_LLM_* for real scoring"}
           </span>
         )}
       </div>
