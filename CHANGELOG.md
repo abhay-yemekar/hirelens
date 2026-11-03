@@ -21,6 +21,12 @@ On `main` since v1.4.0; planned for v1.5.0.
   on overload and rate limits, Mistral and Cerebras as providers, and an
   owner-only per-organization provider setting with a connection test
   (#106, #107).
+- **Settings → Sign-in & security** — see which ways you can sign in,
+  add a password to an account made with Google or GitHub, change or
+  remove your password, connect or disconnect Google and GitHub (one way
+  to sign in always stays), and sign out other devices. The sign-in and sign-up forms
+  now say when an email belongs to a Google or GitHub account and where to
+  add a password (#162).
 - **Talent pool: add to job** — re-ingest a rediscovered candidate into any
   open job, audited (#100).
 - **First real-model eval run** published on `/evaluation`: Groq

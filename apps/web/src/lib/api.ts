@@ -554,6 +554,14 @@ export const runDoctor = (text: string, init?: RequestInit & { serverCookie?: st
     ...init,
   });
 
+/** Give an account that signs in with Google or GitHub its first password. */
+export const addPassword = (newPassword: string) =>
+  apiFetch<{ ok: true }>("/api/account/password", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ newPassword }),
+  });
+
 /** Run the Doctor on a PDF, DOCX, TXT or MD file; returns the extracted text too. */
 export const runDoctorFile = (file: File) => {
   const form = new FormData();
