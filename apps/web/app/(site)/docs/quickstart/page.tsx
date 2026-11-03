@@ -102,13 +102,13 @@ docker compose ps`}</code>
 
       <h2>5. Verify your setup</h2>
       <pre>
-        <code>{`pnpm typecheck   # strict TypeScript across all 8 packages
-pnpm test        # full suite (~89 tests)`}</code>
+        <code>{`pnpm typecheck   # strict TypeScript across every package
+pnpm test        # full suite, including DB-backed integration tests`}</code>
       </pre>
       <p>
-        The suite includes 3 orchestrator integration tests that need the database from step 2 —
-        they create an org, a job, candidates, run a real scoring batch through the mock model, and
-        recompute the hash-chained audit log from stored rows.
+        The <code>api</code> and <code>orchestrator</code> integration tests need the database from
+        step 2 — they create orgs, jobs and candidates, run real scoring batches through the mock
+        model, and recompute the hash-chained audit log from stored rows.
       </p>
 
       <h2>6. Run the apps</h2>

@@ -103,7 +103,7 @@ Content-Type: application/json
         token to a single organization — the same token model the rest of the API uses.
       </p>
       <blockquote>
-        Deploy note: on hirelens.app (same-origin mount) the webhook lives at{" "}
+        Deploy note: on the hosted app (same-origin mount) the webhook lives at{" "}
         <code>/api/webhooks/ats</code>. Self-hosted Docker deployments call the API directly on its
         own origin.
       </blockquote>

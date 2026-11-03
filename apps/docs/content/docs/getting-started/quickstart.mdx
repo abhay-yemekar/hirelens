@@ -5,7 +5,7 @@ description: From a clean machine to your first scored candidate.
 
 ## Prerequisites
 
-- **Node.js 20+** (the CLI additionally wants 22.6+ for native TypeScript)
+- **Node.js 20+**
 - **pnpm 11**
 - **Docker** (for Postgres + pgvector)
 - Optional: an LLM API key (Google Gemini, Anthropic, Groq, OpenRouter, or local Ollama) for rubric derivation and scoring
@@ -39,10 +39,10 @@ pnpm --filter @hirelens/api dev           # in a second terminal, port 4000
 **CLI** — with the API running:
 
 ```bash
-pnpm --filter @hirelens/cli dev login you@example.com
-cd apps/cli && node src/main.ts jobs create "Backend Engineer" --jd jd.md
-cd apps/cli && node src/main.ts rubric derive <jobId>
-cd apps/cli && node src/main.ts score <jobId> ./resumes
+npx hirelens login you@example.com
+npx hirelens jobs create "Backend Engineer" --jd jd.md
+npx hirelens rubric derive <jobId>
+npx hirelens score <jobId> ./resumes
 ```
 
 ## Configure the LLM

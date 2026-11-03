@@ -83,9 +83,7 @@ export function assertValidProviderConfig(config: ProviderConfig): void {
     throw new LlmConfigError(`Provider ${config.id} requires an apiKey`);
   }
   if (config.id === "ollama" && !config.baseUrl) {
-    throw new LlmConfigError(
-      "Provider ollama requires a baseUrl (e.g. http://localhost:11434/api)",
-    );
+    throw new LlmConfigError("Provider ollama requires a baseUrl (e.g. http://localhost:11434/v1)");
   }
   if (!config.model || config.model.trim().length === 0) {
     throw new LlmConfigError("A model id is required");
