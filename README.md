@@ -237,7 +237,7 @@ Most hiring AI is a black box: a number with no justification. That is a liabili
 - ✅ **v1.2** — skill-graph adjacency (matched/adjacent/missing skills per candidate), org analytics dashboard, scheduled four-fifths audit snapshots, deterministic writing-style signals.
 - ✅ **v1.4.0 — shipped 6 October 2026** — [talent-pool rediscovery](https://hirelens-rosy.vercel.app/talent-pool) (org-wide candidate search + audited shortlist), the [public parser API](https://hirelens-rosy.vercel.app/api-reference) (`POST /api/public/parse`, token-gated, stateless, rate-limited), and the ATS format check (deterministic parse simulation surfaced on every candidate + as `formatCheck` on the parser API). Full notes in the [changelog](CHANGELOG.md).
 - ✅ **Post-1.4 backlog** — parser heuristic hardening (compact resumes, inline `Skills:` headers) and talent-pool "add to job" ([push a rediscovered candidate into any open job](https://hirelens-rosy.vercel.app/talent-pool)), shipped in [#100](https://github.com/abhay-yemekar/hirelens/pull/100).
-- **Next** — v1.3 (i18n, SSO/SAML, advanced RBAC) per the [roadmap](https://hirelens-rosy.vercel.app/roadmap).
+- **Next** — v1.5.0 (the Resume Doctor and the post-1.4 work on `main`, see the [changelog](CHANGELOG.md#unreleased)), then the CandidLens rename; i18n, SSO/SAML and advanced RBAC follow in 2027, per the [roadmap](https://hirelens-rosy.vercel.app/roadmap).
 
 Follow along in [Issues](https://github.com/abhay-yemekar/hirelens/issues).
 
