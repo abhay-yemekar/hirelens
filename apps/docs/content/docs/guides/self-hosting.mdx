@@ -21,13 +21,15 @@ Open [http://localhost:3000](http://localhost:3000), create an account, create a
 
 ## Environment
 
+Settings used to be named `HIRELENS_*`. Those names still work; when both are set, the `CANDIDLENS_*` name wins.
+
 | Variable | Required | Purpose |
 |---|---|---|
 | `BETTER_AUTH_SECRET` | yes | Session signing; generate with `openssl rand -base64 32` |
 | `DATABASE_URL` | no | Defaults to the compose Postgres |
-| `HIRELENS_LLM_PROVIDER` | no | `google` \| `anthropic` \| `groq` \| `openrouter` \| `ollama` |
-| `HIRELENS_LLM_MODEL` | no | Provider model id |
-| `HIRELENS_LLM_API_KEY` | no | Hosted providers; leave empty for no-LLM mode |
+| `CANDIDLENS_LLM_PROVIDER` | no | `google` \| `anthropic` \| `groq` \| `openrouter` \| `ollama` |
+| `CANDIDLENS_LLM_MODEL` | no | Provider model id |
+| `CANDIDLENS_LLM_API_KEY` | no | Hosted providers; leave empty for no-LLM mode |
 | `SENTRY_DSN` | no | Error tracking |
 | `LANGFUSE_PUBLIC_KEY` / `_SECRET_KEY` / `_BASE_URL` | no | LLM tracing |
 | `NEXT_PUBLIC_POSTHOG_KEY` | no | Product analytics (explicit events only, autocapture off) |

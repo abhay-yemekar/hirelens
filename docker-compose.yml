@@ -47,6 +47,12 @@ services:
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
       # LLM — optional; scoring/derive return 503 when unset.
+      CANDIDLENS_LLM_PROVIDER: ${CANDIDLENS_LLM_PROVIDER:-}
+      CANDIDLENS_LLM_MODEL: ${CANDIDLENS_LLM_MODEL:-}
+      CANDIDLENS_LLM_API_KEY: ${CANDIDLENS_LLM_API_KEY:-}
+      CANDIDLENS_LLM_BASE_URL: ${CANDIDLENS_LLM_BASE_URL:-}
+      # The old names still work: the API reads CANDIDLENS_* first and falls
+      # back to these, so an existing .env needs no changes.
       HIRELENS_LLM_PROVIDER: ${HIRELENS_LLM_PROVIDER:-}
       HIRELENS_LLM_MODEL: ${HIRELENS_LLM_MODEL:-}
       HIRELENS_LLM_API_KEY: ${HIRELENS_LLM_API_KEY:-}

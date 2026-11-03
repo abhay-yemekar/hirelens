@@ -102,7 +102,7 @@ docker compose up --build -d`}</code>
           </tr>
           <tr>
             <td>
-              <code>HIRELENS_LLM_PROVIDER</code> / <code>_MODEL</code> / <code>_API_KEY</code>
+              <code>CANDIDLENS_LLM_PROVIDER</code> / <code>_MODEL</code> / <code>_API_KEY</code>
             </td>
             <td>no</td>
             <td>
@@ -112,8 +112,8 @@ docker compose up --build -d`}</code>
           </tr>
           <tr>
             <td>
-              <code>HIRELENS_LLM_FALLBACKS</code> (+ per-provider{" "}
-              <code>HIRELENS_LLM_&lt;ID&gt;_MODEL</code>, <code>_API_KEY</code>)
+              <code>CANDIDLENS_LLM_FALLBACKS</code> (+ per-provider{" "}
+              <code>CANDIDLENS_LLM_&lt;ID&gt;_MODEL</code>, <code>_API_KEY</code>)
             </td>
             <td>no</td>
             <td>
@@ -124,7 +124,7 @@ docker compose up --build -d`}</code>
           </tr>
           <tr>
             <td>
-              <code>HIRELENS_LLM_DEADLINE_MS</code>
+              <code>CANDIDLENS_LLM_DEADLINE_MS</code>
             </td>
             <td>no</td>
             <td>
@@ -141,15 +141,19 @@ docker compose up --build -d`}</code>
           </tr>
         </tbody>
       </table>
+      <p>
+        Settings used to be named <code>HIRELENS_*</code>. Those names still work; when both are
+        set, the <code>CANDIDLENS_*</code> name wins.
+      </p>
 
       <h2>Local LLM mode (resumes never leave)</h2>
       <p>
         Install <a href="https://ollama.com">Ollama</a>, pull a model, and point the API at it:
       </p>
       <pre>
-        <code>{`HIRELENS_LLM_PROVIDER=ollama
-HIRELENS_LLM_MODEL=llama3.1
-HIRELENS_LLM_BASE_URL=http://host.docker.internal:11434/v1`}</code>
+        <code>{`CANDIDLENS_LLM_PROVIDER=ollama
+CANDIDLENS_LLM_MODEL=llama3.1
+CANDIDLENS_LLM_BASE_URL=http://host.docker.internal:11434/v1`}</code>
       </pre>
       <p>
         With this configuration the entire pipeline — parsing, rubric derivation, scoring, evidence

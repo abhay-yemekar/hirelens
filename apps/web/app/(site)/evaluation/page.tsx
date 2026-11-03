@@ -166,7 +166,7 @@ export default function EvaluationPage() {
       <h2>Run it yourself</h2>
       <pre>
         <code>{`pnpm --filter @candidlens/evals run evals:mock   # offline, CI mode
-pnpm --filter @candidlens/evals run evals        # live, needs HIRELENS_LLM_*`}</code>
+pnpm --filter @candidlens/evals run evals        # live, needs CANDIDLENS_LLM_*`}</code>
       </pre>
       <p>
         The harness, benchmark dataset, and this report are plain files in{" "}

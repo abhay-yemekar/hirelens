@@ -55,7 +55,7 @@ const ROWS: Array<{ symptom: string; cause: string; fix: string }> = [
   },
   {
     symptom: "503 llm_not_configured from derive/score in Docker",
-    cause: 'Empty-string HIRELENS_LLM_* values count as "set" through compose interpolation.',
+    cause: 'Empty-string CANDIDLENS_LLM_* values count as "set" through compose interpolation.',
     fix: "Put real provider/model/key values in the root .env, then docker compose up -d api.",
   },
   {

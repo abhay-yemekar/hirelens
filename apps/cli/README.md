@@ -16,12 +16,12 @@ Requires Node ≥ 20. Zero runtime dependencies.
 
 The CLI talks to a HireLens server (the one you self-host with `docker compose up`, or your deployment):
 
-| Environment           | Purpose                            | Default                 |
-| --------------------- | ---------------------------------- | ----------------------- |
-| `HIRELENS_API_URL`    | Server base URL                    | `http://localhost:4000` |
-| `HIRELENS_CONFIG_DIR` | Where the session config is stored | `~/.hirelens`           |
+| Environment             | Purpose                            | Default                 |
+| ----------------------- | ---------------------------------- | ----------------------- |
+| `CANDIDLENS_API_URL`    | Server base URL                    | `http://localhost:4000` |
+| `CANDIDLENS_CONFIG_DIR` | Where the session config is stored | `~/.hirelens`           |
 
-`hirelens login` stores your session in `~/.hirelens/config.json` (override the directory with `HIRELENS_CONFIG_DIR`).
+`hirelens login` stores your session in `~/.hirelens/config.json` (override the directory with `CANDIDLENS_CONFIG_DIR`).
 
 ## Commands
 
@@ -43,7 +43,7 @@ hirelens score <jobId> <resumes...|dir>    Upload + score + print ranking
 hirelens version                           Print the version
 ```
 
-Environment: `HIRELENS_API_URL`, `HIRELENS_COOKIE`, `HIRELENS_PASSWORD`, `HIRELENS_CONFIG_DIR`.
+Environment: `CANDIDLENS_API_URL`, `CANDIDLENS_COOKIE`, `CANDIDLENS_PASSWORD`, `CANDIDLENS_CONFIG_DIR`.
 
 ## Example
 

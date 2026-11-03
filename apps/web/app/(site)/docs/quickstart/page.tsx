@@ -130,8 +130,8 @@ pnpm --filter @candidlens/docs dev   # docs site on :3002`}</code>
           sign in / sign up → create an organization → create a job → upload resumes → score →
           review with evidence.
         </strong>{" "}
-        LLM scoring needs <code>HIRELENS_LLM_PROVIDER</code> + <code>HIRELENS_LLM_MODEL</code> (+
-        key) in the API env; without them the server runs fine and scoring returns{" "}
+        LLM scoring needs <code>CANDIDLENS_LLM_PROVIDER</code> + <code>CANDIDLENS_LLM_MODEL</code>{" "}
+        (+ key) in the API env; without them the server runs fine and scoring returns{" "}
         <code>503 llm_not_configured</code>.
       </p>
 

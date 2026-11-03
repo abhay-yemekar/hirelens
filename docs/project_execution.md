@@ -121,7 +121,7 @@ docker compose up --build -d
 
 - web → http://localhost:3000 · API health → http://localhost:4000/api/health
 - Migrations apply automatically on API boot; `docker compose down -v` wipes everything (volume included) for a true clean-machine test.
-- The stack boots fine **without** LLM config (derive/score return `503 llm_not_configured`); add `HIRELENS_LLM_PROVIDER` / `HIRELENS_LLM_MODEL` / `HIRELENS_LLM_API_KEY` to `.env` to enable scoring.
+- The stack boots fine **without** LLM config (derive/score return `503 llm_not_configured`); add `CANDIDLENS_LLM_PROVIDER` / `CANDIDLENS_LLM_MODEL` / `CANDIDLENS_LLM_API_KEY` to `.env` to enable scoring.
 - Containers build via `apps/api/Dockerfile` (pnpm deploy + tsx runtime) and `apps/web/Dockerfile` (Next standalone output); images are rebuilt only when sources change.
 - Dev tip: `docker compose up -d postgres` still runs just the database for the local `pnpm dev` workflow below.
 
@@ -154,7 +154,7 @@ The API is the full product surface: Better Auth at `/api/auth/*` (email/passwor
 | `PUT /api/jobs/:id/demographics/:cid`             | Candidate's opt-in demographics self-report (merged per dimension)             |
 | `POST /api/jobs/:id/bias-audit`                   | Adverse-impact report: selection rates + four-fifths rule by group (audited)   |
 
-LLM features need `HIRELENS_LLM_PROVIDER` + `HIRELENS_LLM_MODEL` (+ key) in `apps/api/.env`; without them the server runs fine and derive/score return `503 llm_not_configured`. A partial LLM config fails at boot rather than half-working. Try the API with the bundled REST collection: import `docs/api.http` into VS Code (REST Client) or curl — see the file for ready-made requests.
+LLM features need `CANDIDLENS_LLM_PROVIDER` + `CANDIDLENS_LLM_MODEL` (+ key) in `apps/api/.env`; without them the server runs fine and derive/score return `503 llm_not_configured`. A partial LLM config fails at boot rather than half-working. Try the API with the bundled REST collection: import `docs/api.http` into VS Code (REST Client) or curl — see the file for ready-made requests.
 
 ### Product UI (`apps/web`)
 
@@ -179,10 +179,10 @@ pnpm --filter @candidlens/ui storybook
 The CLI scores resumes from the terminal. It is published on npm as [`hirelens`](https://www.npmjs.com/package/hirelens) and runs on **Node ≥ 20**.
 
 ```bash
-export HIRELENS_API_URL=http://localhost:4000          # the API (compose or `pnpm --filter @candidlens/api dev`)
-export HIRELENS_CONFIG_DIR=~/.hirelens                  # optional; where the session cookie is stored
+export CANDIDLENS_API_URL=http://localhost:4000          # the API (compose or `pnpm --filter @candidlens/api dev`)
+export CANDIDLENS_CONFIG_DIR=~/.hirelens                  # optional; where the session cookie is stored
 
-npx hirelens login you@example.com                 # prompts for password (or set HIRELENS_PASSWORD)
+npx hirelens login you@example.com                 # prompts for password (or set CANDIDLENS_PASSWORD)
 npx hirelens org create "Acme Hiring"
 npx hirelens jobs create "Senior Backend" --jd jd.md
 npx hirelens rubric derive <jobId>                 # LLM-derives the rubric from the JD
@@ -193,7 +193,7 @@ npx hirelens score <jobId> ./resumes               # upload + score + ranked tab
 
 Working on the CLI itself? `pnpm --filter hirelens dev <command>` runs the TypeScript source directly (Node ≥ 22.6, native type stripping). It runs inside `apps/cli`, so relative paths such as `--jd jd.md` resolve from there.
 
-Accounts are created in the web UI (or via `POST /api/auth/sign-up/email`); `hirelens login` signs an existing account in. All commands require the API to be running and LLM commands (`rubric derive`, `score`) require `HIRELENS_LLM_*` configuration on the API side.
+Accounts are created in the web UI (or via `POST /api/auth/sign-up/email`); `hirelens login` signs an existing account in. All commands require the API to be running and LLM commands (`rubric derive`, `score`) require `CANDIDLENS_LLM_*` configuration on the API side.
 
 ## 7. Daily development loop
 
@@ -235,7 +235,7 @@ Git hooks (via husky + lint-staged + commitlint) enforce Biome formatting on sta
 | `gh` commands fail with `command not found` (Windows)                                                                 | GitHub CLI not on PATH in that shell                                                                                                                                      | Add `C:\Program Files\GitHub CLI` to PATH, or use the full path to `gh.exe`                                                                                               |
 | Every `pnpm` command fails with a corepack stack trace mentioning `runDepsStatusCheck` or `[ERR_PNPM_IGNORED_BUILDS]` | A placeholder value in `pnpm-workspace.yaml` `allowBuilds` (e.g. `core-js: set this to true or false`) makes install verification exit 1                                  | Set every `allowBuilds` entry to `true` or `false`, then `pnpm install`                                                                                                   |
 | Tests all report "skipped" (not failed)                                                                               | `DATABASE_URL` not set in the shell that ran them                                                                                                                         | Export `DATABASE_URL=postgres://postgres:postgres@localhost:5433/hirelens` first (see step 3)                                                                             |
-| `error [503 llm_not_configured]` from `rubric derive` / `score` (API in Docker)                                       | The compose file interpolates `HIRELENS_LLM_*` from the **root** `.env`; empty-string values count as "set" but the key is empty                                          | Put real `HIRELENS_LLM_API_KEY` / `_MODEL` / `_PROVIDER` values in the root `.env`, then `docker compose up -d api`                                                       |
+| `error [503 llm_not_configured]` from `rubric derive` / `score` (API in Docker)                                       | The compose file interpolates `CANDIDLENS_LLM_*` from the **root** `.env`; empty-string values count as "set" but the key is empty                                        | Put real `CANDIDLENS_LLM_API_KEY` / `_MODEL` / `_PROVIDER` values in the root `.env`, then `docker compose up -d api`                                                     |
 | `LlmRuntimeError: … Proto field is not repeating, cannot start list` (Google/Gemini)                                  | Gemini rejects JSON schemas with arrays nested inside arrays — rubric and scoring schemas use that shape                                                                  | Fixed in the LLM layer: `generateStructured` automatically falls back to validated JSON-text mode per provider. If you see this on an old build, update to current `main` |
 | `hirelens score` hangs after creating a job                                                                           | `jobs create` without `--jd` reads the job description from **stdin**, which never closes in a scripted shell                                                             | Always pass `--jd <file>` (or pipe: `echo "..."                                                                                                                           | hirelens jobs create …`) |
 | `error [401 sign_in_failed]` right after a fresh sign-up via API                                                      | better-auth requires an `Origin` header matching a trusted origin (the web app's, e.g. `http://localhost:3000`) — plain curl/CLI calls without it are rejected on sign-up | Sign up once through the web UI or include `-H "Origin: http://localhost:3000"`; then CLI login works normally                                                            |

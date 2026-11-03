@@ -16,13 +16,13 @@ export default function CliPage() {
     >
       <h2>Setup</h2>
       <pre>
-        <code>{`export HIRELENS_API_URL=http://localhost:4000     # the API
-export HIRELENS_CONFIG_DIR=~/.hirelens            # optional; cookie storage
+        <code>{`export CANDIDLENS_API_URL=http://localhost:4000     # the API
+export CANDIDLENS_CONFIG_DIR=~/.hirelens            # optional; cookie storage
 
 npx hirelens login you@example.com`}</code>
       </pre>
       <p>
-        <code>login</code> prompts for your password (or set <code>HIRELENS_PASSWORD</code> for
+        <code>login</code> prompts for your password (or set <code>CANDIDLENS_PASSWORD</code> for
         scripts). Accounts are created in the web UI or via the sign-up API; the CLI signs existing
         accounts in. Sessions persist to <code>~/.hirelens/</code>.
       </p>
@@ -94,8 +94,8 @@ npx hirelens score <jobId> ./resumes --breakdown`}</code>
       </pre>
       <p>
         LLM commands (<code>rubric derive</code>, <code>score</code>) require{" "}
-        <code>HIRELENS_LLM_*</code> configuration on the <em>API</em> side — the CLI itself holds no
-        keys.
+        <code>CANDIDLENS_LLM_*</code> configuration on the <em>API</em> side — the CLI itself holds
+        no keys.
       </p>
     </ProsePage>
   );

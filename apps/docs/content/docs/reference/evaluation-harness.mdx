@@ -22,7 +22,7 @@ A seeded (seed 42), fully synthetic set of six resumes spanning strong to weak, 
 
 ```bash
 pnpm --filter @candidlens/evals run evals:mock    # offline mock model; validates plumbing, CI-safe
-pnpm --filter @candidlens/evals run evals         # live model; needs HIRELENS_LLM_* env, writes eval-report.json
+pnpm --filter @candidlens/evals run evals         # live model; needs CANDIDLENS_LLM_* env, writes eval-report.json
 ```
 
 The live runner paces calls (default 8s) to stay inside free-tier rate limits and fails loudly on quota exhaustion rather than printing partial numbers.

@@ -55,10 +55,10 @@ cp apps/api/.env.example apps/api/.env
 
 | Variable | Notes |
 |---|---|
-| `HIRELENS_LLM_PROVIDER` | `google` \| `anthropic` \| `groq` \| `openrouter` \| `ollama` |
-| `HIRELENS_LLM_MODEL` | Provider model id, e.g. `gemini-3-flash` |
-| `HIRELENS_LLM_API_KEY` | Required for hosted providers |
-| `HIRELENS_LLM_BASE_URL` | Required for `ollama` |
+| `CANDIDLENS_LLM_PROVIDER` | `google` \| `anthropic` \| `groq` \| `openrouter` \| `ollama` |
+| `CANDIDLENS_LLM_MODEL` | Provider model id, e.g. `gemini-3-flash` |
+| `CANDIDLENS_LLM_API_KEY` | Required for hosted providers |
+| `CANDIDLENS_LLM_BASE_URL` | Required for `ollama` |
 
 Without a key the product still works for ingestion, review, and audit — only `rubric derive` and `score` return `llm_not_configured`.
 

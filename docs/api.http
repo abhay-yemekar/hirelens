@@ -126,7 +126,7 @@ cookie: {{cookie}}
   }
 }
 
-### Derive a rubric from the job description with the LLM (needs HIRELENS_LLM_*)
+### Derive a rubric from the job description with the LLM (needs CANDIDLENS_LLM_*)
 POST {{host}}/api/jobs/JOB_ID_HERE/rubrics/derive
 cookie: {{cookie}}
 
@@ -158,7 +158,7 @@ content-type: application/zip
 < ./batch.zip
 --Boundary--
 
-### Score all candidates against the latest rubric (needs HIRELENS_LLM_*)
+### Score all candidates against the latest rubric (needs CANDIDLENS_LLM_*)
 POST {{host}}/api/jobs/JOB_ID_HERE/score
 cookie: {{cookie}}
 
