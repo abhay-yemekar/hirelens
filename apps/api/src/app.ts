@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
-import type { LanguageModel } from "@hirelens/core";
-import { ExtractionError } from "@hirelens/core";
-import type { Database } from "@hirelens/db";
-import { auth, MIGRATION_SNAPSHOT } from "@hirelens/db";
+import type { LanguageModel } from "@candidlens/core";
+import { ExtractionError } from "@candidlens/core";
+import type { Database } from "@candidlens/db";
+import { auth, MIGRATION_SNAPSHOT } from "@candidlens/db";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -177,7 +177,7 @@ export function createApp(deps: AppDeps) {
             migrationsPending: true,
             migrations,
             llm: llmInfo,
-            message: `Database schema is behind by ${state.missing.length} migration(s) (newest missing: ${missing}). Run: pnpm --filter @hirelens/db db:migrate`,
+            message: `Database schema is behind by ${state.missing.length} migration(s) (newest missing: ${missing}). Run: pnpm --filter @candidlens/db db:migrate`,
           },
           503,
         );
@@ -205,7 +205,7 @@ export function createApp(deps: AppDeps) {
           ...(missing ? { migrationsPending: true } : {}),
           llm: llmInfo,
           message: missing
-            ? "Database schema is out of date (migrations journal missing). Run: pnpm --filter @hirelens/db db:migrate"
+            ? "Database schema is out of date (migrations journal missing). Run: pnpm --filter @candidlens/db db:migrate"
             : "Database is unreachable.",
         },
         503,

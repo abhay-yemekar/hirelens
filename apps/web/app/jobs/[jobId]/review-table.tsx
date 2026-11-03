@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@hirelens/ui";
+import { Button } from "@candidlens/ui";
 import { Info } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { NoticeBanner } from "@/components/notice-banner";

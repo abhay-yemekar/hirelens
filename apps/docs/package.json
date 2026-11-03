@@ -1,5 +1,5 @@
 {
-  "name": "@hirelens/docs",
+  "name": "@candidlens/docs",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -20,7 +20,7 @@
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
-    "@hirelens/config": "workspace:*",
+    "@candidlens/config": "workspace:*",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0"
   }

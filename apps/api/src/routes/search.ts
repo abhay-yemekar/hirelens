@@ -15,9 +15,9 @@
  * queue, so Ask answers and search results can't leak identities.
  */
 
-import { synthesizeAnswer } from "@hirelens/core";
-import type { Database } from "@hirelens/db";
-import { candidates, chunks, documents } from "@hirelens/db";
+import { synthesizeAnswer } from "@candidlens/core";
+import type { Database } from "@candidlens/db";
+import { candidates, chunks, documents } from "@candidlens/db";
 import { and, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";

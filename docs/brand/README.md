@@ -23,7 +23,7 @@ These match the site's `--hl-ink`, `--hl-accent`, `--hl-cream` and `--hl-mist` t
 | `favicon-tile.svg`    | Source of `apps/web/app/favicon.ico` (16, 32, 48 px)        |
 | `apple-icon-tile.svg` | Source of `apps/web/app/apple-icon.png` (180 px)            |
 - `apps/web/app/icon.svg` is the small mark with a dark-mode colour switch. It is written by hand, not generated.
-- After editing a tile, run `pnpm --filter @hirelens/web run brand-icons` to regenerate the raster icons.
+- After editing a tile, run `pnpm --filter @candidlens/web run brand-icons` to regenerate the raster icons.
 - In the app, use `LogoMark` and `Logo` from `apps/web/src/components/brand.tsx`. The product name lives in its `BRAND` constant.
 - The link-preview image is `apps/web/app/opengraph-image.tsx`, which Next renders at build time.
 

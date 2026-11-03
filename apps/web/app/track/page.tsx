@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@hirelens/ui";
+import { Button } from "@candidlens/ui";
 import { Briefcase, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";

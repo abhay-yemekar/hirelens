@@ -7,8 +7,8 @@
  * as "worth probing", never as a verdict — the UI copy mirrors that.
  */
 
-import { detectAiContent } from "@hirelens/core";
-import { candidates, documents, jobs } from "@hirelens/db";
+import { detectAiContent } from "@candidlens/core";
+import { candidates, documents, jobs } from "@candidlens/db";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { ROLE_MIN, requireAuth } from "../auth.js";

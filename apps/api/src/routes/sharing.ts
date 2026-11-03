@@ -12,9 +12,9 @@
  */
 
 import { randomBytes } from "node:crypto";
-import { hashLink } from "@hirelens/core";
-import { auditLog, jobs, scoringRuns, shareLinks } from "@hirelens/db";
-import { appendAudit } from "@hirelens/orchestrator";
+import { hashLink } from "@candidlens/core";
+import { auditLog, jobs, scoringRuns, shareLinks } from "@candidlens/db";
+import { appendAudit } from "@candidlens/orchestrator";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hirelens/ui";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@candidlens/ui";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";

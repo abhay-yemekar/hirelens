@@ -1,5 +1,5 @@
 {
-  "name": "@hirelens/web",
+  "name": "@candidlens/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -17,9 +17,9 @@
     "@ai-sdk/groq": "^4.0.54",
     "@ai-sdk/openai-compatible": "^3.0.62",
     "@better-auth/drizzle-adapter": "^1.7.7",
-    "@hirelens/api": "workspace:*",
-    "@hirelens/core": "workspace:*",
-    "@hirelens/ui": "workspace:*",
+    "@candidlens/api": "workspace:*",
+    "@candidlens/core": "workspace:*",
+    "@candidlens/ui": "workspace:*",
     "@sentry/node": "^11.4.0",
     "@tailwindcss/postcss": "^4.3.3",
     "ai": "^7.0.127",
@@ -41,7 +41,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@hirelens/config": "workspace:*",
+    "@candidlens/config": "workspace:*",
     "@types/node": "^26.6.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

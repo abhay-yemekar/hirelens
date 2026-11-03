@@ -24,7 +24,7 @@
  * otherwise confirm a candidate exists).
  */
 
-import { skillsInText } from "@hirelens/core";
+import { skillsInText } from "@candidlens/core";
 import {
   candidates,
   decisions,
@@ -34,8 +34,8 @@ import {
   scores,
   scoringRuns,
   stageEnum,
-} from "@hirelens/db";
-import { appendAudit } from "@hirelens/orchestrator";
+} from "@candidlens/db";
+import { appendAudit } from "@candidlens/orchestrator";
 import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { ROLE_MIN, requireAuth } from "../auth.js";
@@ -181,7 +181,7 @@ export function talentPoolRoutes(): Hono<AppEnv> {
       .innerJoin(jobs, eq(rubrics.jobId, jobs.id))
       .where(eq(jobs.orgId, orgId));
 
-    // criteria jsonb mirrors the @hirelens/core Criterion shape.
+    // criteria jsonb mirrors the @candidlens/core Criterion shape.
     const criteriaByKey = new Map<string, Array<{ key: string; weight: number }>>();
     for (const r of rubricRows) {
       const raw = r.criteria as unknown;

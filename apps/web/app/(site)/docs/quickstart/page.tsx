@@ -93,7 +93,7 @@ docker compose ps`}</code>
 
       <h2>4. Migrate</h2>
       <pre>
-        <code>{`pnpm --filter @hirelens/db db:migrate`}</code>
+        <code>{`pnpm --filter @candidlens/db db:migrate`}</code>
       </pre>
       <p>
         Prints <code>Migrations applied.</code> and creates all tables: identity and organizations,
@@ -120,9 +120,9 @@ docker compose up --build -d
       </pre>
       <p>Migrations apply automatically on API boot. For daily development instead:</p>
       <pre>
-        <code>{`pnpm --filter @hirelens/api dev    # API on :4000
-pnpm --filter @hirelens/web dev    # product UI on :3000
-pnpm --filter @hirelens/docs dev   # docs site on :3002`}</code>
+        <code>{`pnpm --filter @candidlens/api dev    # API on :4000
+pnpm --filter @candidlens/web dev    # product UI on :3000
+pnpm --filter @candidlens/docs dev   # docs site on :3002`}</code>
       </pre>
       <p>
         Then:{" "}

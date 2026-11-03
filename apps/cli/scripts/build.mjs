@@ -8,7 +8,7 @@
  * any Node ≥ 20 with zero install-time compilation and zero runtime
  * dependencies.
  *
- * Run via `pnpm --filter @hirelens/cli build`. Output: dist/main.js
+ * Run via `pnpm --filter @candidlens/cli build`. Output: dist/main.js
  * (+ LICENSE copied in for `npm pack`).
  */
 

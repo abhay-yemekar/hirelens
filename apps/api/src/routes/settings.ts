@@ -6,7 +6,7 @@
  * Settings UI can show live availability.
  */
 
-import { PROVIDER_LABELS } from "@hirelens/core";
+import { PROVIDER_LABELS } from "@candidlens/core";
 
 /** Validated provider-ids schema (shared shape with core's LlmProviderId). */
 const LlmProviderIdSchema = z.enum([
@@ -19,8 +19,8 @@ const LlmProviderIdSchema = z.enum([
   "ollama",
 ]);
 
-import { orgSettings } from "@hirelens/db";
-import { appendAudit } from "@hirelens/orchestrator";
+import { orgSettings } from "@candidlens/db";
+import { appendAudit } from "@candidlens/orchestrator";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -143,7 +143,7 @@ export function settingsRoutes(): Hono<AppEnv> {
             ok: false,
             error: "migrations_pending",
             message:
-              "The org_settings table does not exist yet. Run: pnpm --filter @hirelens/db db:migrate",
+              "The org_settings table does not exist yet. Run: pnpm --filter @candidlens/db db:migrate",
           },
           503,
         );

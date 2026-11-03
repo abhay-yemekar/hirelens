@@ -4,8 +4,8 @@
  * DATABASE_URL is set (never skips on CI).
  */
 
-import { createMockModel } from "@hirelens/core";
-import { auth, createDb } from "@hirelens/db";
+import { createMockModel } from "@candidlens/core";
+import { auth, createDb } from "@candidlens/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 import { deleteOrgCompletely } from "./helpers.js";

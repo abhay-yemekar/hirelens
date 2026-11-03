@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, CardContent } from "@hirelens/ui";
+import { Button, CardContent } from "@candidlens/ui";
 import { ChevronDown, Plus, Save, Sparkles, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { NoticeBanner } from "@/components/notice-banner";

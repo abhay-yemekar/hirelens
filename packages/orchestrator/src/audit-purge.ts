@@ -10,7 +10,7 @@
  * "fixing" history.
  */
 
-import { auditLog, type Database } from "@hirelens/db";
+import { auditLog, type Database } from "@candidlens/db";
 import { eq, sql } from "drizzle-orm";
 
 export async function purgeOrg(db: Database, orgId: string): Promise<void> {

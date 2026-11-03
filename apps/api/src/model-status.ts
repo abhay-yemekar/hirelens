@@ -14,7 +14,7 @@ import {
   PROVIDER_LABELS,
   pingModel,
   resolveLanguageModel,
-} from "@hirelens/core";
+} from "@candidlens/core";
 import { type LlmEnv, readLlmEnv } from "./env.js";
 
 interface ProviderInfo {

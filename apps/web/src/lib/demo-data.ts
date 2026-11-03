@@ -3,7 +3,7 @@
  * email is fictional; resumes are deliberately varied in seniority and
  * fit so the ranking is meaningful. No real PII anywhere.
  */
-import type { Rubric } from "@hirelens/core";
+import type { Rubric } from "@candidlens/core";
 
 export const DEMO_JD = `Senior Backend Engineer — Meridian Pay
 

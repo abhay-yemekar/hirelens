@@ -1,5 +1,5 @@
-import type { Database } from "@hirelens/db";
-import { member, organization } from "@hirelens/db";
+import type { Database } from "@candidlens/db";
+import { member, organization } from "@candidlens/db";
 import { and, eq } from "drizzle-orm";
 import type { MiddlewareHandler } from "hono";
 import type { AppEnv } from "./types.js";

@@ -13,9 +13,9 @@
  */
 
 import { randomBytes } from "node:crypto";
-import { buildInterviewKit, renderKitHtml } from "@hirelens/core";
-import { candidates, demographics, jobs, portalLinks, rubrics } from "@hirelens/db";
-import { appendAudit } from "@hirelens/orchestrator";
+import { buildInterviewKit, renderKitHtml } from "@candidlens/core";
+import { candidates, demographics, jobs, portalLinks, rubrics } from "@candidlens/db";
+import { appendAudit } from "@candidlens/orchestrator";
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";

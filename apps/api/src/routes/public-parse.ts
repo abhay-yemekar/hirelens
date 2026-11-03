@@ -26,7 +26,7 @@ import {
   MAX_DOCUMENT_BYTES,
   parseCandidate,
   textHash,
-} from "@hirelens/core";
+} from "@candidlens/core";
 import { Hono } from "hono";
 import { authenticateToken } from "../token-auth.js";
 import type { AppEnv } from "../types.js";

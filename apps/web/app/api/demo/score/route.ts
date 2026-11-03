@@ -2,7 +2,7 @@
  * No-signup demo scoring endpoint.
  *
  * Uses the SAME scoring engine as the product (`scoreResume` from
- * @hirelens/core) with the server's configured LLM. Without an LLM key
+ * @candidlens/core) with the server's configured LLM. Without an LLM key
  * (or on provider failure) it falls back to a deterministic heuristic
  * scorer so the demo always works — the UI labels which mode ran.
  *
@@ -10,7 +10,7 @@
  * public API): 20 runs/hour/IP, 400/hour globally. Results are cached
  * per resume so repeat plays are instant and cheap.
  */
-import { type ProviderConfig, resolveLanguageModel, scoreResume } from "@hirelens/core";
+import { type ProviderConfig, resolveLanguageModel, scoreResume } from "@candidlens/core";
 import { type NextRequest, NextResponse } from "next/server";
 import { DEMO_RESUMES, DEMO_RUBRIC } from "@/lib/demo-data";
 

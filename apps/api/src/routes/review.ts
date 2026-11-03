@@ -1,6 +1,6 @@
-import { type Criterion, weightedOverall } from "@hirelens/core";
-import { candidates, decisions, rubrics, scores, scoringRuns } from "@hirelens/db";
-import { appendAudit } from "@hirelens/orchestrator";
+import { type Criterion, weightedOverall } from "@candidlens/core";
+import { candidates, decisions, rubrics, scores, scoringRuns } from "@candidlens/db";
+import { appendAudit } from "@candidlens/orchestrator";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";

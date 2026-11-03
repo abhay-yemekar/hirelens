@@ -4,7 +4,7 @@
  * when Langfuse env vars are absent (see observability.ts).
  */
 
-import type { GenerationObservation, TraceSink } from "@hirelens/orchestrator";
+import type { GenerationObservation, TraceSink } from "@candidlens/orchestrator";
 import { logger, startTrace, type TraceHandle } from "./observability.js";
 
 export function langfuseTraceSink(): TraceSink {

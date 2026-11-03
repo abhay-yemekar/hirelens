@@ -1,5 +1,5 @@
-import type { LanguageModel } from "@hirelens/core";
-import type { Database } from "@hirelens/db";
+import type { LanguageModel } from "@candidlens/core";
+import type { Database } from "@candidlens/db";
 import type { AuthContext } from "./auth.js";
 import type { HireLensIndexer } from "./indexing.js";
 

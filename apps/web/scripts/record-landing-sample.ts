@@ -6,13 +6,13 @@
  * never drift from what the engine produces.
  *
  *   HIRELENS_LLM_PROVIDER=groq HIRELENS_LLM_MODEL=openai/gpt-oss-120b \
- *   HIRELENS_LLM_API_KEY=... pnpm --filter @hirelens/web run landing-sample
+ *   HIRELENS_LLM_API_KEY=... pnpm --filter @candidlens/web run landing-sample
  *
- * Build @hirelens/core first: this imports its dist.
+ * Build @candidlens/core first: this imports its dist.
  */
 
 import { writeFileSync } from "node:fs";
-import { type LlmProviderId, resolveLanguageModel, scoreResume } from "@hirelens/core";
+import { type LlmProviderId, resolveLanguageModel, scoreResume } from "@candidlens/core";
 import { DEMO_RESUMES, DEMO_RUBRIC } from "../src/lib/demo-data";
 
 /** Free-tier providers allow a few requests per minute. */

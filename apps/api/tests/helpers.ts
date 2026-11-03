@@ -1,5 +1,5 @@
-import { auth, type Database, organization } from "@hirelens/db";
-import { purgeOrg } from "@hirelens/orchestrator";
+import { auth, type Database, organization } from "@candidlens/db";
+import { purgeOrg } from "@candidlens/orchestrator";
 import { eq } from "drizzle-orm";
 
 /**

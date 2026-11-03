@@ -12,8 +12,8 @@
  * were somehow bypassed, the second commit fails instead of forking.
  */
 
-import { hashLink } from "@hirelens/core";
-import { auditLog, type Database } from "@hirelens/db";
+import { hashLink } from "@candidlens/core";
+import { auditLog, type Database } from "@candidlens/db";
 import { desc, eq, sql } from "drizzle-orm";
 
 export interface AuditEntryInput {
@@ -68,5 +68,5 @@ export async function appendAudit(
   });
 }
 
-/** Genesis hash for an empty chain (mirrors @hirelens/core). */
+/** Genesis hash for an empty chain (mirrors @candidlens/core). */
 const GENESIS = "0".repeat(64);

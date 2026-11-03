@@ -12,7 +12,7 @@ import {
   type ScoredCriterion,
   scoreResume,
   weightedOverall,
-} from "@hirelens/core";
+} from "@candidlens/core";
 import {
   BENCHMARK_SEED,
   type BenchmarkResume,

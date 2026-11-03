@@ -15,8 +15,8 @@
  */
 
 import { randomBytes } from "node:crypto";
-import type { Criterion } from "@hirelens/core";
-import { skillGraph, skillsInText } from "@hirelens/core";
+import type { Criterion } from "@candidlens/core";
+import { skillGraph, skillsInText } from "@candidlens/core";
 import {
   candidateReportLinks,
   candidates,
@@ -25,8 +25,8 @@ import {
   rubrics,
   scores as scoresTable,
   scoringRuns,
-} from "@hirelens/db";
-import { appendAudit } from "@hirelens/orchestrator";
+} from "@candidlens/db";
+import { appendAudit } from "@candidlens/orchestrator";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@hirelens/ui";
+import { Button } from "@candidlens/ui";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 

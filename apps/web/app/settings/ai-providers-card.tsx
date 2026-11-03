@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hirelens/ui";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@candidlens/ui";
 import { CheckCircle2, RefreshCw, XCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { NoticeBanner } from "@/components/notice-banner";
@@ -129,7 +129,7 @@ export function LlmProvidersCard() {
           <NoticeBanner
             descriptor={{
               tone: "warning",
-              text: "Server migrations haven't run yet, so saving a provider choice is unavailable for now. Ask your operator to run: pnpm --filter @hirelens/db db:migrate",
+              text: "Server migrations haven't run yet, so saving a provider choice is unavailable for now. Ask your operator to run: pnpm --filter @candidlens/db db:migrate",
             }}
           />
         ) : null}

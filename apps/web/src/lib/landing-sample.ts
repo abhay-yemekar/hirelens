@@ -15,7 +15,7 @@ import {
   PROVIDER_LABELS,
   type TextSpan,
   weightedOverall,
-} from "@hirelens/core";
+} from "@candidlens/core";
 import { DEMO_RESUMES, DEMO_RUBRIC } from "./demo-data";
 import recording from "./landing-sample.json";
 

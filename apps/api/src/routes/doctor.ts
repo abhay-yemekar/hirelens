@@ -24,8 +24,8 @@ import {
   MAX_DOCUMENT_BYTES,
   runResumeDoctor,
   textHash,
-} from "@hirelens/core";
-import { type Database, doctorReports } from "@hirelens/db";
+} from "@candidlens/core";
+import { type Database, doctorReports } from "@candidlens/db";
 import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";

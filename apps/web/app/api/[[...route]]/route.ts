@@ -1,4 +1,4 @@
-import { flushSentry, getServerApp } from "@hirelens/api/embed";
+import { flushSentry, getServerApp } from "@candidlens/api/embed";
 import type { NextRequest } from "next/server";
 
 /**

@@ -1,4 +1,4 @@
-import { AllProvidersFailedError, type LanguageModel } from "@hirelens/core";
+import { AllProvidersFailedError, type LanguageModel } from "@candidlens/core";
 import type { Context } from "hono";
 import { ApiInputError } from "./errors.js";
 import type { AppEnv } from "./types.js";

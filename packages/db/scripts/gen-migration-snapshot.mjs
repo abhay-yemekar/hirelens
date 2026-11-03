@@ -9,7 +9,7 @@
  * because the serverless bundle cannot rely on the drizzle folder
  * shipping inside it.
  *
- * Run after every `db:generate`: pnpm --filter @hirelens/db gen:migrations
+ * Run after every `db:generate`: pnpm --filter @candidlens/db gen:migrations
  * (output is committed).
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -25,7 +25,7 @@ if (entries.length === 0) throw new Error("migration journal has no entries");
 const out = `/**
  * GENERATED FILE — do not edit by hand.
  * Source of truth: drizzle/meta/_journal.json
- * Regenerate with: pnpm --filter @hirelens/db gen:migrations
+ * Regenerate with: pnpm --filter @candidlens/db gen:migrations
  *
  * Snapshot of the migration journal at ${new Date().toISOString()}
  */

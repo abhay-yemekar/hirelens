@@ -4,7 +4,7 @@
  * the CI service container), with migrations applied (db:migrate).
  */
 
-import { createMockModel, GENESIS, hashLink, type LanguageModel } from "@hirelens/core";
+import { createMockModel, GENESIS, hashLink, type LanguageModel } from "@candidlens/core";
 import {
   auditLog,
   candidates,
@@ -18,7 +18,7 @@ import {
   scores,
   scoringRuns,
   user,
-} from "@hirelens/db";
+} from "@candidlens/db";
 import { asc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { purgeOrg } from "../src/audit-purge.js";

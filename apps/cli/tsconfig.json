@@ -1,5 +1,5 @@
 {
-  "extends": "@hirelens/config/typescript/node",
+  "extends": "@candidlens/config/typescript/node",
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",

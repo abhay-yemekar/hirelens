@@ -5,9 +5,9 @@
  * and never abort the whole batch or vanish silently.
  */
 
-import { blindView, type LanguageModel, modelIdOf } from "@hirelens/core";
-import type { Database } from "@hirelens/db";
-import { candidates, documents, jobs, rubrics, scoringRuns } from "@hirelens/db";
+import { blindView, type LanguageModel, modelIdOf } from "@candidlens/core";
+import type { Database } from "@candidlens/db";
+import { candidates, documents, jobs, rubrics, scoringRuns } from "@candidlens/db";
 import { desc, eq, inArray } from "drizzle-orm";
 import { appendAudit } from "./audit.js";
 import type { BatchSummary } from "./orchestrator.js";

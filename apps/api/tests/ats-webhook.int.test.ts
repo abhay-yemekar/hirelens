@@ -7,8 +7,8 @@
 
 import dns from "node:dns";
 import { createServer } from "node:http";
-import { createMockModel } from "@hirelens/core";
-import { auth, candidates, createDb, organization } from "@hirelens/db";
+import { createMockModel } from "@candidlens/core";
+import { auth, candidates, createDb, organization } from "@candidlens/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";

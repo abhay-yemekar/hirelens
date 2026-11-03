@@ -1,8 +1,8 @@
-@import "@hirelens/ui/styles.css";
+@import "@candidlens/ui/styles.css";
 
 /*
  * Scan the shared UI package. Tailwind v4's automatic content detection
- * starts at the app root, so variant classes defined inside @hirelens/ui
+ * starts at the app root, so variant classes defined inside @candidlens/ui
  * (button backgrounds, score colors, press states) would never generate —
  * the classic "buttons don't look like buttons" bug.
  */

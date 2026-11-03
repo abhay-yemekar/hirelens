@@ -1,4 +1,4 @@
-import { createMockModel } from "@hirelens/core";
+import { createMockModel } from "@candidlens/core";
 import { describe, expect, it } from "vitest";
 import { benchmarkResumes, benchmarkRubric } from "./benchmark.js";
 import { runEvals } from "./harness.js";

@@ -1,4 +1,4 @@
-import { createDb } from "@hirelens/db";
+import { createDb } from "@candidlens/db";
 import { createApp } from "./app.js";
 import { readLlmEnv } from "./env.js";
 import { createIndexer, embeddingModelFromEnv } from "./indexing.js";

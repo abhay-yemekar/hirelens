@@ -1,5 +1,5 @@
 {
-  "name": "@hirelens/core",
+  "name": "@candidlens/core",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -26,7 +26,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@hirelens/config": "workspace:*",
+    "@candidlens/config": "workspace:*",
     "@types/node": "^26.6.4",
     "pdf-lib": "^1.17.1",
     "typescript": "~5.9.3",

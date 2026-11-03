@@ -46,8 +46,8 @@ jobs:
 
       - name: Prepare database
         run: |
-          pnpm --filter @hirelens/db db:extensions
-          pnpm --filter @hirelens/db db:migrate
+          pnpm --filter @candidlens/db db:extensions
+          pnpm --filter @candidlens/db db:migrate
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5433/hirelens
 

@@ -13,8 +13,8 @@
  * ATS (push-back is explicit).
  */
 
-import type { Database } from "@hirelens/db";
-import { candidates, jobs } from "@hirelens/db";
+import type { Database } from "@candidlens/db";
+import { candidates, jobs } from "@candidlens/db";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";

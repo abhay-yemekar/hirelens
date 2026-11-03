@@ -7,16 +7,16 @@
  * working (semantically when embeddings exist, lexically otherwise).
  */
 
-import type { EmbeddingModel } from "@hirelens/core";
+import type { EmbeddingModel } from "@candidlens/core";
 import {
   chunkText,
   createEmbeddingModel,
   EMBEDDING_MODEL_ID,
   embedChunkTexts,
   embedQuery,
-} from "@hirelens/core";
-import type { Database } from "@hirelens/db";
-import { chunks } from "@hirelens/db";
+} from "@candidlens/core";
+import type { Database } from "@candidlens/db";
+import { chunks } from "@candidlens/db";
 import { eq } from "drizzle-orm";
 
 /** Batch size for embedMany calls — a resume is ~5-15 chunks. */

@@ -1,12 +1,12 @@
-import { type Criterion, expandZip, weightedOverall } from "@hirelens/core";
+import { type Criterion, expandZip, weightedOverall } from "@candidlens/core";
 import {
   candidates as candidatesTable,
   evidence,
   rubrics,
   scores,
   scoringRuns,
-} from "@hirelens/db";
-import { appendAudit, runBatch } from "@hirelens/orchestrator";
+} from "@candidlens/db";
+import { appendAudit, runBatch } from "@candidlens/orchestrator";
 import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { ROLE_MIN, requireAuth } from "../auth.js";

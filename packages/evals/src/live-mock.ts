@@ -4,7 +4,7 @@
  * the harness itself without API keys.
  */
 
-import { createMockModel } from "@hirelens/core";
+import { createMockModel } from "@candidlens/core";
 import { runEvals } from "./harness.js";
 
 const CRITERIA = ["system-design", "databases", "testing", "ops", "communication"];
