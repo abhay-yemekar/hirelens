@@ -554,6 +554,16 @@ export const runDoctor = (text: string, init?: RequestInit & { serverCookie?: st
     ...init,
   });
 
+/** Run the Doctor on a PDF, DOCX, TXT or MD file; returns the extracted text too. */
+export const runDoctorFile = (file: File) => {
+  const form = new FormData();
+  form.set("file", file);
+  return apiFetch<{ ok: true; text: string; report: DoctorReport; history: DoctorHistoryRow[] }>(
+    "/api/doctor/file",
+    { method: "POST", body: form },
+  );
+};
+
 /** Score history (optionally narrowed to one text hash). */
 export const listDoctorHistory = (
   hash?: string,

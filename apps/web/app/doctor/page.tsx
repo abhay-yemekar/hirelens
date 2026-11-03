@@ -2,15 +2,21 @@
 
 import { useCallback, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
-import { ApiRequestError, type DoctorHistoryRow, type DoctorReport, runDoctor } from "@/lib/api";
+import {
+  ApiRequestError,
+  type DoctorHistoryRow,
+  type DoctorReport,
+  runDoctor,
+  runDoctorFile,
+} from "@/lib/api";
 
 /**
  * Resume Doctor (phase 2 flagship, candidate-side).
  *
- * Paste or upload a resume, get the deterministic 0–100 score with every
- * flag pinned to the exact line of text it refers to, plus this org's
- * score history for the same text. Mobile-first: score and headline
- * first, text with inline flags second, filters last.
+ * Paste a resume or upload a PDF, Word or text file, get the deterministic
+ * 0–100 score with every flag pinned to the exact line of text it refers
+ * to, plus this org's score history for the same text. Mobile-first: score
+ * and headline first, text with inline flags second, filters last.
  */
 
 const SEVERITY_COLOR: Record<string, string> = {
@@ -27,6 +33,20 @@ const CATEGORY_LABELS: Record<string, string> = {
   brevity: "Brevity",
   parse: "Parseability",
 };
+
+/** Files the server extracts; .txt and .md are read in the browser. */
+const UPLOAD_ACCEPT =
+  ".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown";
+
+/** Hosted request bodies cap near 4.5 MB; resumes are far smaller. */
+const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+
+function errorMessage(err: unknown): string {
+  if (err instanceof ApiRequestError && err.code === "unauthorized") {
+    return "Sign in to run the Resume Doctor.";
+  }
+  return err instanceof Error ? err.message : "Something went wrong — is the API running?";
+}
 
 function bandColor(band: DoctorReport["band"]): string {
   if (band === "excellent") return "var(--color-success, #30a46c)";
@@ -97,38 +117,57 @@ export default function DoctorPage() {
   const [dragOver, setDragOver] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const analyze = useCallback(async () => {
-    if (text.trim().length === 0) return;
-    setPending(true);
-    setError(null);
-    setActiveCode(null);
-    try {
-      const res = await runDoctor(text);
-      setReport(res.report);
-      setHistory(res.history);
-    } catch (err) {
-      if (err instanceof ApiRequestError && err.code === "unauthorized") {
-        setError("Sign in to run the Resume Doctor.");
-      } else {
-        setError(err instanceof Error ? err.message : "Something went wrong — is the API running?");
+  /** Run one request, keeping the pending, error and result state in step. */
+  const diagnose = useCallback(
+    async (run: () => Promise<{ report: DoctorReport; history: DoctorHistoryRow[] }>) => {
+      setPending(true);
+      setError(null);
+      setActiveCode(null);
+      try {
+        const res = await run();
+        setReport(res.report);
+        setHistory(res.history);
+      } catch (err) {
+        setError(errorMessage(err));
+      } finally {
+        setPending(false);
       }
-    } finally {
-      setPending(false);
-    }
-  }, [text]);
+    },
+    [],
+  );
 
-  const readFile = useCallback(async (file: File) => {
-    // Plain text formats only (txt/md). PDF/DOCX extraction lives server-
-    // side in the full ingest flow; the doctor page keeps it simple by
-    // accepting raw text. Read as UTF-8, cap at 200 KB to match the API.
-    if (file.size > 200_000) {
-      setError("File too large — the doctor accepts up to 200 KB of text.");
-      return;
-    }
-    const content = await file.text();
-    setText(content);
-    setError(null);
-  }, []);
+  const analyze = useCallback(() => {
+    if (text.trim().length === 0) return;
+    void diagnose(() => runDoctor(text));
+  }, [diagnose, text]);
+
+  // A file runs the Doctor straight away. Text files are read here; PDF and
+  // Word files go to the server, which returns the text the flags point into.
+  const readFile = useCallback(
+    async (file: File) => {
+      const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+      if (ext !== "pdf" && ext !== "docx" && ext !== "txt" && ext !== "md") {
+        setError(`${file.name}: use a PDF, Word (.docx), .txt or .md file.`);
+        return;
+      }
+      if (file.size > MAX_UPLOAD_BYTES) {
+        setError(`${file.name} is larger than 4 MB.`);
+        return;
+      }
+      if (ext === "txt" || ext === "md") {
+        const content = await file.text();
+        setText(content);
+        void diagnose(() => runDoctor(content));
+        return;
+      }
+      void diagnose(async () => {
+        const res = await runDoctorFile(file);
+        setText(res.text);
+        return res;
+      });
+    },
+    [diagnose],
+  );
 
   const visibleFindings = report
     ? categoryFilter
@@ -146,13 +185,27 @@ export default function DoctorPage() {
         </p>
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Resume Doctor</h1>
         <p className="mt-2 max-w-2xl text-sm" style={{ color: "var(--hl-muted)" }}>
-          Paste (or drop) a resume and get its fixable problems — contact, structure, dates, impact,
-          brevity — each pinned to the exact line. Score bands: excellent ≥ 85, good ≥ 60,
-          needs_work below.
+          Paste your resume or upload a PDF or Word file, and get its fixable problems — contact,
+          structure, dates, impact, brevity — each pinned to the exact line. Score bands: excellent
+          ≥ 85, good ≥ 60, needs_work below.
         </p>
       </header>
 
-      <section className="mt-6" aria-label="Input">
+      <section
+        className="mt-6"
+        aria-label="Input"
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          const f = e.dataTransfer.files?.[0];
+          if (f) void readFile(f);
+        }}
+      >
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -160,7 +213,7 @@ export default function DoctorPage() {
           rows={8}
           className="w-full rounded-lg border p-3 font-mono text-[13px] leading-6"
           style={{
-            borderColor: "var(--hl-border)",
+            borderColor: dragOver ? "var(--hl-accent)" : "var(--hl-border)",
             background: "var(--hl-card, transparent)",
             color: "var(--hl-cream)",
           }}
@@ -168,7 +221,7 @@ export default function DoctorPage() {
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={() => void analyze()}
+            onClick={analyze}
             disabled={pending || text.trim().length === 0}
             className="rounded-lg px-5 py-2.5 text-sm font-semibold transition-opacity disabled:opacity-40"
             style={{ background: "var(--hl-accent)", color: "var(--hl-ink)" }}
@@ -181,15 +234,17 @@ export default function DoctorPage() {
             className="rounded-lg border px-4 py-2 text-sm transition-colors"
             style={{ borderColor: "var(--hl-border)", color: "var(--hl-cream)" }}
           >
-            Upload .txt / .md
+            Upload PDF, Word or text
           </button>
           <input
             ref={fileInput}
             type="file"
-            accept=".txt,.md,text/plain"
+            accept={UPLOAD_ACCEPT}
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
+              // Clear so picking the same file again still fires onChange.
+              e.target.value = "";
               if (f) void readFile(f);
             }}
           />
