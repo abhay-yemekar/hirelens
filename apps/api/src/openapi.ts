@@ -633,6 +633,15 @@ export const openApiDocument = {
         responses: { 200: ok({ type: "object" }) },
       },
     },
+    "/api/doctor/file": {
+      post: {
+        tags: ["Resume Doctor"],
+        summary: "Check a resume file: PDF, Word (.docx), .txt or .md.",
+        description:
+          "Same rules and response as POST /api/doctor, for multipart/form-data with a `file` part (at most 10 MiB). The file's text is extracted in memory and returned as `text`, which the findings' spans point into; the file is not stored. 422 `unreadable_document` for a scanned PDF or an unsupported format.",
+        responses: { 200: ok({ type: "object" }) },
+      },
+    },
     "/api/doctor/{id}": {
       delete: {
         tags: ["Resume Doctor"],

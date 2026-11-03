@@ -4,6 +4,9 @@
  * POST /api/doctor       — run the deterministic doctor over raw resume
  *                          text, persist a history row, return the report
  *                          plus the caller's score history for that text.
+ * POST /api/doctor/file  — the same for an uploaded PDF, DOCX, TXT or MD
+ *                          file; also returns the extracted text, since
+ *                          the report's offsets point into it.
  * GET  /api/doctor       — org-wide history (newest first).
  * DELETE /api/doctor/:id — remove a history entry (org-scoped).
  *
@@ -14,20 +17,42 @@
  * (contentHash = sha-256 of the analyzed text) applies for dedupe/grouping.
  */
 
-import { isDoctorInputEnough, runResumeDoctor, textHash } from "@hirelens/core";
-import { doctorReports } from "@hirelens/db";
+import {
+  ExtractionError,
+  extractDocument,
+  isDoctorInputEnough,
+  MAX_DOCUMENT_BYTES,
+  runResumeDoctor,
+  textHash,
+} from "@hirelens/core";
+import { type Database, doctorReports } from "@hirelens/db";
 import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import { ROLE_MIN, requireAuth, resolveAuthContext, sessionUserId } from "../auth.js";
+import {
+  type AuthContext,
+  ROLE_MIN,
+  requireAuth,
+  resolveAuthContext,
+  sessionUserId,
+} from "../auth.js";
 import { readJson } from "../http.js";
 import type { AppEnv } from "../types.js";
 
+/** Longest resume text the Doctor analyzes, typed or extracted. */
+const MAX_TEXT_CHARS = 200_000;
+
 const AnalyzeSchema = z
   .object({
-    text: z.string().min(1).max(200_000),
+    text: z.string().min(1).max(MAX_TEXT_CHARS),
   })
   .strip();
+
+const TOO_SHORT = {
+  ok: false,
+  error: "text_too_short",
+  message: "Resume text is too short to analyze — need at least 120 non-whitespace characters.",
+} as const;
 
 /** Rows the GET history endpoint hands back (no findings payload — size). */
 interface DoctorHistoryRow {
@@ -37,6 +62,62 @@ interface DoctorHistoryRow {
   band: string;
   createdAt: string;
   findingCount: number;
+}
+
+/**
+ * Run the engine, then record history. The engine is the source of truth:
+ * compute FIRST, persist AFTER, so a failed history write cannot alter an
+ * already-computed report. Callers outside an organization get no history.
+ */
+async function diagnose(db: Database, authc: AuthContext | null, text: string) {
+  const report = runResumeDoctor(text);
+  const hash = textHash(text);
+  if (authc === null) return { report, history: [] as DoctorHistoryRow[] };
+
+  // History row: informational only. Never blocks the response.
+  await db
+    .insert(doctorReports)
+    .values({
+      orgId: authc.orgId,
+      createdBy: authc.userId,
+      textHash: hash,
+      score: report.score,
+      band: report.band,
+      findings: report.findings as unknown as Array<Record<string, unknown>>,
+      nextSteps: report.nextSteps,
+    })
+    .catch(() => undefined);
+
+  // That same text's score history for this org (newest first), so the
+  // caller can immediately show "how has this resume trended?".
+  const history = await db
+    .select({
+      id: doctorReports.id,
+      textHash: doctorReports.textHash,
+      score: doctorReports.score,
+      band: doctorReports.band,
+      createdAt: doctorReports.createdAt,
+      findingCount: doctorReports.findings,
+    })
+    .from(doctorReports)
+    .where(and(eq(doctorReports.orgId, authc.orgId), eq(doctorReports.textHash, hash)))
+    .orderBy(desc(doctorReports.createdAt))
+    .limit(10)
+    .catch(() => []);
+
+  return {
+    report,
+    history: history.map(
+      (h): DoctorHistoryRow => ({
+        id: h.id,
+        textHash: h.textHash,
+        score: h.score,
+        band: h.band,
+        createdAt: h.createdAt.toISOString(),
+        findingCount: Array.isArray(h.findingCount) ? h.findingCount.length : 0,
+      }),
+    ),
+  };
 }
 
 export function doctorRoutes() {
@@ -63,65 +144,81 @@ export function doctorRoutes() {
       );
     }
     const text = parsed.data.text;
-    if (!isDoctorInputEnough(text)) {
+    if (!isDoctorInputEnough(text)) return c.json(TOO_SHORT, 422);
+
+    return c.json({ ok: true, ...(await diagnose(db, authc, text)) });
+  });
+
+  // Same rules as POST /doctor, for a file. The text is extracted in
+  // memory and only its hash is stored, as for pasted text.
+  routes.post("/doctor/file", async (c) => {
+    const db = c.get("db");
+    if (sessionUserId(c.get("session")) === null) {
+      return c.json({ ok: false, error: "unauthorized" }, 401);
+    }
+    const authc = await resolveAuthContext(db, c.get("session"));
+
+    const form = await c.req.formData().catch(() => null);
+    const file = form?.get("file");
+    if (!(file instanceof File)) {
       return c.json(
         {
           ok: false,
-          error: "text_too_short",
-          message:
-            "Resume text is too short to analyze — need at least 120 non-whitespace characters.",
+          error: "invalid_body",
+          message: "Send multipart/form-data with a `file` part.",
+        },
+        400,
+      );
+    }
+    if (file.size > MAX_DOCUMENT_BYTES) {
+      return c.json(
+        {
+          ok: false,
+          error: "file_too_large",
+          message: `${file.name} is larger than ${MAX_DOCUMENT_BYTES / 1024 / 1024} MB.`,
+        },
+        413,
+      );
+    }
+
+    let text: string;
+    try {
+      const extracted = await extractDocument(new Uint8Array(await file.arrayBuffer()), file.name);
+      text = extracted.needsOcr ? "" : extracted.pages.join("\n\n").trim();
+    } catch (err) {
+      if (!(err instanceof ExtractionError)) throw err;
+      return c.json(
+        {
+          ok: false,
+          error: "unreadable_document",
+          message: `${file.name}: use a PDF, Word (.docx), .txt or .md file.`,
         },
         422,
       );
     }
+    if (text === "") {
+      return c.json(
+        {
+          ok: false,
+          error: "unreadable_document",
+          message: `${file.name} has no selectable text (a scanned PDF?). Export it as a text-based PDF or Word file, or paste the text.`,
+        },
+        422,
+      );
+    }
+    if (text.length > MAX_TEXT_CHARS) {
+      return c.json(
+        {
+          ok: false,
+          error: "text_too_large",
+          message: `${file.name} has more than 200,000 characters of text.`,
+        },
+        413,
+      );
+    }
+    if (!isDoctorInputEnough(text)) return c.json(TOO_SHORT, 422);
 
-    // The engine is the source of truth: compute FIRST, persist AFTER, so
-    // a failed history write cannot alter an already-computed report.
-    const report = runResumeDoctor(text);
-    const hash = textHash(text);
-    if (authc === null) return c.json({ ok: true, report, history: [] });
-
-    // History row: informational only. Never blocks the response.
-    await db
-      .insert(doctorReports)
-      .values({
-        orgId: authc.orgId,
-        createdBy: authc.userId,
-        textHash: hash,
-        score: report.score,
-        band: report.band,
-        findings: report.findings as unknown as Array<Record<string, unknown>>,
-        nextSteps: report.nextSteps,
-      })
-      .catch(() => undefined);
-
-    // That same text's score history for this org (newest first), so the
-    // caller can immediately show "how has this resume trended?".
-    const history = await db
-      .select({
-        id: doctorReports.id,
-        textHash: doctorReports.textHash,
-        score: doctorReports.score,
-        band: doctorReports.band,
-        createdAt: doctorReports.createdAt,
-        findingCount: doctorReports.findings,
-      })
-      .from(doctorReports)
-      .where(and(eq(doctorReports.orgId, authc.orgId), eq(doctorReports.textHash, hash)))
-      .orderBy(desc(doctorReports.createdAt))
-      .limit(10)
-      .catch(() => []);
-
-    const historyRows: DoctorHistoryRow[] = history.map((h) => ({
-      id: h.id,
-      textHash: h.textHash,
-      score: h.score,
-      band: h.band,
-      createdAt: h.createdAt.toISOString(),
-      findingCount: Array.isArray(h.findingCount) ? h.findingCount.length : 0,
-    }));
-
-    return c.json({ ok: true, report, history: historyRows });
+    return c.json({ ok: true, text, ...(await diagnose(db, authc, text)) });
   });
 
   routes.get("/doctor", requireAuth(ROLE_MIN.view), async (c) => {

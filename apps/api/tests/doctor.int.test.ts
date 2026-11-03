@@ -6,6 +6,8 @@
 import type { DoctorReport } from "@hirelens/core";
 import { auth, createDb, type Database, doctorReports } from "@hirelens/db";
 import { eq } from "drizzle-orm";
+import { strToU8, zipSync } from "fflate";
+import { PDFDocument, StandardFonts } from "pdf-lib";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 import { deleteOrgCompletely } from "./helpers.js";
@@ -43,6 +45,44 @@ const GOOD_RESUME = [
 ].join("\n");
 
 const SPAM = "x".repeat(50);
+
+/** A one-page text PDF with one resume line per text line (ASCII only). */
+async function makePdf(lines: string[]): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const page = doc.addPage([595, 842]);
+  lines.forEach((line, i) => {
+    page.drawText(line, { x: 50, y: 800 - i * 16, size: 11, font });
+  });
+  return doc.save();
+}
+
+/** The smallest DOCX mammoth reads: one paragraph per line. */
+function makeDocx(lines: string[]): Uint8Array {
+  const paragraphs = lines.map((l) => `<w:p><w:r><w:t xml:space="preserve">${l}</w:t></w:r></w:p>`);
+  return zipSync({
+    "[Content_Types].xml": strToU8(
+      '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>',
+    ),
+    "_rels/.rels": strToU8(
+      '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>',
+    ),
+    "word/document.xml": strToU8(
+      `<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${paragraphs.join("")}</w:body></w:document>`,
+    ),
+  });
+}
+
+/** POST one file to /api/doctor/file as multipart. */
+function uploadFile(
+  bytes: Uint8Array,
+  name: string,
+  headers: Record<string, string> = authHeaders,
+): Promise<Response> {
+  const form = new FormData();
+  form.set("file", new File([new Uint8Array(bytes)], name));
+  return Promise.resolve(app.request("/api/doctor/file", { method: "POST", headers, body: form }));
+}
 
 beforeAll(async () => {
   if (!available) return;
@@ -173,6 +213,89 @@ describe.skipIf(!available && allowSkip)("doctor route", () => {
     const goodBody = (await good.json()) as { report: DoctorReport };
     expect(goodBody.report.score).toBeGreaterThan(weakBody.report.score);
     expect(weakBody.report.findings.length).toBeGreaterThan(goodBody.report.findings.length);
+  });
+
+  describe("file upload", () => {
+    const LINES = GOOD_RESUME.split("\n").filter((l) => l.trim() !== "");
+
+    it("diagnoses a PDF and returns the text the flags point into", async () => {
+      const res = await uploadFile(await makePdf(LINES), "priya-sharma.pdf");
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { ok: boolean; text: string; report: DoctorReport };
+      expect(body.ok).toBe(true);
+      expect(body.text).toContain("priya.sharma@example.com");
+      expect(body.text).toContain("Senior Backend Engineer");
+      // Same engine, same text: the file result equals a paste of its text.
+      const pasted = await app.request("/api/doctor", {
+        method: "POST",
+        headers: { ...authHeaders, "content-type": "application/json" },
+        body: JSON.stringify({ text: body.text }),
+      });
+      const pastedBody = (await pasted.json()) as { report: DoctorReport };
+      expect(body.report).toEqual(pastedBody.report);
+      for (const f of body.report.findings) {
+        if (f.startOffset === null || f.endOffset === null) continue;
+        expect(f.endOffset).toBeLessThanOrEqual(body.text.length);
+      }
+    });
+
+    it("diagnoses a Word file", async () => {
+      const res = await uploadFile(makeDocx(LINES), "priya-sharma.docx");
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { text: string; report: DoctorReport };
+      expect(body.text).toContain("priya.sharma@example.com");
+      expect(body.report.score).toBeGreaterThan(0);
+    });
+
+    it("serves a signed-in candidate without an organization", async () => {
+      const signUp = await auth.api.signUpEmail({
+        body: {
+          name: "Doctor Upload Candidate",
+          email: `doctor-upload-${STAMP}@example.com`,
+          password: "Str0ng-Passw0rd!123",
+        },
+        returnHeaders: true,
+      });
+      const cookie = signUp.headers.get("set-cookie")?.split(";")[0] ?? "";
+      const res = await uploadFile(await makePdf(LINES), "cv.pdf", { cookie });
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { history: unknown[] };
+      expect(body.history).toEqual([]);
+    });
+
+    it("rejects signed-out callers", async () => {
+      const res = await uploadFile(await makePdf(LINES), "cv.pdf", {});
+      expect(res.status).toBe(401);
+    });
+
+    it("explains a PDF with no selectable text", async () => {
+      const res = await uploadFile(await makePdf(["scanned page"]), "scan.pdf");
+      expect(res.status).toBe(422);
+      const body = (await res.json()) as { error: string; message: string };
+      expect(body.error).toBe("unreadable_document");
+      expect(body.message).toContain("scanned");
+    });
+
+    it("rejects formats it cannot read", async () => {
+      const res = await uploadFile(strToU8("GIF89a not a resume"), "photo.gif");
+      expect(res.status).toBe(422);
+      expect(((await res.json()) as { error: string }).error).toBe("unreadable_document");
+    });
+
+    it("rejects a request without a file part", async () => {
+      const res = await app.request("/api/doctor/file", {
+        method: "POST",
+        headers: authHeaders,
+        body: new FormData(),
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects a file whose text is too short to diagnose", async () => {
+      const res = await uploadFile(strToU8(SPAM), "short.txt");
+      expect(res.status).toBe(422);
+      expect(((await res.json()) as { error: string }).error).toBe("text_too_short");
+    });
   });
 
   it("GET returns org-scoped history and DELETE removes a row", async () => {
