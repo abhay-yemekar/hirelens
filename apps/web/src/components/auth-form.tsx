@@ -37,6 +37,31 @@ type Mode = "signin" | "signup";
 const GOOGLE_ENABLED = process.env["NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED"] === "true";
 const GITHUB_ENABLED = process.env["NEXT_PUBLIC_GITHUB_OAUTH_ENABLED"] === "true";
 
+/**
+ * Clearer text for the two errors people hit when their email belongs to
+ * an account made with Google or GitHub: it has no password yet.
+ */
+function authErrorText(
+  error: { code?: string | undefined; message?: string | undefined },
+  fallback: string,
+): string {
+  const social = GOOGLE_ENABLED || GITHUB_ENABLED;
+  if (
+    error.code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL" ||
+    error.code === "USER_ALREADY_EXISTS"
+  ) {
+    return social
+      ? "An account with this email already exists. Sign in instead. If you created it with Google or GitHub, use that button, then add a password under Settings → Sign-in & security."
+      : "An account with this email already exists. Sign in instead.";
+  }
+  if (error.code === "INVALID_EMAIL_OR_PASSWORD") {
+    return social
+      ? "Wrong email or password. If you usually sign in with Google or GitHub, use that button. You can add a password afterwards under Settings → Sign-in & security."
+      : "Wrong email or password.";
+  }
+  return error.message ?? fallback;
+}
+
 /** Official Google "G" mark — the four-color logo, as inline SVG. */
 function GoogleIcon() {
   return (
@@ -122,14 +147,14 @@ export function AuthForm() {
           email,
           password,
         });
-        if (res.error) throw new Error(res.error.message ?? "Sign-up failed");
+        if (res.error) throw new Error(authErrorText(res.error, "Sign-up failed"));
         // Hard navigation, already reading the fresh session cookie.
         // track is unset for new users, so this lands on the chooser.
         await landOnSideHome();
         return;
       } else {
         const res = await authClient.signIn.email({ email, password });
-        if (res.error) throw new Error(res.error.message ?? "Sign-in failed");
+        if (res.error) throw new Error(authErrorText(res.error, "Sign-in failed"));
         // Hard navigation, already reading the fresh session cookie.
         await landOnSideHome();
         return;

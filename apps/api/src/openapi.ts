@@ -126,6 +126,7 @@ export const openApiDocument = {
   servers: [{ url: "/", description: "Current host" }],
   tags: [
     { name: "Auth" },
+    { name: "Account" },
     { name: "Jobs" },
     { name: "Rubrics" },
     { name: "Candidates" },
@@ -133,6 +134,7 @@ export const openApiDocument = {
     { name: "Review" },
     { name: "Bias audit" },
     { name: "Sharing" },
+    { name: "Resume Doctor" },
   ],
   components: {
     securitySchemes: {
@@ -630,6 +632,15 @@ export const openApiDocument = {
             description: "Text hash returned by a previous check.",
           },
         ],
+        responses: { 200: ok({ type: "object" }) },
+      },
+    },
+    "/api/account/password": {
+      post: {
+        tags: ["Account"],
+        summary: "Add a first password to an account created with Google or GitHub.",
+        description:
+          "Session required; an organization is not. Body: { newPassword } (8–128 characters). Lets an account that signs in with Google or GitHub also sign in with email and password. 409 `password_already_set` when the account has one (change it through the auth API instead); 403 `session_not_fresh` when the user signed in more than 15 minutes ago and must sign in again first; 415 when the body is not JSON.",
         responses: { 200: ok({ type: "object" }) },
       },
     },

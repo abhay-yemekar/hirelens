@@ -17,6 +17,7 @@ import { requestLogging } from "./middleware.js";
 import { compareMigrations } from "./migration-health.js";
 import { captureException } from "./observability.js";
 import { openApiDocument } from "./openapi.js";
+import { accountRoutes } from "./routes/account.js";
 import { aiContentRoutes } from "./routes/ai-content.js";
 import { analyticsRoutes } from "./routes/analytics.js";
 import { atsWebhookRoutes } from "./routes/ats-webhook.js";
@@ -231,6 +232,7 @@ export function createApp(deps: AppDeps) {
   app.route("/api", atsWebhookRoutes());
   app.route("/api", publicParseRoutes());
   app.route("/api", doctorRoutes());
+  app.route("/api", accountRoutes());
 
   // Authenticated, org-scoped API surface.
   const protectedApi = new Hono<AppEnv>();

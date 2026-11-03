@@ -8,6 +8,7 @@ import { organization, userTrack, useSession } from "@/lib/auth-client";
 import { LlmProvidersCard } from "./ai-providers-card";
 import { ApiTokensCard } from "./api-tokens-card";
 import { MembersCard } from "./members-card";
+import { SignInCard } from "./sign-in-card";
 import { TrackCard } from "./track-card";
 
 interface OrgRow {
@@ -149,6 +150,7 @@ export default function SettingsPage() {
         )}
 
         <TrackCard />
+        <SignInCard />
         {isRecruiter && <LlmProvidersCard />}
         {isRecruiter && <MembersCard />}
         {isRecruiter && <ApiTokensCard />}
