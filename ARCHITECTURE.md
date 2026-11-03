@@ -8,7 +8,7 @@ HireLens is a pnpm + Turborepo monorepo. This page describes the system as it ru
 apps/
   web/           Next.js 16: marketing site, product UI, candidate tools.
                  Serves the API on the same origin by embedding apps/api
-                 (@hirelens/api/embed) in a catch-all route handler.
+                 (@candidlens/api/embed) in a catch-all route handler.
   api/           Hono REST API. Runs standalone for self-hosters (Docker).
   cli/           `hirelens` on npm: jobs, rubrics, uploads and scoring
                  from a terminal.

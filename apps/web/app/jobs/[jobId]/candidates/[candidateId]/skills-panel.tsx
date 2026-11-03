@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hirelens/ui";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@candidlens/ui";
 import { useEffect, useState } from "react";
 import { NoticeBanner } from "@/components/notice-banner";
 import { getCandidateSkills, type SkillGraphResult } from "@/lib/api";

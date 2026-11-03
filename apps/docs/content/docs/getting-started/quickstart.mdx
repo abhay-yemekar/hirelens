@@ -18,7 +18,7 @@ cd hirelens
 pnpm install
 docker compose up -d                      # Postgres 16 + pgvector on :5433
 cp packages/db/.env.example packages/db/.env
-pnpm --filter @hirelens/db db:migrate     # create tables
+pnpm --filter @candidlens/db db:migrate     # create tables
 ```
 
 Verify everything:
@@ -32,8 +32,8 @@ pnpm test                                 # unit + DB-backed integration tests
 **Web UI** — [http://localhost:3000](http://localhost:3000) after:
 
 ```bash
-pnpm --filter @hirelens/web dev
-pnpm --filter @hirelens/api dev           # in a second terminal, port 4000
+pnpm --filter @candidlens/web dev
+pnpm --filter @candidlens/api dev           # in a second terminal, port 4000
 ```
 
 **CLI** — with the API running:

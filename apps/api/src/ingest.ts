@@ -13,9 +13,9 @@ import {
   MAX_DOCUMENT_BYTES,
   parseCandidate,
   textHash,
-} from "@hirelens/core";
-import type { Database } from "@hirelens/db";
-import { candidates, documents } from "@hirelens/db";
+} from "@candidlens/core";
+import type { Database } from "@candidlens/db";
+import { candidates, documents } from "@candidlens/db";
 import { and, eq } from "drizzle-orm";
 import { ApiInputError } from "./errors.js";
 import type { HireLensIndexer } from "./indexing.js";

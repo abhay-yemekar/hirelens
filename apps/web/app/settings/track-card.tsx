@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hirelens/ui";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@candidlens/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { setUserTrack, userTrack, useSession } from "@/lib/auth-client";

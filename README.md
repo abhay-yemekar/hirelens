@@ -122,11 +122,11 @@ Migrations apply on first boot. Open [localhost:3000](http://localhost:3000), cr
 pnpm install
 docker compose up -d                      # Postgres 16 + pgvector on :5433
 cp packages/db/.env.example packages/db/.env
-pnpm --filter @hirelens/db db:migrate     # create tables
+pnpm --filter @candidlens/db db:migrate     # create tables
 pnpm test                                 # full suite incl. DB-backed integration tests
-pnpm --filter @hirelens/web dev           # product UI on :3000
-pnpm --filter @hirelens/api dev           # API on :4000
-pnpm --filter @hirelens/docs dev          # docs site on :3002
+pnpm --filter @candidlens/web dev           # product UI on :3000
+pnpm --filter @candidlens/api dev           # API on :4000
+pnpm --filter @candidlens/docs dev          # docs site on :3002
 ```
 
 The detailed walkthrough — every command, expected output, and a troubleshooting table built from real failures — is in **[docs/project_execution.md](docs/project_execution.md)**.
@@ -188,7 +188,7 @@ The production deployment runs entirely on free tiers — deliberate choices, do
 | LLM tracing       | **Langfuse** (free tier)      | Traces every prompt/score for eval reproducibility; no-op until keys exist                                                                                                                             |
 | CI                | **GitHub Actions**            | Free for public repos — lint, typecheck, tests (incl. the eval harness mock run), CodeQL, and secrets scanning on every PR                                                                             |
 
-Deployment is a single Vercel project from the repo root (root directory `apps/web`); migrations run with `pnpm --filter @hirelens/db db:migrate` against the Neon pooled connection string. Self-hosters use the Docker path above instead — same app, your infrastructure.
+Deployment is a single Vercel project from the repo root (root directory `apps/web`); migrations run with `pnpm --filter @candidlens/db db:migrate` against the Neon pooled connection string. Self-hosters use the Docker path above instead — same app, your infrastructure.
 
 ## Evaluation harness — an unevaluated ranker is a liability
 
@@ -199,7 +199,7 @@ Deployment is a single Vercel project from the repo root (root directory `apps/w
 - **Position bias** — Kendall τ between the ranking from the original input order and from the reversed order (1.0 = order made no difference)
 - **Name-swap bias** — score movement when only the name changes (0 = invariant); movement above 5 points is flagged
 
-Latest committed numbers (`packages/eval-report.json`) — **this is the offline mock-model run, a plumbing check: the mock scores every criterion 3, so 0.47 is just the share of expected-strong labels and the σ/τ/Δ values are trivially perfect. A first real-model run (Groq `openai/gpt-oss-120b`, 30 Oct 2026: 29/30 direction accuracy on a 6-resume benchmark, with caveats) is on the [evaluation page](https://hirelens-rosy.vercel.app/evaluation) and in `packages/evals/reports/`.** Run them yourself with `pnpm --filter @hirelens/evals run evals` and your own key:
+Latest committed numbers (`packages/eval-report.json`) — **this is the offline mock-model run, a plumbing check: the mock scores every criterion 3, so 0.47 is just the share of expected-strong labels and the σ/τ/Δ values are trivially perfect. A first real-model run (Groq `openai/gpt-oss-120b`, 30 Oct 2026: 29/30 direction accuracy on a 6-resume benchmark, with caveats) is on the [evaluation page](https://hirelens-rosy.vercel.app/evaluation) and in `packages/evals/reports/`.** Run them yourself with `pnpm --filter @candidlens/evals run evals` and your own key:
 
 | Metric                                | Value           |
 | ------------------------------------- | --------------- |
@@ -209,7 +209,7 @@ Latest committed numbers (`packages/eval-report.json`) — **this is the offline
 | Name-swap bias (mean Δ)               | 0.0 (0 flagged) |
 | Rank agreement (τ vs. expected order) | 1.0             |
 
-Run it yourself: `pnpm --filter @hirelens/evals run evals:mock` (offline, CI) or `evals` (live). The unit suite runs on every PR.
+Run it yourself: `pnpm --filter @candidlens/evals run evals:mock` (offline, CI) or `evals` (live). The unit suite runs on every PR.
 
 ## Why glass-box
 

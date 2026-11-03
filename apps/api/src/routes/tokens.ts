@@ -6,8 +6,8 @@
  */
 
 import { createHash, randomBytes } from "node:crypto";
-import { apiTokens } from "@hirelens/db";
-import { appendAudit } from "@hirelens/orchestrator";
+import { apiTokens } from "@candidlens/db";
+import { appendAudit } from "@candidlens/orchestrator";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";

@@ -13,9 +13,9 @@
  * (action: bias_audit.scheduled) so tampering with history stays visible.
  */
 
-import { biasAudit, type GroupOutcome } from "@hirelens/core";
-import { biasAuditSnapshots, candidates, decisions, demographics, jobs } from "@hirelens/db";
-import { appendAudit } from "@hirelens/orchestrator";
+import { biasAudit, type GroupOutcome } from "@candidlens/core";
+import { biasAuditSnapshots, candidates, decisions, demographics, jobs } from "@candidlens/db";
+import { appendAudit } from "@candidlens/orchestrator";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";

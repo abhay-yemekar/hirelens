@@ -9,7 +9,7 @@
  * builders use. The .d.ts sibling re-exports the source types so the
  * web app keeps full typechecking against this entry.
  *
- * Run via `pnpm --filter @hirelens/api build:embed` (turbo wires it
+ * Run via `pnpm --filter @candidlens/api build:embed` (turbo wires it
  * before the web build in CI and on Vercel).
  *
  * External: everything the web app already resolves from its own

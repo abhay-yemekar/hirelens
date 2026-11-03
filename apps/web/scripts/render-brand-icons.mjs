@@ -4,7 +4,7 @@
  *   app/favicon.ico    16, 32 and 48 px (PNG entries) from favicon-tile.svg
  *   app/apple-icon.png 180 px from apple-icon-tile.svg
  *
- *   pnpm --filter @hirelens/web run brand-icons
+ *   pnpm --filter @candidlens/web run brand-icons
  *
  * app/icon.svg is hand-written (it switches colour with dark mode), so it
  * is not generated. sharp comes with Next.js, so it is resolved from there.

@@ -10,7 +10,7 @@
  * passed off as AI-crafted.
  */
 
-import { type ProviderConfig, resolveLanguageModel } from "@hirelens/core";
+import { type ProviderConfig, resolveLanguageModel } from "@candidlens/core";
 import { generateText } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 

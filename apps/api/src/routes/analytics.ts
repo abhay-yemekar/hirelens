@@ -14,8 +14,8 @@
  * few scoped queries; no window functions needed.
  */
 
-import type { Database } from "@hirelens/db";
-import { auditLog, candidates, decisions, jobs, scores, scoringRuns } from "@hirelens/db";
+import type { Database } from "@candidlens/db";
+import { auditLog, candidates, decisions, jobs, scores, scoringRuns } from "@candidlens/db";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import { ROLE_MIN, requireAuth } from "../auth.js";

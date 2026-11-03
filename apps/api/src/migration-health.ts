@@ -9,7 +9,7 @@
  * 13 migrations applied, the latest two missing, "healthy" until the
  * first org-scoped query 500'd.
  */
-import { MIGRATION_SNAPSHOT } from "@hirelens/db";
+import { MIGRATION_SNAPSHOT } from "@candidlens/db";
 
 export interface MigrationState {
   /** Applied rows whose timestamp matches a journal entry. */

@@ -12,8 +12,8 @@
  *   DATABASE_URL=postgres://… npx tsx scripts/backfill-contacts.ts [--dry-run]
  */
 
-import { parseCandidate } from "@hirelens/core";
-import { candidates, createDb, documents } from "@hirelens/db";
+import { parseCandidate } from "@candidlens/core";
+import { candidates, createDb, documents } from "@candidlens/db";
 import { eq } from "drizzle-orm";
 
 const DATABASE_URL = process.env.DATABASE_URL;

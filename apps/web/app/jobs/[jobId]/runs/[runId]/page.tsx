@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle, OverallScore, ScoreBadge } from "@hirelens/ui";
+import { Card, CardContent, CardHeader, CardTitle, OverallScore, ScoreBadge } from "@candidlens/ui";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";

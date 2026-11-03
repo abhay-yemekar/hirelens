@@ -160,13 +160,13 @@ export default function EvaluationPage() {
         These numbers come from the committed <code>packages/eval-report.json</code>: an offline
         mock model that returns the same score for every criterion. They show the harness runs end
         to end, not how well any real model ranks resumes; the real-model run is above. Run them
-        against your own model with <code>pnpm --filter @hirelens/evals run evals</code>.
+        against your own model with <code>pnpm --filter @candidlens/evals run evals</code>.
       </blockquote>
 
       <h2>Run it yourself</h2>
       <pre>
-        <code>{`pnpm --filter @hirelens/evals run evals:mock   # offline, CI mode
-pnpm --filter @hirelens/evals run evals        # live, needs HIRELENS_LLM_*`}</code>
+        <code>{`pnpm --filter @candidlens/evals run evals:mock   # offline, CI mode
+pnpm --filter @candidlens/evals run evals        # live, needs HIRELENS_LLM_*`}</code>
       </pre>
       <p>
         The harness, benchmark dataset, and this report are plain files in{" "}

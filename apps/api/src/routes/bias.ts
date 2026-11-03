@@ -1,6 +1,6 @@
-import { biasAudit, type GroupOutcome } from "@hirelens/core";
-import { candidates, decisions, demographics } from "@hirelens/db";
-import { appendAudit } from "@hirelens/orchestrator";
+import { biasAudit, type GroupOutcome } from "@candidlens/core";
+import { candidates, decisions, demographics } from "@candidlens/db";
+import { appendAudit } from "@candidlens/orchestrator";
 import { and, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";

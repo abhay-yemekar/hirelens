@@ -1,7 +1,7 @@
 /**
  * GENERATED FILE — do not edit by hand.
  * Source of truth: drizzle/meta/_journal.json
- * Regenerate with: pnpm --filter @hirelens/db gen:migrations
+ * Regenerate with: pnpm --filter @candidlens/db gen:migrations
  *
  * Snapshot of the migration journal at 2026-10-15T03:45:30.413Z
  */

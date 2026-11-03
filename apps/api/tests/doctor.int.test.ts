@@ -3,8 +3,8 @@
  * Skips unless DATABASE_URL is set.
  */
 
-import type { DoctorReport } from "@hirelens/core";
-import { auth, createDb, type Database, doctorReports } from "@hirelens/db";
+import type { DoctorReport } from "@candidlens/core";
+import { auth, createDb, type Database, doctorReports } from "@candidlens/db";
 import { eq } from "drizzle-orm";
 import { strToU8, zipSync } from "fflate";
 import { PDFDocument, StandardFonts } from "pdf-lib";

@@ -1,5 +1,5 @@
 {
-  "name": "@hirelens/config",
+  "name": "@candidlens/config",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

@@ -6,8 +6,8 @@
  * blocking the response on the write.
  */
 
-import type { Database } from "@hirelens/db";
-import { apiTokens } from "@hirelens/db";
+import type { Database } from "@candidlens/db";
+import { apiTokens } from "@candidlens/db";
 import { and, eq, isNull } from "drizzle-orm";
 import { hashToken } from "./routes/tokens.js";
 

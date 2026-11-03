@@ -3,12 +3,12 @@
  * migration-state comparison, per-provider failover breakdown, the LLM
  * availability guard semantics, and the shared blind-view masking.
  */
-import { AllProvidersFailedError, blindView } from "@hirelens/core";
-import { MIGRATION_SNAPSHOT } from "@hirelens/db";
+import { AllProvidersFailedError, blindView } from "@candidlens/core";
+import { MIGRATION_SNAPSHOT } from "@candidlens/db";
 import { describe, expect, it } from "vitest";
 import { classifyAttempt, llmRouteError, sanitizeLlmConfigError } from "../src/llm-error.js";
 // compareMigrations must see MIGRATION_SNAPSHOT — import both and assert on the
-// journal snapshot that ships with @hirelens/db.
+// journal snapshot that ships with @candidlens/db.
 import { compareMigrations } from "../src/migration-health.js";
 
 describe("compareMigrations", () => {

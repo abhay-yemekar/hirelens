@@ -4,7 +4,7 @@
  * behavior, and the owner-only mutation rules. Skips unless
  * DATABASE_URL is set — same availability contract as the other suites.
  */
-import { createDb, type Database } from "@hirelens/db";
+import { createDb, type Database } from "@candidlens/db";
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
@@ -25,7 +25,7 @@ beforeAll(async () => {
   db = createDb(DATABASE_URL);
   app = createApp({ db, llm: null });
 
-  const signUp = await import("@hirelens/db").then(({ auth }) =>
+  const signUp = await import("@candidlens/db").then(({ auth }) =>
     auth.api.signUpEmail({
       body: {
         name: "Settings Tester",
@@ -39,7 +39,7 @@ beforeAll(async () => {
   expect(cookie).toContain("session_token");
   authHeaders = { cookie };
 
-  const { auth } = await import("@hirelens/db");
+  const { auth } = await import("@candidlens/db");
   const org = await auth.api.createOrganization({
     body: { name: "Settings Test Org", slug: `settings-test-${STAMP}` },
     headers: new Headers({ cookie }),

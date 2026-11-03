@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hirelens/ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@candidlens/ui";
 import { useEffect, useState } from "react";
 import { type AiContentReport, getAiContent } from "@/lib/api";
 

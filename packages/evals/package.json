@@ -1,5 +1,5 @@
 {
-  "name": "@hirelens/evals",
+  "name": "@candidlens/evals",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,10 +11,10 @@
     "evals:mock": "tsx src/live-mock.ts"
   },
   "dependencies": {
-    "@hirelens/core": "workspace:*"
+    "@candidlens/core": "workspace:*"
   },
   "devDependencies": {
-    "@hirelens/config": "workspace:*",
+    "@candidlens/config": "workspace:*",
     "@types/node": "^26.6.4",
     "tsx": "^4.23.15",
     "typescript": "~5.9.3",

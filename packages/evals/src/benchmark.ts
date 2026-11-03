@@ -14,7 +14,7 @@
  * pins any stochastic elements.
  */
 
-import type { AnchoredLevel, Criterion, Rubric } from "@hirelens/core";
+import type { AnchoredLevel, Criterion, Rubric } from "@candidlens/core";
 
 export const BENCHMARK_SEED = 42;
 

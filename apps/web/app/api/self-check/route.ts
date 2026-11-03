@@ -14,7 +14,7 @@
  * (single call), falling back to a generic criteria set otherwise.
  */
 
-import type { Criterion, Rubric } from "@hirelens/core";
+import type { Criterion, Rubric } from "@candidlens/core";
 import {
   ExtractionError,
   extractDocument,
@@ -28,7 +28,7 @@ import {
   skillGraph,
   skillsInText,
   sniffKind,
-} from "@hirelens/core";
+} from "@candidlens/core";
 import { type NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";

@@ -5,7 +5,7 @@
  * DATABASE_URL is set.
  */
 
-import { createMockModel } from "@hirelens/core";
+import { createMockModel } from "@candidlens/core";
 import {
   auth,
   createDb,
@@ -14,7 +14,7 @@ import {
   organization,
   scores,
   scoringRuns,
-} from "@hirelens/db";
+} from "@candidlens/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";

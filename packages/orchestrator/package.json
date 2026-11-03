@@ -1,5 +1,5 @@
 {
-  "name": "@hirelens/orchestrator",
+  "name": "@candidlens/orchestrator",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,13 +12,13 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@hirelens/core": "workspace:*",
-    "@hirelens/db": "workspace:*",
+    "@candidlens/core": "workspace:*",
+    "@candidlens/db": "workspace:*",
     "drizzle-orm": "^0.45.3",
     "pg": "^8.23.1"
   },
   "devDependencies": {
-    "@hirelens/config": "workspace:*",
+    "@candidlens/config": "workspace:*",
     "@types/node": "^26.6.4",
     "tsx": "^4.23.15",
     "typescript": "~5.9.3",

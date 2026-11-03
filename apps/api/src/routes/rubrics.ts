@@ -1,6 +1,6 @@
-import { deriveRubric, parseRubric, serializeRubric } from "@hirelens/core";
-import type { Database } from "@hirelens/db";
-import { rubrics } from "@hirelens/db";
+import { deriveRubric, parseRubric, serializeRubric } from "@candidlens/core";
+import type { Database } from "@candidlens/db";
+import { rubrics } from "@candidlens/db";
 import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";

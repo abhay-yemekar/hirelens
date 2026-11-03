@@ -31,7 +31,7 @@ const ROWS: Array<{ symptom: string; cause: string; fix: string }> = [
   {
     symptom: 'relation "user" does not exist',
     cause: "Migrations were never applied to this volume.",
-    fix: "Run pnpm --filter @hirelens/db db:migrate and re-run tests.",
+    fix: "Run pnpm --filter @candidlens/db db:migrate and re-run tests.",
   },
   {
     symptom: "Orchestrator integration tests fail, everything else passes",

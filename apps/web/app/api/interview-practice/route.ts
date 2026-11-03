@@ -13,7 +13,7 @@
  * clearly labeled, never passed off as AI judgment.
  */
 
-import { type ProviderConfig, resolveLanguageModel, skillsInText } from "@hirelens/core";
+import { type ProviderConfig, resolveLanguageModel, skillsInText } from "@candidlens/core";
 import { generateText } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 

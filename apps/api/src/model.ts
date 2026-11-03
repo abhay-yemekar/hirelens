@@ -1,5 +1,5 @@
-import type { LanguageModel } from "@hirelens/core";
-import { type ChainEntry, createFailoverModel, resolveLanguageModel } from "@hirelens/core";
+import type { LanguageModel } from "@candidlens/core";
+import { type ChainEntry, createFailoverModel, resolveLanguageModel } from "@candidlens/core";
 import type { LlmEnv } from "./env.js";
 
 /**

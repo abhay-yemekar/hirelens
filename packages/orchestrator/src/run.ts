@@ -3,8 +3,8 @@
  * fan-out. Split from orchestrator.ts to keep files small.
  */
 
-import { type LanguageModel, modelIdOf, type ScoreRunOptions, scoreResume } from "@hirelens/core";
-import { type Database, evidence, scores } from "@hirelens/db";
+import { type LanguageModel, modelIdOf, type ScoreRunOptions, scoreResume } from "@candidlens/core";
+import { type Database, evidence, scores } from "@candidlens/db";
 import { appendAudit } from "./audit.js";
 import type { TraceSink } from "./trace.js";
 

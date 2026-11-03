@@ -1,5 +1,5 @@
 {
-  "extends": "@hirelens/config/typescript/base",
+  "extends": "@candidlens/config/typescript/base",
   "compilerOptions": {
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "esnext",

@@ -82,7 +82,7 @@ Notes:
 ## 4. Create the database schema (migrate)
 
 ```bash
-pnpm --filter @hirelens/db db:migrate
+pnpm --filter @candidlens/db db:migrate
 ```
 
 **What happens:** the migrate script connects to `DATABASE_URL`, runs `CREATE EXTENSION IF NOT EXISTS vector` (idempotent — safe even though `docker/init` already did it), then applies all Drizzle migrations from `packages/db/drizzle/` (identity/organization tables, jobs, candidates, rubrics, scoring runs, scores, evidence, audit log).
@@ -129,7 +129,7 @@ docker compose up --build -d
 
 ```bash
 cp apps/api/.env.example apps/api/.env   # then edit if needed
-pnpm --filter @hirelens/api dev
+pnpm --filter @candidlens/api dev
 # → http://localhost:4000/api/health  →  {"ok":true,"service":"hirelens-api","version":"0.1.0"}
 ```
 
@@ -159,7 +159,7 @@ LLM features need `HIRELENS_LLM_PROVIDER` + `HIRELENS_LLM_MODEL` (+ key) in `app
 ### Product UI (`apps/web`)
 
 ```bash
-pnpm --filter @hirelens/web dev
+pnpm --filter @candidlens/web dev
 # → http://localhost:3000
 ```
 
@@ -170,7 +170,7 @@ Flow: **sign in / sign up** → **create or pick an organization** (`/welcome`; 
 ### Design-system playground (`packages/ui`)
 
 ```bash
-pnpm --filter @hirelens/ui storybook
+pnpm --filter @candidlens/ui storybook
 # → http://localhost:6006 — Button, Card, ScoreBadge, motion primitives, dark/light toggle
 ```
 
@@ -179,7 +179,7 @@ pnpm --filter @hirelens/ui storybook
 The CLI scores resumes from the terminal. It is published on npm as [`hirelens`](https://www.npmjs.com/package/hirelens) and runs on **Node ≥ 20**.
 
 ```bash
-export HIRELENS_API_URL=http://localhost:4000          # the API (compose or `pnpm --filter @hirelens/api dev`)
+export HIRELENS_API_URL=http://localhost:4000          # the API (compose or `pnpm --filter @candidlens/api dev`)
 export HIRELENS_CONFIG_DIR=~/.hirelens                  # optional; where the session cookie is stored
 
 npx hirelens login you@example.com                 # prompts for password (or set HIRELENS_PASSWORD)
@@ -199,7 +199,7 @@ Accounts are created in the web UI (or via `POST /api/auth/sign-up/email`); `hir
 
 ```bash
 docker compose up -d                 # if the DB isn't running
-pnpm --filter @hirelens/db db:migrate
+pnpm --filter @candidlens/db db:migrate
 pnpm dev                             # runs every package's dev task in parallel
 ```
 
@@ -207,8 +207,8 @@ Other useful commands:
 
 | Command                                       | What it does                                            |
 | --------------------------------------------- | ------------------------------------------------------- |
-| `pnpm --filter @hirelens/db db:studio`        | Drizzle Studio — browse tables/rows in a browser UI     |
-| `pnpm --filter @hirelens/db db:extensions`    | Re-run `CREATE EXTENSION vector` against `DATABASE_URL` |
+| `pnpm --filter @candidlens/db db:studio`      | Drizzle Studio — browse tables/rows in a browser UI     |
+| `pnpm --filter @candidlens/db db:extensions`  | Re-run `CREATE EXTENSION vector` against `DATABASE_URL` |
 | `pnpm format`                                 | Auto-format everything with Biome                       |
 | `pnpm lint`                                   | Biome check (CI runs this; must be clean)               |
 | `pnpm typecheck` / `pnpm test` / `pnpm build` | Turborepo fan-out of each task across packages          |
@@ -223,10 +223,10 @@ Git hooks (via husky + lint-staged + commitlint) enforce Biome formatting on sta
 | `port is already allocated` / `bind: address already in use` on **5433**                                              | Another container or service owns 5433 (e.g. a second copy of this compose project)                                                                                       | `docker compose down` in any other checkout; or change the left side of `"5433:5432"` in `docker-compose.yml` **and** your `DATABASE_URL` consistently                    |
 | `DATABASE_URL is required` from `db:migrate`                                                                          | `packages/db/.env` missing or empty                                                                                                                                       | Repeat step 3 (`cp packages/db/.env.example packages/db/.env`)                                                                                                            |
 | `password authentication failed for user "postgres"`                                                                  | Connecting to a **different** Postgres than ours (a local 5432 install)                                                                                                   | Confirm the URL uses port **5433** and points at `localhost`, and the compose stack is up                                                                                 |
-| `relation "user" does not exist` (or any table) in tests                                                              | Migrations were never applied to this volume                                                                                                                              | Run `pnpm --filter @hirelens/db db:migrate`, re-run tests                                                                                                                 |
+| `relation "user" does not exist` (or any table) in tests                                                              | Migrations were never applied to this volume                                                                                                                              | Run `pnpm --filter @candidlens/db db:migrate`, re-run tests                                                                                                               |
 | Orchestrator integration tests fail, everything else passes                                                           | Database container stopped or unreachable                                                                                                                                 | `docker compose up -d`, wait for `healthy` in `docker compose ps`, retry                                                                                                  |
 | `function gen_random_uuid() does not exist`                                                                           | Postgres image without needed contrib modules                                                                                                                             | Use the pinned image `pgvector/pgvector:pg16` (it includes them) — this is why `docker-compose.yml` pins it                                                               |
-| `type "vector" does not exist`                                                                                        | pgvector extension missing (non-Docker Postgres)                                                                                                                          | Run `pnpm --filter @hirelens/db db:extensions` with a superuser `DATABASE_URL`, or switch to the compose stack                                                            |
+| `type "vector" does not exist`                                                                                        | pgvector extension missing (non-Docker Postgres)                                                                                                                          | Run `pnpm --filter @candidlens/db db:extensions` with a superuser `DATABASE_URL`, or switch to the compose stack                                                          |
 | `Ignored build scripts: @swc/core` warning at install                                                                 | pnpm blocked native build scripts                                                                                                                                         | `pnpm approve-builds` → approve listed packages → `pnpm install` again                                                                                                    |
 | `Unsupported engine` warning on install                                                                               | Node older than 20                                                                                                                                                        | Upgrade Node (nvm-windows / nvm / fnm all work)                                                                                                                           |
 | CRLF / formatting diffs flood a PR on Windows                                                                         | Git`core.autocrlf` rewrites line endings                                                                                                                                  | Run `pnpm format` before committing; the repo's `.gitattributes`/Biome config expects LF                                                                                  |
@@ -245,10 +245,10 @@ Still stuck? Open an issue with your OS, Node/pnpm/Docker versions, the exact co
 ## 9. What "everything works" looks like
 
 - `docker compose ps` → `hirelens-postgres` **Up (healthy)**
-- `pnpm --filter @hirelens/db db:migrate` → `Migrations applied.`
+- `pnpm --filter @candidlens/db db:migrate` → `Migrations applied.`
 - `pnpm test` → all packages green, including the 3 orchestrator integration tests
-- `pnpm --filter @hirelens/api dev` → `{"ok":true,…}` at `http://localhost:4000/api/health`
-- `pnpm --filter @hirelens/ui storybook` → component playground at `http://localhost:6006`
+- `pnpm --filter @candidlens/api dev` → `{"ok":true,…}` at `http://localhost:4000/api/health`
+- `pnpm --filter @candidlens/ui storybook` → component playground at `http://localhost:6006`
 
 That's the full local surface today. As phases land (API routes, product UI, RAG), this document gains a section per app — maintained with every phase, not at the end.
 
@@ -265,7 +265,7 @@ Every observability integration is a **strict no-op until its env vars are set**
 
 How to verify each one:
 
-- **Logs**: start the API (`pnpm --filter @hirelens/api dev`) and hit any endpoint — every request prints a `http.request` line with a `requestId`, and responses carry the matching `x-request-id` header.
+- **Logs**: start the API (`pnpm --filter @candidlens/api dev`) and hit any endpoint — every request prints a `http.request` line with a `requestId`, and responses carry the matching `x-request-id` header.
 - **Sentry**: set the DSN, restart the API, trigger any 500 (e.g. stop Postgres and hit a data endpoint) — the error appears in Sentry within seconds, tagged with the request id.
 - **Langfuse**: set both keys, restart the API, run a scoring batch — one trace per batch appears, with per-candidate generations showing token usage, latency, prompt hash, and per-criterion scores.
 - **PostHog**: set the key, restart `apps/web`, click around — `scoring.kickoff` and `decision.recorded` events appear in PostHog live view. Autocapture is deliberately **off**: only explicit product events are sent, never raw DOM data.

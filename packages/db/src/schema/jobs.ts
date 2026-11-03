@@ -37,7 +37,7 @@ export const rubrics = pgTable(
       .notNull()
       .references(() => jobs.id, { onDelete: "cascade" }),
     version: integer("version").notNull(),
-    /** criteria jsonb mirrors the @hirelens/core criterion shape. */
+    /** criteria jsonb mirrors the @candidlens/core criterion shape. */
     criteria: jsonb("criteria").$type<unknown[]>().notNull(),
     /** Raw rubric payload for exact reproducibility of this version. */
     payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),

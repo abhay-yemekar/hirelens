@@ -1,6 +1,6 @@
 "use client";
 
-import { initTheme } from "@hirelens/ui";
+import { initTheme } from "@candidlens/ui";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { capturePageview, initPostHog } from "@/lib/analytics";

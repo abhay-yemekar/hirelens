@@ -5,8 +5,8 @@
  * rate limit. Skips unless DATABASE_URL is set (never skips on CI).
  */
 
-import { createMockModel } from "@hirelens/core";
-import { auth, createDb, organization } from "@hirelens/db";
+import { createMockModel } from "@candidlens/core";
+import { auth, createDb, organization } from "@candidlens/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";

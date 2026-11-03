@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
   FadeIn,
-} from "@hirelens/ui";
+} from "@candidlens/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";

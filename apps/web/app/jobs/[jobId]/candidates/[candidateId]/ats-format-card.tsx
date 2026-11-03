@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@hirelens/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@candidlens/ui";
 
 /**
  * ATS format check (v1.4) — shows the deterministic parse simulation

@@ -1,6 +1,6 @@
-import type { Database } from "@hirelens/db";
-import { jobs } from "@hirelens/db";
-import { appendAudit } from "@hirelens/orchestrator";
+import type { Database } from "@candidlens/db";
+import { jobs } from "@candidlens/db";
+import { appendAudit } from "@candidlens/orchestrator";
 import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";

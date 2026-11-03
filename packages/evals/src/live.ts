@@ -3,11 +3,11 @@
  * and writes it to reports/<date>-<provider>-<model>.json with provenance.
  * packages/eval-report.json stays the offline mock run (evals:mock).
  *
- *   pnpm --filter @hirelens/evals run evals          # with HIRELENS_LLM_* set
- *   pnpm --filter @hirelens/evals run evals:mock     # offline, mock model
+ *   pnpm --filter @candidlens/evals run evals          # with HIRELENS_LLM_* set
+ *   pnpm --filter @candidlens/evals run evals:mock     # offline, mock model
  */
 
-import { resolveLanguageModel } from "@hirelens/core";
+import { resolveLanguageModel } from "@candidlens/core";
 import { runEvals } from "./harness.js";
 
 async function main(): Promise<void> {
@@ -38,8 +38,8 @@ async function main(): Promise<void> {
     if (msg.includes("quota") || msg.includes("429")) {
       console.error(
         "Provider quota exhausted (the free tier is ~20 req/min and a small daily cap).\n" +
-          "Run `pnpm --filter @hirelens/evals run evals` with a billing-enabled key,\n" +
-          "or use `pnpm --filter @hirelens/evals run evals:mock` for an offline plumbing check.",
+          "Run `pnpm --filter @candidlens/evals run evals` with a billing-enabled key,\n" +
+          "or use `pnpm --filter @candidlens/evals run evals:mock` for an offline plumbing check.",
       );
       process.exit(3);
     }

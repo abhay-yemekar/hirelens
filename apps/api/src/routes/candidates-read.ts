@@ -1,5 +1,5 @@
-import { skillGraph, skillsInText } from "@hirelens/core";
-import { candidates, decisions, documents } from "@hirelens/db";
+import { skillGraph, skillsInText } from "@candidlens/core";
+import { candidates, decisions, documents } from "@candidlens/db";
 import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 import { Hono } from "hono";
 import { blindView } from "../blind.js";

@@ -8,8 +8,8 @@
  * exercised exactly as in production.
  */
 
-import { parseRubric } from "@hirelens/core";
-import { auth, createDb, type Database, jobs, organization } from "@hirelens/db";
+import { parseRubric } from "@candidlens/core";
+import { auth, createDb, type Database, jobs, organization } from "@candidlens/db";
 import { eq } from "drizzle-orm";
 import { zipSync } from "fflate";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";

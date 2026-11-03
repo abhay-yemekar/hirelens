@@ -14,7 +14,7 @@ import { candidates } from "./candidates.js";
 /**
  * Append-only, hash-chained audit log. Rows are never updated or deleted;
  * the prevHash -> hash chain is verified in application code
- * (@hirelens/core AuditChain).
+ * (@candidlens/core AuditChain).
  */
 export const auditLog = pgTable(
   "audit_log",

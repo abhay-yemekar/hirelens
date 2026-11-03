@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@hirelens/ui";
+import { Button } from "@candidlens/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";

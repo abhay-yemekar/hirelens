@@ -4,7 +4,7 @@
  * mock model and computed identically for live models.
  */
 
-import type { ScoredCriterion } from "@hirelens/core";
+import type { ScoredCriterion } from "@candidlens/core";
 
 /** One recorded scoring of one resume. */
 export interface ScoreRecord {
