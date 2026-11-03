@@ -57,7 +57,7 @@
 /*
  * Product-app scope: bridges the shared UI kit's --color-* tokens onto the
  * marketing brand palette, so every Button, link, and focus ring in the
- * product app renders in HireLens coral/ink — one scope, not 30 call-site
+ * product app renders in CandidLens coral/ink — one scope, not 30 call-site
  * patches. Score-ramp and feedback colors keep their dark-theme tuning
  * (data-theme=dark is set alongside this class by AppShell).
  */

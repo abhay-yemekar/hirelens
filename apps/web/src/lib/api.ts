@@ -24,7 +24,7 @@ function _authHeaders(cookieHeader: string | null): HeadersInit {
 }
 
 /**
- * Call the HireLens API. In the browser, credentials are sent automatically
+ * Call the CandidLens API. In the browser, credentials are sent automatically
  * (same-site cookies). On the server, pass the incoming request's cookie
  * header via the `serverCookie` option so auth round-trips.
  */

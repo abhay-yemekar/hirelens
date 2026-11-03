@@ -1,3 +1,3 @@
-/* Single stylesheet entry for apps: Tailwind v4 engine + HireLens tokens. */
+/* Single stylesheet entry for apps: Tailwind v4 engine + CandidLens tokens. */
 @import "tailwindcss";
 @import "./tokens.css";

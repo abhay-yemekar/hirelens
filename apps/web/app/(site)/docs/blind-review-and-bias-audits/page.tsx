@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { ProsePage } from "@/components/prose-page";
 
 export const metadata: Metadata = {
-  title: "Blind review & bias audits — HireLens Docs",
+  title: "Blind review & bias audits — CandidLens Docs",
   description:
-    "How HireLens masks identity cues with character alignment preserved, and how the adverse-impact audit applies the EEOC four-fifths rule with exact math.",
+    "How CandidLens masks identity cues with character alignment preserved, and how the adverse-impact audit applies the EEOC four-fifths rule with exact math.",
 };
 
 export default function BlindReviewPage() {
@@ -34,7 +34,7 @@ export default function BlindReviewPage() {
 
       <h2>Demographics: opt-in, isolated, never in scoring</h2>
       <p>
-        Bias auditing needs group data, and group data is sensitive. HireLens takes the only
+        Bias auditing needs group data, and group data is sensitive. CandidLens takes the only
         defensible position:
       </p>
       <ul>
@@ -75,7 +75,7 @@ export default function BlindReviewPage() {
 
       <h2>What the audit is — and isn't</h2>
       <blockquote>
-        Statistical screening metrics, not a legal conclusion. HireLens helps you meet audit
+        Statistical screening metrics, not a legal conclusion. CandidLens helps you meet audit
         obligations; it does not make you compliant.
       </blockquote>
       <p>

@@ -1,4 +1,4 @@
-# HireLens — one-command self-host.
+# CandidLens — one-command self-host.
 #
 #   cp .env.example .env   # set BETTER_AUTH_SECRET (required)
 #   docker compose up --build -d

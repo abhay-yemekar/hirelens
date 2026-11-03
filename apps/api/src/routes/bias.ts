@@ -162,7 +162,7 @@ export function biasAuditRoutes(): Hono<AppEnv> {
       withDemographics: demoByCandidate.size,
       audit,
       disclaimer:
-        "Statistical screening metrics, not a legal conclusion. HireLens helps you meet audit obligations; it does not make you compliant.",
+        "Statistical screening metrics, not a legal conclusion. CandidLens helps you meet audit obligations; it does not make you compliant.",
     });
   });
 

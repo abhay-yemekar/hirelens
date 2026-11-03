@@ -63,7 +63,7 @@ const MENUS: Array<{ label: string; items: MenuItem[] }> = [
         label: "Self-hosting guide",
         desc: "Docker, env vars, and API keys",
       },
-      { href: "/docs/cli", label: "CLI", desc: "Drive HireLens from any pipeline" },
+      { href: "/docs/cli", label: "CLI", desc: "Drive CandidLens from any pipeline" },
       { href: "/api-reference", label: "API reference", desc: "Endpoints, auth, examples" },
       { href: "/troubleshooting", label: "Troubleshooting", desc: "Common issues and fixes" },
     ],

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "Live demo — no signup — HireLens",
+  title: "Live demo — no signup — CandidLens",
   description:
     "Pick a synthetic resume, press score: watch real rubric-based scoring arrive with the exact quoted evidence behind every point. No signup, no email.",
 };

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { ProsePage } from "@/components/prose-page";
 
 export const metadata: Metadata = {
-  title: "Contributing — HireLens",
+  title: "Contributing — CandidLens",
   description:
-    "How to contribute to HireLens: GitHub Flow, Conventional Commits, the PR checklist, and what makes a PR merge fast.",
+    "How to contribute to CandidLens: GitHub Flow, Conventional Commits, the PR checklist, and what makes a PR merge fast.",
 };
 
 export default function ContributingPage() {

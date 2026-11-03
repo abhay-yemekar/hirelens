@@ -242,7 +242,8 @@ export async function POST(req: NextRequest) {
   if (!bucket.allowed) {
     return NextResponse.json(
       {
-        error: "You've used all 10 free checks for this hour. Self-hosted HireLens has no limits.",
+        error:
+          "You've used all 10 free checks for this hour. Self-hosted CandidLens has no limits.",
       },
       {
         status: 429,

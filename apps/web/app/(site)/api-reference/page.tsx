@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { ProsePage } from "@/components/prose-page";
 
 export const metadata: Metadata = {
-  title: "API reference — HireLens",
+  title: "API reference — CandidLens",
   description:
-    "The HireLens REST API: authenticated, org-scoped endpoints for jobs, rubrics, candidates, scoring runs, review, and bias audits. Live OpenAPI 3.1 contract.",
+    "The CandidLens REST API: authenticated, org-scoped endpoints for jobs, rubrics, candidates, scoring runs, review, and bias audits. Live OpenAPI 3.1 contract.",
 };
 
 const ROUTES: Array<{ method: string; path: string; desc: string }> = [

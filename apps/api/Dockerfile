@@ -1,4 +1,4 @@
-# HireLens API — multi-stage build for the self-host stack.
+# CandidLens API — multi-stage build for the self-host stack.
 # Scope note: workspace packages export TypeScript source directly, so
 # the server runs under tsx (Node 22 type stripping + transpile). The
 # typecheck runs in CI; the image stays simple and self-contained.

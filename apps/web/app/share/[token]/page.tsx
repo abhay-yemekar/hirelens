@@ -70,7 +70,7 @@ export default function PublicSharePage() {
         <LogoMark size={32} />
         <div className="flex flex-col">
           <span className="text-sm font-semibold tracking-tight text-[var(--hl-cream)]">
-            HireLens
+            CandidLens
           </span>
           <span className="text-xs" style={{ color: "var(--color-fg-muted)" }}>
             Shared candidate evaluation
@@ -212,7 +212,7 @@ export default function PublicSharePage() {
               className="underline underline-offset-4 hover:opacity-85"
               style={{ color: "var(--hl-accent)" }}
             >
-              HireLens
+              CandidLens
             </a>{" "}
             — open-source, self-hostable AI resume screening. {cap("status")}: shared read-only.
           </footer>

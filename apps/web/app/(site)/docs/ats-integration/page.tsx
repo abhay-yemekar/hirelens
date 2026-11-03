@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { ProsePage } from "@/components/prose-page";
 
 export const metadata: Metadata = {
-  title: "ATS integration guide — HireLens Docs",
+  title: "ATS integration guide — CandidLens Docs",
   description:
-    "Connect Greenhouse, Lever, Ashby, Workable, or any ATS to HireLens: the partner-by-API pattern, webhook inbound, CSV round-trip, and the CLI pipeline.",
+    "Connect Greenhouse, Lever, Ashby, Workable, or any ATS to CandidLens: the partner-by-API pattern, webhook inbound, CSV round-trip, and the CLI pipeline.",
 };
 
 export default function AtsIntegrationPage() {
@@ -12,7 +12,7 @@ export default function AtsIntegrationPage() {
     <ProsePage
       eyebrow="Docs · Integrations"
       title="ATS integration guide"
-      lede="HireLens integrates with any applicant tracking system through a stable, OpenAPI 3.1–documented REST API — not fragile per-vendor scrapers. This page shows the three integration patterns that cover Greenhouse, Lever, Ashby, Workable, Recruitee, and self-built ATS tools."
+      lede="CandidLens integrates with any applicant tracking system through a stable, OpenAPI 3.1–documented REST API — not fragile per-vendor scrapers. This page shows the three integration patterns that cover Greenhouse, Lever, Ashby, Workable, Recruitee, and self-built ATS tools."
     >
       <h2>Which pattern fits your ATS?</h2>
       <table>
@@ -50,8 +50,8 @@ export default function AtsIntegrationPage() {
 
       <h2 id="csv">Pattern 1 — the CSV / ZIP round-trip (works with every ATS)</h2>
       <p>
-        Every major ATS can export a candidate list as CSV and resumes as a ZIP or folder. HireLens
-        consumes exactly that:
+        Every major ATS can export a candidate list as CSV and resumes as a ZIP or folder.
+        CandidLens consumes exactly that:
       </p>
       <ol>
         <li>
@@ -64,8 +64,8 @@ export default function AtsIntegrationPage() {
           shows up as <strong>Jane Doe</strong> in the review queue.
         </li>
         <li>
-          Open the job in HireLens → <strong>Candidates → Upload ZIP</strong>. Scores, evidence, and
-          the review queue fill in like any other upload.
+          Open the job in CandidLens → <strong>Candidates → Upload ZIP</strong>. Scores, evidence,
+          and the review queue fill in like any other upload.
         </li>
         <li>
           When decisions are made, export <strong>Review queue → CSV</strong> and import it back
@@ -80,7 +80,7 @@ export default function AtsIntegrationPage() {
       <h2 id="webhook">Pattern 2 — inbound webhook (automatic screening)</h2>
       <p>
         Point your ATS's outgoing webhook (Greenhouse "custom webhook", Lever "stagetype
-        notification", or a Zapier/Make relay) at HireLens to screen a candidate the moment they
+        notification", or a Zapier/Make relay) at CandidLens to screen a candidate the moment they
         reach a stage:
       </p>
       <pre>
@@ -89,7 +89,7 @@ Authorization: Bearer <your API token>
 Content-Type: application/json
 
 {
-  "jobId": "your-hirelens-job-id",
+  "jobId": "your-candidlens-job-id",
   "candidate": {
     "name": "Jane Doe",
     "email": "jane@example.com",
@@ -98,7 +98,7 @@ Content-Type: application/json
 }`}</code>
       </pre>
       <p>
-        HireLens fetches the resume, ingests it into the job, and it appears in the review queue.
+        CandidLens fetches the resume, ingests it into the job, and it appears in the review queue.
         The endpoint is idempotent per (job, candidate) pair, so ATS retries are safe. Scope the API
         token to a single organization — the same token model the rest of the API uses.
       </p>
@@ -128,10 +128,10 @@ hirelens scoring run --job <job-id>
 hirelens scoring results --job <job-id> --format json`}</code>
       </pre>
 
-      <h2>What HireLens deliberately does not do</h2>
+      <h2>What CandidLens deliberately does not do</h2>
       <ul>
         <li>
-          <strong>No two-way sync</strong> — your ATS stays the system of record; HireLens never
+          <strong>No two-way sync</strong> — your ATS stays the system of record; CandidLens never
           overwrites stages or dispositions. You push results back explicitly.
         </li>
         <li>
@@ -148,7 +148,7 @@ hirelens scoring results --job <job-id> --format json`}</code>
       <ul>
         <li>Create a dedicated API token per ATS (revocable independently).</li>
         <li>
-          Map ATS stages → HireLens jobs explicitly; don't screen stages candidates can still
+          Map ATS stages → CandidLens jobs explicitly; don't screen stages candidates can still
           withdraw at.
         </li>
         <li>Share candidate report links only for stages where your process has passed consent.</li>

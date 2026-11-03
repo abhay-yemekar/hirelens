@@ -108,7 +108,7 @@ export default function CandidateReportPage() {
       >
         <div className="mx-auto flex w-full max-w-3xl items-center gap-3">
           <LogoMark />
-          <span className="text-sm font-semibold">HireLens</span>
+          <span className="text-sm font-semibold">CandidLens</span>
           <span className="ml-auto text-xs" style={{ color: "var(--hl-muted)" }}>
             Evidence-linked screening
           </span>
@@ -430,7 +430,7 @@ export default function CandidateReportPage() {
                 className="underline underline-offset-2"
                 style={{ color: "var(--hl-accent)" }}
               >
-                HireLens
+                CandidLens
               </Link>{" "}
               — open-source, evidence-linked screening.
             </p>

@@ -387,9 +387,9 @@ export default function SelfCheckPage() {
               // A portable copy of the plan — plain Markdown, generated
               // client-side, nothing sent anywhere.
               const lines = [
-                "# My HireLens improvement plan",
+                "# My CandidLens improvement plan",
                 "",
-                `Generated ${new Date().toLocaleDateString()} via hirelens-rosy.vercel.app/self-check`,
+                `Generated ${new Date().toLocaleDateString()} via ${window.location.host}/self-check`,
                 "",
                 "## Steps, weakest area first",
                 ...planSteps.map((s, i) => `${i + 1}. ${s}`),
@@ -402,7 +402,7 @@ export default function SelfCheckPage() {
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
               a.href = url;
-              a.download = "hirelens-improvement-plan.md";
+              a.download = "candidlens-improvement-plan.md";
               a.click();
               URL.revokeObjectURL(url);
             }}
@@ -563,7 +563,7 @@ export default function SelfCheckPage() {
       <p className="mt-2 text-center text-sm text-[var(--hl-mist)]">
         Hiring instead of applying?{" "}
         <Link href="/demo" className="text-[var(--hl-warn)] underline underline-offset-2">
-          See how recruiters screen with HireLens
+          See how recruiters screen with CandidLens
         </Link>
       </p>
     </main>

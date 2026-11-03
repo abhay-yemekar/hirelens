@@ -2,7 +2,7 @@
  * Inbound ATS webhook (v1.2) — POST /api/webhooks/ats.
  *
  * The integration surface promised in the ATS guide: an ATS (Greenhouse,
- * Lever, or a Zapier relay) POSTs a candidate at a stage; HireLens fetches
+ * Lever, or a Zapier relay) POSTs a candidate at a stage; CandidLens fetches
  * the resume, ingests it into the target job, and the review queue fills
  * in. Bearer-token auth via org-scoped API tokens; idempotent per
  * (job, candidate text) through ingest's content-hash dedupe; results read

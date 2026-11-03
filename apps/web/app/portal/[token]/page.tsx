@@ -135,7 +135,7 @@ export default function PortalPage() {
           className="text-xs font-medium uppercase tracking-wide"
           style={{ color: "var(--hl-mist)" }}
         >
-          HireLens · Candidate portal
+          CandidLens · Candidate portal
         </p>
         <h1 className="text-2xl font-semibold tracking-tight text-[var(--hl-cream)]">
           Help us keep hiring fair

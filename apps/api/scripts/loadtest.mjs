@@ -185,7 +185,7 @@ async function main() {
   const review = await timed(`/api/jobs/${job.id}/review`);
   const candidatesAfter = await timed(`/api/jobs/${job.id}/candidates`);
 
-  console.log("\n=== HireLens load test — 200 resumes ===");
+  console.log("\n=== CandidLens load test — 200 resumes ===");
   console.log(`job:            ${job.id}`);
   console.log(
     `zip upload:     ${uploadMs} ms (created ${upBody.created}, dup ${upBody.duplicates}, skipped ${upBody.skipped?.length ?? 0})`,

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { ProsePage } from "@/components/prose-page";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — HireLens",
+  title: "Privacy Policy — CandidLens",
   description:
-    "What HireLens collects (almost nothing), what self-hosters are responsible for, and how candidate data is treated.",
+    "What CandidLens collects (almost nothing), what self-hosters are responsible for, and how candidate data is treated.",
 };
 
 export default function PrivacyPage() {
@@ -12,19 +12,21 @@ export default function PrivacyPage() {
     <ProsePage
       eyebrow="Legal"
       title="Privacy Policy"
-      updated="Last updated: September 2026 · Applies to the HireLens software and this marketing site"
+      updated="Last updated: September 2026 · Applies to the CandidLens software and this marketing site"
     >
       <p>
-        HireLens is open-source software that <strong>you self-host</strong>. There is no HireLens
-        cloud service holding your data, and there is no HireLens account to sign up for on this
-        website. That shape makes this policy short — and it puts the data in your hands, not ours.
+        CandidLens is open-source software that <strong>you self-host</strong>. There is no
+        CandidLens cloud service holding your data, and there is no CandidLens account to sign up
+        for on this website. That shape makes this policy short — and it puts the data in your
+        hands, not ours.
       </p>
 
       <h2>The short version</h2>
       <ul>
         <li>
-          <strong>We don't collect your data.</strong> Running HireLens does not send your resumes,
-          rubrics, scores, or audit logs anywhere. Everything lives in your own Postgres database.
+          <strong>We don't collect your data.</strong> Running CandidLens does not send your
+          resumes, rubrics, scores, or audit logs anywhere. Everything lives in your own Postgres
+          database.
         </li>
         <li>
           <strong>Optional telemetry is opt-in.</strong> Error tracking (Sentry), LLM tracing
@@ -32,7 +34,7 @@ export default function PrivacyPage() {
           if the operator explicitly configures the corresponding keys.
         </li>
         <li>
-          <strong>Candidate data is yours to govern.</strong> Whoever operates a HireLens instance
+          <strong>Candidate data is yours to govern.</strong> Whoever operates a CandidLens instance
           is the data controller for the candidate data in it. This page is not a substitute for
           your own privacy obligations to candidates.
         </li>
@@ -68,7 +70,7 @@ export default function PrivacyPage() {
         Anthropic, Groq, OpenRouter) with your own API key, or a fully local Ollama instance. If
         resume privacy is paramount, use local mode — then resumes never leave your infrastructure.
         When you use a cloud provider, that provider processes the resume text under
-        <em> its</em> terms and its own privacy policy; HireLens adds nothing to that data path.
+        <em> its</em> terms and its own privacy policy; CandidLens adds nothing to that data path.
       </p>
 
       <h2>Retention and erasure</h2>
@@ -86,7 +88,7 @@ export default function PrivacyPage() {
 
       <hr />
       <p>
-        <strong>Compliance note.</strong> HireLens is a tool that helps organizations meet
+        <strong>Compliance note.</strong> CandidLens is a tool that helps organizations meet
         obligations like NYC Local Law 144 or the EU AI Act's documentation duties. It is not legal
         advice and does not by itself make any deployment compliant. An AI score is a screening aid,
         not a hiring decision.

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Documentation — HireLens",
+  title: "Documentation — CandidLens",
   description:
-    "HireLens documentation: quickstart, CLI reference, self-hosting guide, blind review methodology, API reference, and troubleshooting.",
+    "CandidLens documentation: quickstart, CLI reference, self-hosting guide, blind review methodology, API reference, and troubleshooting.",
 };
 
 const SECTIONS = [
@@ -85,7 +85,7 @@ export default function DocsHubPage() {
             Documentation
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Everything you need to run HireLens.
+            Everything you need to run CandidLens.
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7" style={{ color: "var(--hl-mist)" }}>
             The guides below are rendered right here — no repository detour. The full source of each

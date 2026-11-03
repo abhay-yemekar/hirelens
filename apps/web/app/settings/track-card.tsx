@@ -40,7 +40,7 @@ export function TrackCard() {
       <CardHeader>
         <CardTitle style={{ color: "var(--hl-cream)" }}>Account</CardTitle>
         <CardDescription style={{ color: "var(--hl-mist)" }}>
-          Which side of hiring you use HireLens from — controls where sign-in lands you. You can
+          Which side of hiring you use CandidLens from — controls where sign-in lands you. You can
           switch anytime.
         </CardDescription>
       </CardHeader>

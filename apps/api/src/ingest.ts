@@ -18,7 +18,7 @@ import type { Database } from "@candidlens/db";
 import { candidates, documents } from "@candidlens/db";
 import { and, eq } from "drizzle-orm";
 import { ApiInputError } from "./errors.js";
-import type { HireLensIndexer } from "./indexing.js";
+import type { CandidLensIndexer } from "./indexing.js";
 
 export type IngestResult =
   | { status: "created"; candidateId: string; documentId: string; filename: string }
@@ -35,7 +35,7 @@ const MIME_BY_KIND: Record<string, string> = {
 export async function ingestBytes(
   db: Database,
   input: { jobId: string; filename: string; bytes: Uint8Array },
-  indexer?: HireLensIndexer | null,
+  indexer?: CandidLensIndexer | null,
 ): Promise<IngestResult> {
   if (input.bytes.length > MAX_DOCUMENT_BYTES) {
     throw new ApiInputError(

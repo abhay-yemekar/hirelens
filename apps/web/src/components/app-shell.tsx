@@ -123,7 +123,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-4">
           {/* Logo → marketing site: the standard "back to the website" move. */}
-          <Link href="/" className="text-[var(--hl-cream)]" aria-label="HireLens website home">
+          <Link href="/" className="text-[var(--hl-cream)]" aria-label="CandidLens website home">
             <Logo compact />
           </Link>
           <span aria-hidden className="h-5 w-px" style={{ background: "var(--hl-border)" }} />
@@ -198,7 +198,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 click from any page. Selected side fills coral. */}
             <div
               role="tablist"
-              aria-label="Which side of HireLens you're using"
+              aria-label="Which side of CandidLens you're using"
               className="flex items-center rounded-full border p-0.5"
               style={{ borderColor: "var(--hl-border)" }}
             >

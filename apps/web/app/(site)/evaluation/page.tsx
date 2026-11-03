@@ -4,9 +4,9 @@ import evalReport from "../../../../../packages/eval-report.json";
 import groqReport from "../../../../../packages/evals/reports/2026-10-30-groq-openai-gpt-oss-120b.json";
 
 export const metadata: Metadata = {
-  title: "Evaluation harness — HireLens",
+  title: "Evaluation harness — CandidLens",
   description:
-    "An unevaluated ranker is a liability. HireLens ships a seeded harness for direction accuracy, self-consistency, position bias, and name-swap bias, with a first real-model run published.",
+    "An unevaluated ranker is a liability. CandidLens ships a seeded harness for direction accuracy, self-consistency, position bias, and name-swap bias, with a first real-model run published.",
 };
 
 /** 95% Wilson score interval for k successes out of n, as whole percents. */
@@ -31,7 +31,7 @@ export default function EvaluationPage() {
     <ProsePage
       eyebrow="Docs · Understand"
       title="Evaluation harness"
-      lede="Most “AI resume screeners” are an unevaluated wrapper around one API call. An unevaluated ranker in hiring is a liability — so HireLens ships a seeded benchmark harness that runs through the same engine the product uses. A mock-model run checks the harness on every PR, and real-model runs are published with their provenance."
+      lede="Most “AI resume screeners” are an unevaluated wrapper around one API call. An unevaluated ranker in hiring is a liability — so CandidLens ships a seeded benchmark harness that runs through the same engine the product uses. A mock-model run checks the harness on every PR, and real-model runs are published with their provenance."
     >
       <h2>The four metrics</h2>
       <ul>

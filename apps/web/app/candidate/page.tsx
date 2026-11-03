@@ -79,7 +79,7 @@ export default function CandidateHomePage() {
     const token = match?.[1] ?? raw;
     if (!/^[A-Za-z0-9_-]{8,}$/.test(token)) {
       setReportError(
-        "That doesn't look like a HireLens report link — paste the URL from the message you received.",
+        "That doesn't look like a CandidLens report link — paste the URL from the message you received.",
       );
       return;
     }
@@ -106,7 +106,7 @@ export default function CandidateHomePage() {
             Welcome, {name}
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6" style={{ color: "var(--hl-mist)" }}>
-            HireLens never scores you silently: every result comes with the exact evidence behind
+            CandidLens never scores you silently: every result comes with the exact evidence behind
             it, and you see your own report before anyone acts on it.
           </p>
         </FadeIn>

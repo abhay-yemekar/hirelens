@@ -108,7 +108,7 @@ export default function JobsPage() {
           <CardHeader>
             <CardTitle style={{ color: "var(--hl-cream)" }}>New job</CardTitle>
             <CardDescription style={{ color: "var(--hl-mist)" }}>
-              Describe the role — HireLens drafts the scoring rubric from your description when an
+              Describe the role — CandidLens drafts the scoring rubric from your description when an
               LLM key is configured, or you can import one on the job page.
             </CardDescription>
           </CardHeader>

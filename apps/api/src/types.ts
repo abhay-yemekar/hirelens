@@ -1,7 +1,7 @@
 import type { LanguageModel } from "@candidlens/core";
 import type { Database } from "@candidlens/db";
 import type { AuthContext } from "./auth.js";
-import type { HireLensIndexer } from "./indexing.js";
+import type { CandidLensIndexer } from "./indexing.js";
 
 /** Raw better-auth getSession() payload attached by the session middleware. */
 export interface AuthSessionPayload {
@@ -15,7 +15,7 @@ export type AppEnv = {
     db: Database;
     model: LanguageModel | null;
     /** Semantic-search indexer; null when no embedding key is configured. */
-    indexer: HireLensIndexer | null;
+    indexer: CandidLensIndexer | null;
     session: AuthSessionPayload | null;
     auth: AuthContext;
     requestId: string;

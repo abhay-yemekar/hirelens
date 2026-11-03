@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "HireLens — See why, not just who",
+    default: "CandidLens — See why, not just who",
     template: "%s",
   },
   description: "RAG + LLM powered resume screening with auditable evidence.",

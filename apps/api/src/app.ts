@@ -11,7 +11,7 @@ import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { requireAuth } from "./auth.js";
 import { ApiInputError } from "./errors.js";
-import type { HireLensIndexer } from "./indexing.js";
+import type { CandidLensIndexer } from "./indexing.js";
 import { isMissingTableError, sanitizeLlmConfigError } from "./llm-error.js";
 import { requestLogging } from "./middleware.js";
 import { compareMigrations } from "./migration-health.js";
@@ -42,7 +42,7 @@ export interface AppDeps {
   db: Database;
   llm: LanguageModel | null;
   /** Semantic indexer; null/omitted → search falls back to keyword mode. */
-  indexer?: HireLensIndexer | null;
+  indexer?: CandidLensIndexer | null;
   /**
    * Captured readLlmEnv() failure: the env HAS LLM variables but they are
    * invalid. Surfaced (sanitised) by /api/health?db=1 and Settings so the
@@ -146,7 +146,12 @@ export function createApp(deps: AppDeps) {
       ...(deps.llmConfigError ? { configError: sanitizeLlmConfigError(deps.llmConfigError) } : {}),
     };
     if (c.req.query("db") !== "1") {
-      return c.json({ ok: true as const, service: "hirelens-api", version: "0.1.0", llm: llmInfo });
+      return c.json({
+        ok: true as const,
+        service: "candidlens-api",
+        version: "0.1.0",
+        llm: llmInfo,
+      });
     }
     let db: Database | null = null;
     try {
@@ -172,7 +177,7 @@ export function createApp(deps: AppDeps) {
         return c.json(
           {
             ok: false as const,
-            service: "hirelens-api",
+            service: "candidlens-api",
             version: "0.1.0",
             migrationsPending: true,
             migrations,
@@ -188,7 +193,7 @@ export function createApp(deps: AppDeps) {
           : "";
       return c.json({
         ok: true as const,
-        service: "hirelens-api",
+        service: "candidlens-api",
         version: "0.1.0",
         migrations,
         llm: llmInfo,
@@ -200,7 +205,7 @@ export function createApp(deps: AppDeps) {
       return c.json(
         {
           ok: false as const,
-          service: "hirelens-api",
+          service: "candidlens-api",
           version: "0.1.0",
           ...(missing ? { migrationsPending: true } : {}),
           llm: llmInfo,

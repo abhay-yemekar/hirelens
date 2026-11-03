@@ -21,7 +21,7 @@ const app = createApp({
 });
 
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
-  console.log(`HireLens API listening on http://localhost:${info.port}`);
+  console.log(`CandidLens API listening on http://localhost:${info.port}`);
 });
 
 async function shutdown(): Promise<void> {

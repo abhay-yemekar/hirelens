@@ -10,9 +10,10 @@ import { BRAND, BRAND_COLORS } from "@/components/brand";
 export const alt = `${BRAND.name}: ${BRAND.tagline}`;
 
 const WORDMARK_PX = 112;
-/** The renderer drops the e–L kerning between two text runs, which opens a
- *  visible gap in the wordmark; pull the coral half back by that pair. */
-const KERNING_GAP_PX = Math.round(WORDMARK_PX * 0.0625);
+/** The renderer drops the kerning pair where the wordmark's two halves
+ *  meet (d–L), which opens a visible gap; pull the coral half back by it.
+ *  Measured: 6 px at 112 px. Re-measure if the name changes. */
+const KERNING_GAP_PX = 6;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

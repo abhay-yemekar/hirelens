@@ -106,7 +106,7 @@ export function SiteFooter() {
           style={{ color: "var(--hl-muted)" }}
         >
           <p>
-            © {new Date().getFullYear()} HireLens · MIT · Built by{" "}
+            © {new Date().getFullYear()} CandidLens (formerly HireLens) · MIT · Built by{" "}
             <a
               href="https://www.linkedin.com/in/abhayyemekar/"
               className="underline underline-offset-2 transition-colors hover:text-[var(--hl-cream)]"
