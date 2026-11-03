@@ -98,15 +98,15 @@ docker exec -it hirelens-postgres psql -U postgres -d hirelens -c "\dt"
 ## 5. Verify your setup (recommended)
 
 ```bash
-pnpm typecheck        # strict TypeScript across all 8 packages
+pnpm typecheck        # strict TypeScript across every package
 pnpm test             # full test suite
 pnpm build            # compiles every package
 pnpm lint             # Biome check (format + lint)
 ```
 
-**Expected output for `pnpm test`:** a Turborepo summary like `22 tasks` (cached/execution counts vary) and, inside the logs, roughly **89 tests passing** — ~76 unit tests in `core`, component tests in `ui`, and **3 integration tests in `orchestrator` that require the database from step 2 and the `.env` from step 3** (they create an org, a job, candidates, run a real scoring batch through the mock model, and verify the hash-chained audit log by recomputing it from stored rows).
+**Expected output for `pnpm test`:** a Turborepo summary (cached and executed task counts vary) with every test passing. Unit tests live in `core`, `evals`, `cli` and `web`, component tests in `ui`, and **integration tests in `api` and `orchestrator` need the database from step 2 and the `.env` from step 3**. They create orgs, jobs and candidates, run real scoring batches through the mock model, and verify the hash-chained audit log by recomputing it from stored rows.
 
-> **The integration tests need Postgres running.** If the database is down, the orchestrator test task fails while all other tests still pass — see troubleshooting below.
+> **The integration tests need Postgres running.** If the database is down, the `api` and `orchestrator` test tasks fail while all other tests still pass — see troubleshooting below.
 
 ## 6. Run the applications
 
@@ -176,20 +176,22 @@ pnpm --filter @hirelens/ui storybook
 
 ### CLI (`apps/cli`)
 
-The CLI scores resumes from the terminal. It ships as zero-dependency TypeScript run directly by Node's native type stripping — needs **Node ≥ 22.6**.
+The CLI scores resumes from the terminal. It is published on npm as [`hirelens`](https://www.npmjs.com/package/hirelens) and runs on **Node ≥ 20**.
 
 ```bash
 export HIRELENS_API_URL=http://localhost:4000          # the API (compose or `pnpm --filter @hirelens/api dev`)
 export HIRELENS_CONFIG_DIR=~/.hirelens                  # optional; where the session cookie is stored
 
-pnpm --filter hirelens dev login you@example.com   # prompts for password (or set HIRELENS_PASSWORD)
-cd apps/cli && node src/main.ts org create "Acme Hiring"
-cd apps/cli && node src/main.ts jobs create "Senior Backend" --jd jd.md
-cd apps/cli && node src/main.ts rubric derive <jobId>   # LLM-derives the rubric from the JD
-cd apps/cli && node src/main.ts score <jobId> ./resumes # upload + score + ranked table
+npx hirelens login you@example.com                 # prompts for password (or set HIRELENS_PASSWORD)
+npx hirelens org create "Acme Hiring"
+npx hirelens jobs create "Senior Backend" --jd jd.md
+npx hirelens rubric derive <jobId>                 # LLM-derives the rubric from the JD
+npx hirelens score <jobId> ./resumes               # upload + score + ranked table
 #   --breakdown  per-criterion scores + evidence
 #   --json       machine-readable output
 ```
+
+Working on the CLI itself? `pnpm --filter hirelens dev <command>` runs the TypeScript source directly (Node ≥ 22.6, native type stripping). It runs inside `apps/cli`, so relative paths such as `--jd jd.md` resolve from there.
 
 Accounts are created in the web UI (or via `POST /api/auth/sign-up/email`); `hirelens login` signs an existing account in. All commands require the API to be running and LLM commands (`rubric derive`, `score`) require `HIRELENS_LLM_*` configuration on the API side.
 

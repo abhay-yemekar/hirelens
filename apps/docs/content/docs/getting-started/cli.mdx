@@ -3,7 +3,7 @@ title: CLI
 description: The full pipeline from a terminal.
 ---
 
-The CLI ships as zero-dependency TypeScript run directly by Node's native type stripping (**Node ≥ 22.6**). It talks to a running HireLens API over the same cookie-session auth the web UI uses.
+The CLI is published on npm as `hirelens` (zero runtime dependencies, **Node ≥ 20**): run it with `npx hirelens`. It talks to a running HireLens API over the same cookie-session auth the web UI uses. To work on the CLI itself, `pnpm --filter hirelens dev <command>` runs the TypeScript source (Node ≥ 22.6).
 
 ## Setup
 

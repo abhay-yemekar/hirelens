@@ -64,7 +64,7 @@ const MENUS: Array<{ label: string; items: MenuItem[] }> = [
         desc: "Docker, env vars, and API keys",
       },
       { href: "/docs/cli", label: "CLI", desc: "Drive HireLens from any pipeline" },
-      { href: "/docs/api-reference", label: "API reference", desc: "Endpoints, auth, examples" },
+      { href: "/api-reference", label: "API reference", desc: "Endpoints, auth, examples" },
       { href: "/troubleshooting", label: "Troubleshooting", desc: "Common issues and fixes" },
     ],
   },

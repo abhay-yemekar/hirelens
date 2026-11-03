@@ -12,14 +12,14 @@ export default function CliPage() {
     <ProsePage
       eyebrow="Docs · Get started"
       title="CLI reference"
-      lede="hirelens is a zero-runtime-dependency TypeScript CLI run directly by Node's type stripping — needs Node ≥ 22.6. The full pipeline, from a terminal."
+      lede="hirelens is a zero-runtime-dependency CLI published on npm — run it with npx on Node ≥ 20. The full pipeline, from a terminal."
     >
       <h2>Setup</h2>
       <pre>
         <code>{`export HIRELENS_API_URL=http://localhost:4000     # the API
 export HIRELENS_CONFIG_DIR=~/.hirelens            # optional; cookie storage
 
-pnpm --filter @hirelens/cli dev login you@example.com`}</code>
+npx hirelens login you@example.com`}</code>
       </pre>
       <p>
         <code>login</code> prompts for your password (or set <code>HIRELENS_PASSWORD</code> for
@@ -87,11 +87,10 @@ hirelens score <jobId> ./resumes --json        # machine-readable output`}</code
 
       <h2>Example end-to-end</h2>
       <pre>
-        <code>{`cd apps/cli
-node src/main.ts org create "Acme Hiring"
-node src/main.ts jobs create "Senior Backend Engineer" --jd jd.md
-node src/main.ts rubric derive <jobId>
-node src/main.ts score <jobId> ./resumes --breakdown`}</code>
+        <code>{`npx hirelens org create "Acme Hiring"
+npx hirelens jobs create "Senior Backend Engineer" --jd jd.md
+npx hirelens rubric derive <jobId>
+npx hirelens score <jobId> ./resumes --breakdown`}</code>
       </pre>
       <p>
         LLM commands (<code>rubric derive</code>, <code>score</code>) require{" "}
