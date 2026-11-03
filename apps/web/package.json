@@ -8,7 +8,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "landing-sample": "tsx scripts/record-landing-sample.ts"
+    "landing-sample": "tsx scripts/record-landing-sample.ts",
+    "brand-icons": "node scripts/render-brand-icons.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.71",
