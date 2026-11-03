@@ -2,10 +2,13 @@
 
 ## Supported versions
 
-| Version                 | Supported        |
-| ----------------------- | ---------------- |
-| `main` branch           | ✅               |
-| tagged releases < 1.0.0 | ❌ (pre-release) |
+| Version                                  | Supported                  |
+| ---------------------------------------- | -------------------------- |
+| `main` branch (what the hosted app runs) | ✅                         |
+| Latest release (currently 1.4.x)         | ✅                         |
+| Older releases (1.0.x, 1.2.x)            | ❌ — upgrade to the latest |
+
+Security fixes land on `main` first, then ship in the next release: the npm package `hirelens` and the GHCR images. Fixes are not backported to older releases.
 
 ## Reporting a vulnerability
 
@@ -23,7 +26,7 @@ Please do not test vulnerabilities against any instance you do not own or operat
 
 ## Scope
 
-In scope: the `backend/` and `frontend/` prototype code, and all `apps/` and `packages/` code as the monorepo lands. Out of scope: your own deployment misconfiguration, denial-of-service, and social engineering.
+In scope: all code in `apps/` and `packages/`, including algorithmic denial-of-service in that code (for example, a pattern or parser that crafted input makes slow). Out of scope: misconfiguration of your own deployment, flooding a running instance with traffic, and social engineering.
 
 ## A note on PII
 
