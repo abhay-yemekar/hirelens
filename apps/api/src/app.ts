@@ -81,7 +81,8 @@ export function createApp(deps: AppDeps) {
   app.use("*", async (c, next) => {
     const path = c.req.path;
     const isZipUpload = path.endsWith("/candidates/zip");
-    const isResumeUpload = path.endsWith("/candidates") && c.req.method === "POST";
+    const isResumeUpload =
+      (path.endsWith("/candidates") || path.endsWith("/doctor/file")) && c.req.method === "POST";
     const maxBytes = isZipUpload
       ? MAX_ZIP_UPLOAD_BYTES
       : isResumeUpload
