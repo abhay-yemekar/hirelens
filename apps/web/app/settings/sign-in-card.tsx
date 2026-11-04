@@ -1,7 +1,8 @@
 "use client";
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@candidlens/ui";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { PasswordInput } from "@/components/password-input";
 import { ApiRequestError, addPassword } from "@/lib/api";
 import { authClient, useSession } from "@/lib/auth-client";
 
@@ -41,31 +42,39 @@ function messageFor(code: string | undefined, fallback: string): string {
   return (code && ERROR_MESSAGES[code]) || fallback;
 }
 
-type Status = { kind: "ok" | "error"; text: string } | null;
+/** Which part of the card a message belongs to; it shows next to that part. */
+type Area = "methods" | "password" | "devices";
+type Status = { area: Area; kind: "ok" | "error"; text: string } | null;
 type LinkedAccount = { id: string; providerId: string };
 /** Stands in for a list request that threw (for example, the network failed). */
 const NOT_LOADED = { error: true, data: null } as const;
 
 const inputClass =
-  "rounded-[var(--radius-control)] border px-3 py-2 text-sm text-[var(--hl-cream)] focus:border-[var(--hl-accent)] focus:outline-none";
+  "rounded-[var(--radius-control)] border px-3 py-2 text-sm text-[var(--hl-cream)] focus:border-[var(--hl-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--hl-accent-soft)]";
 const inputStyle = { borderColor: "var(--hl-border)", background: "var(--hl-input)" };
 
 function PasswordField({
   label,
+  name,
   value,
   onChange,
   autoComplete,
 }: {
   label: string;
+  name: string;
   value: string;
   onChange: (v: string) => void;
   autoComplete: "current-password" | "new-password";
 }) {
+  const id = useId();
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span style={{ color: "var(--hl-mist)" }}>{label}</span>
-      <input
-        type="password"
+    <div className="flex flex-col gap-1 text-sm">
+      <label htmlFor={id} style={{ color: "var(--hl-mist)" }}>
+        {label}
+      </label>
+      <PasswordInput
+        id={id}
+        name={name}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         autoComplete={autoComplete}
@@ -75,7 +84,22 @@ function PasswordField({
         className={inputClass}
         style={inputStyle}
       />
-    </label>
+    </div>
+  );
+}
+
+/** A polite live region for one part of the card; empty unless its message is current. */
+function StatusLine({ status, area }: { status: Status; area: Area }) {
+  return (
+    <p aria-live="polite" className="text-sm empty:hidden">
+      {status?.area === area && (
+        <span
+          style={{ color: status.kind === "ok" ? "var(--color-success)" : "var(--color-danger)" }}
+        >
+          {status.text}
+        </span>
+      )}
+    </p>
   );
 }
 
@@ -122,7 +146,11 @@ export function SignInCard() {
     // query afterwards so a reload doesn't show the message again.
     const error = new URLSearchParams(window.location.search).get("error");
     if (!error) return;
-    setStatus({ kind: "error", text: messageFor(error, "That account could not be connected.") });
+    setStatus({
+      area: "methods",
+      kind: "error",
+      text: messageFor(error, "That account could not be connected."),
+    });
     window.history.replaceState(null, "", window.location.pathname);
   }, []);
 
@@ -135,7 +163,7 @@ export function SignInCard() {
     e.preventDefault();
     setStatus(null);
     if (next !== confirm) {
-      setStatus({ kind: "error", text: "The new passwords don't match." });
+      setStatus({ area: "password", kind: "error", text: "The new passwords don't match." });
       return;
     }
     setBusy(true);
@@ -148,6 +176,7 @@ export function SignInCard() {
         });
         if (res.error) throw res.error;
         setStatus({
+          area: "password",
           kind: "ok",
           text: signOutOthers
             ? "Password changed. Other devices are signed out."
@@ -156,6 +185,7 @@ export function SignInCard() {
       } else {
         await addPassword(next);
         setStatus({
+          area: "password",
           kind: "ok",
           text: `Password added. You can now also sign in with ${email} and this password.`,
         });
@@ -168,7 +198,7 @@ export function SignInCard() {
       const code =
         err instanceof ApiRequestError ? err.code : (err as { code?: string } | null)?.code;
       const fallback = err instanceof Error ? err.message : "Something went wrong. Try again.";
-      setStatus({ kind: "error", text: messageFor(code, fallback) });
+      setStatus({ area: "password", kind: "error", text: messageFor(code, fallback) });
     } finally {
       setBusy(false);
     }
@@ -188,6 +218,7 @@ export function SignInCard() {
     if (res.error) {
       setBusy(false);
       setStatus({
+        area: "methods",
         kind: "error",
         text: `Could not start connecting ${label}. Is it set up on this server?`,
       });
@@ -204,12 +235,13 @@ export function SignInCard() {
     setBusy(false);
     if (res.error) {
       setStatus({
+        area: "methods",
         kind: "error",
         text: messageFor(res.error.code, "That didn't work. Try again."),
       });
       return;
     }
-    setStatus({ kind: "ok", text: done });
+    setStatus({ area: "methods", kind: "ok", text: done });
     await load();
   }
 
@@ -219,10 +251,14 @@ export function SignInCard() {
     const res = await authClient.revokeOtherSessions();
     setBusy(false);
     if (res.error) {
-      setStatus({ kind: "error", text: "Could not sign out other devices. Try again." });
+      setStatus({
+        area: "devices",
+        kind: "error",
+        text: "Could not sign out other devices. Try again.",
+      });
       return;
     }
-    setStatus({ kind: "ok", text: "Other devices are signed out." });
+    setStatus({ area: "devices", kind: "ok", text: "Other devices are signed out." });
     await load();
   }
 
@@ -239,18 +275,6 @@ export function SignInCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
-        <p aria-live="polite" className="text-sm empty:hidden">
-          {status && (
-            <span
-              style={{
-                color: status.kind === "ok" ? "var(--color-success)" : "var(--color-danger)",
-              }}
-            >
-              {status.text}
-            </span>
-          )}
-        </p>
-
         <section aria-labelledby="sign-in-methods" className="flex flex-col gap-3">
           <h3 id="sign-in-methods" className="text-sm font-semibold text-[var(--hl-cream)]">
             Sign-in methods
@@ -323,6 +347,7 @@ export function SignInCard() {
               })}
             </ul>
           )}
+          <StatusLine status={status} area="methods" />
         </section>
 
         {providers !== null && (
@@ -344,6 +369,7 @@ export function SignInCard() {
             {hasPassword && (
               <PasswordField
                 label="Current password"
+                name="current-password"
                 value={current}
                 onChange={setCurrent}
                 autoComplete="current-password"
@@ -351,12 +377,14 @@ export function SignInCard() {
             )}
             <PasswordField
               label="New password (8 to 128 characters)"
+              name="new-password"
               value={next}
               onChange={setNext}
               autoComplete="new-password"
             />
             <PasswordField
               label="Confirm new password"
+              name="confirm-password"
               value={confirm}
               onChange={setConfirm}
               autoComplete="new-password"
@@ -379,6 +407,7 @@ export function SignInCard() {
                 {busy ? "Saving…" : hasPassword ? "Change password" : "Add password"}
               </Button>
             </div>
+            <StatusLine status={status} area="password" />
           </form>
         )}
 
@@ -405,6 +434,7 @@ export function SignInCard() {
               Sign out other devices
             </Button>
           </div>
+          <StatusLine status={status} area="devices" />
         </section>
       </CardContent>
     </Card>
