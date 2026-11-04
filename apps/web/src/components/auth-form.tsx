@@ -1,9 +1,18 @@
 "use client";
 
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@candidlens/ui";
-import { useId, useState } from "react";
+import { Button } from "@candidlens/ui";
+import Link from "next/link";
+import { useEffect, useId, useState } from "react";
+import {
+  AuthCard,
+  authInputClass,
+  authInputStyle,
+  authLinkClass,
+  authSubmitClass,
+} from "@/components/auth-card";
 import { PasswordInput } from "@/components/password-input";
 import { authClient, userTrack } from "@/lib/auth-client";
+import { EMAIL_ENABLED } from "@/lib/env";
 
 /**
  * After sign-in, land on the session side's home. The track is re-read
@@ -40,27 +49,44 @@ const GITHUB_ENABLED = process.env["NEXT_PUBLIC_GITHUB_OAUTH_ENABLED"] === "true
 
 /**
  * Clearer text for the two errors people hit when their email belongs to
- * an account made with Google or GitHub: it has no password yet.
+ * an account made with Google or GitHub (it has no password yet) or when
+ * they have forgotten the password.
  */
 function authErrorText(
   error: { code?: string | undefined; message?: string | undefined },
   fallback: string,
 ): string {
   const social = GOOGLE_ENABLED || GITHUB_ENABLED;
+  const reset = EMAIL_ENABLED ? " Or use “Forgot password?” to set a new one by email." : "";
   if (
     error.code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL" ||
     error.code === "USER_ALREADY_EXISTS"
   ) {
     return social
-      ? "An account with this email already exists. Sign in instead. If you created it with Google or GitHub, use that button, then add a password under Settings → Sign-in & security."
-      : "An account with this email already exists. Sign in instead.";
+      ? `An account with this email already exists. Sign in instead: if you created it with Google or GitHub, use that button.${reset}`
+      : `An account with this email already exists. Sign in instead.${reset}`;
   }
   if (error.code === "INVALID_EMAIL_OR_PASSWORD") {
     return social
-      ? "Wrong email or password. If you usually sign in with Google or GitHub, use that button. You can add a password afterwards under Settings → Sign-in & security."
-      : "Wrong email or password.";
+      ? `Wrong email or password. If you usually sign in with Google or GitHub, use that button.${reset}`
+      : `Wrong email or password.${reset}`;
   }
   return error.message ?? fallback;
+}
+
+/**
+ * Text for the ?error= Better Auth adds when a Google or GitHub sign-in
+ * comes back without signing in.
+ */
+function socialErrorText(code: string): string {
+  if (code === "account_not_linked") {
+    // Google and GitHub never join an existing account on their own
+    // (packages/db/auth.config.ts); the user connects them from Settings.
+    return `This email already has a CandidLens account. Sign in the way you did before (email and password, or the other button), then connect this one under Settings → Sign-in & security.${
+      EMAIL_ENABLED ? " No password yet, or forgot it? Use “Forgot password?”." : ""
+    }`;
+  }
+  return "That sign-in didn't work. Try again.";
 }
 
 /** Official Google "G" mark — the four-color logo, as inline SVG. */
@@ -96,17 +122,6 @@ function GitHubIcon() {
   );
 }
 
-/**
- * Shared input styling: brand ink surface (matches the split-panel
- * theme) + warm border, with an accent glow on focus.
- */
-const inputClass =
-  "w-full rounded-[var(--radius-control)] border px-3 py-2.5 text-sm text-[var(--hl-cream)] transition-shadow duration-[var(--duration-fast)] placeholder:text-[var(--hl-muted)] focus:outline-none focus:border-[var(--hl-accent)] focus:ring-2 focus:ring-[var(--hl-accent-soft)]";
-const inputStyle = {
-  borderColor: "var(--hl-border)",
-  background: "var(--hl-input)",
-} as const;
-
 export function AuthForm() {
   const [mode, setMode] = useState<Mode>("signin");
   const [name, setName] = useState("");
@@ -117,6 +132,15 @@ export function AuthForm() {
   const [socialBusy, setSocialBusy] = useState<"google" | "github" | null>(null);
   const passwordId = useId();
   const passwordHintId = useId();
+
+  useEffect(() => {
+    // Back from Google or GitHub without a session: Better Auth adds
+    // ?error=. Show it once, then drop it so a reload starts clean.
+    const code = new URLSearchParams(window.location.search).get("error");
+    if (!code) return;
+    setError(socialErrorText(code));
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
 
   async function social(provider: "google" | "github") {
     setError(null);
@@ -129,6 +153,9 @@ export function AuthForm() {
         // New accounts see the one-time track chooser; established users
         // skip straight to their workspace.
         callbackURL: `${window.location.origin}/track`,
+        // A refused sign-in comes back here with ?error= (see above),
+        // not to Better Auth's bare error page.
+        errorCallbackURL: `${window.location.origin}/signin`,
       });
       // OAuth redirects away; nothing to do on success.
     } catch {
@@ -149,6 +176,8 @@ export function AuthForm() {
           name: name.trim() || email,
           email,
           password,
+          // Where the confirmation link in the welcome email lands.
+          callbackURL: `${window.location.origin}/settings?verified=1`,
         });
         if (res.error) throw new Error(authErrorText(res.error, "Sign-up failed. Try again."));
         // Hard navigation, already reading the fresh session cookie.
@@ -172,165 +201,156 @@ export function AuthForm() {
   const showSocial = GOOGLE_ENABLED || GITHUB_ENABLED;
 
   return (
-    <Card
-      className="w-full max-w-md"
-      style={{
-        background: "var(--hl-card)",
-        borderColor: "rgba(183, 191, 218, 0.22)",
-        boxShadow: "0 1px 0 rgba(255,255,255,0.05) inset, 0 32px 80px -32px rgba(3, 6, 18, 0.9)",
-      }}
+    <AuthCard
+      title={mode === "signin" ? "Sign in to CandidLens" : "Create your account"}
+      description={
+        mode === "signin"
+          ? "Continue with Google or GitHub, or use your email."
+          : EMAIL_ENABLED
+            ? "We'll email you a link to confirm your address. You'll create or join an organization next."
+            : "You'll create or join an organization next."
+      }
     >
-      <CardHeader>
-        {/* h1: the page's top heading (axe heading-order). */}
-        <CardTitle asChild className="text-xl" style={{ color: "var(--hl-cream)" }}>
-          <h1>{mode === "signin" ? "Sign in to CandidLens" : "Create your account"}</h1>
-        </CardTitle>
-        <CardDescription style={{ color: "var(--hl-mist)" }}>
-          {mode === "signin"
-            ? "Continue with Google or GitHub, or use your email."
-            : "You'll create or join an organization next."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {showSocial && (
-          <>
-            <div className="flex flex-col gap-2.5">
-              {GOOGLE_ENABLED && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 text-[0.9rem] font-medium text-[var(--hl-cream)] transition-colors hover:bg-white/[0.04]"
-                  style={{ borderColor: "var(--hl-border)" }}
-                  disabled={socialBusy !== null}
-                  onClick={() => social("google")}
-                >
-                  {socialBusy === "google" ? (
-                    "Redirecting…"
-                  ) : (
-                    <>
-                      <GoogleIcon />
-                      Continue with Google
-                    </>
-                  )}
-                </Button>
-              )}
-              {GITHUB_ENABLED && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 text-[0.9rem] font-medium text-[var(--hl-cream)] transition-colors hover:bg-white/[0.04]"
-                  style={{ borderColor: "var(--hl-border)" }}
-                  disabled={socialBusy !== null}
-                  onClick={() => social("github")}
-                >
-                  {socialBusy === "github" ? (
-                    "Redirecting…"
-                  ) : (
-                    <>
-                      <GitHubIcon />
-                      Continue with GitHub
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-            <div
-              className="my-5 flex items-center gap-3 text-xs"
-              style={{ color: "var(--hl-muted)" }}
-            >
-              <span className="h-px flex-1" style={{ background: "var(--hl-border)" }} />
-              or continue with email
-              <span className="h-px flex-1" style={{ background: "var(--hl-border)" }} />
-            </div>
-          </>
-        )}
-        <form onSubmit={submit} className="flex flex-col gap-3.5">
-          {mode === "signup" && (
-            <label className="flex flex-col gap-1.5 text-sm">
-              <span style={{ color: "var(--hl-mist)" }}>Name</span>
-              <input
-                type="text"
-                name="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                autoComplete="name"
-                className={inputClass}
-                style={inputStyle}
-              />
-            </label>
-          )}
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span style={{ color: "var(--hl-mist)" }}>Email</span>
-            <input
-              type="email"
-              name="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              spellCheck={false}
-              className={inputClass}
-              style={inputStyle}
-            />
-          </label>
-          <div className="flex flex-col gap-1.5 text-sm">
-            <label htmlFor={passwordId} style={{ color: "var(--hl-mist)" }}>
-              Password
-            </label>
-            <PasswordInput
-              id={passwordId}
-              name="password"
-              required
-              minLength={8}
-              maxLength={128}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              aria-describedby={mode === "signup" ? passwordHintId : undefined}
-              className={inputClass}
-              style={inputStyle}
-            />
-            {mode === "signup" && (
-              <p id={passwordHintId} className="text-xs" style={{ color: "var(--hl-muted)" }}>
-                At least 8 characters.
-              </p>
+      {showSocial && (
+        <>
+          <div className="flex flex-col gap-2.5">
+            {GOOGLE_ENABLED && (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 text-[0.9rem] font-medium text-[var(--hl-cream)] transition-colors hover:bg-white/[0.04]"
+                style={{ borderColor: "var(--hl-border)" }}
+                disabled={socialBusy !== null}
+                onClick={() => social("google")}
+              >
+                {socialBusy === "google" ? (
+                  "Redirecting…"
+                ) : (
+                  <>
+                    <GoogleIcon />
+                    Continue with Google
+                  </>
+                )}
+              </Button>
+            )}
+            {GITHUB_ENABLED && (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 text-[0.9rem] font-medium text-[var(--hl-cream)] transition-colors hover:bg-white/[0.04]"
+                style={{ borderColor: "var(--hl-border)" }}
+                disabled={socialBusy !== null}
+                onClick={() => social("github")}
+              >
+                {socialBusy === "github" ? (
+                  "Redirecting…"
+                ) : (
+                  <>
+                    <GitHubIcon />
+                    Continue with GitHub
+                  </>
+                )}
+              </Button>
             )}
           </div>
-
-          {error && (
-            <p role="alert" className="text-sm" style={{ color: "var(--hl-bad)" }}>
-              {error}
+          <div
+            className="my-5 flex items-center gap-3 text-xs"
+            style={{ color: "var(--hl-muted)" }}
+          >
+            <span className="h-px flex-1" style={{ background: "var(--hl-border)" }} />
+            or continue with email
+            <span className="h-px flex-1" style={{ background: "var(--hl-border)" }} />
+          </div>
+        </>
+      )}
+      <form onSubmit={submit} className="flex flex-col gap-3.5">
+        {mode === "signup" && (
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span style={{ color: "var(--hl-mist)" }}>Name</span>
+            <input
+              type="text"
+              name="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoComplete="name"
+              className={authInputClass}
+              style={authInputStyle}
+            />
+          </label>
+        )}
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span style={{ color: "var(--hl-mist)" }}>Email</span>
+          <input
+            type="email"
+            name="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            spellCheck={false}
+            className={authInputClass}
+            style={authInputStyle}
+          />
+        </label>
+        <div className="flex flex-col gap-1.5 text-sm">
+          <label htmlFor={passwordId} style={{ color: "var(--hl-mist)" }}>
+            Password
+          </label>
+          <PasswordInput
+            id={passwordId}
+            name="password"
+            required
+            minLength={8}
+            maxLength={128}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete={mode === "signup" ? "new-password" : "current-password"}
+            aria-describedby={mode === "signup" ? passwordHintId : undefined}
+            className={authInputClass}
+            style={authInputStyle}
+          />
+          {mode === "signup" && (
+            <p id={passwordHintId} className="text-xs" style={{ color: "var(--hl-muted)" }}>
+              At least 8 characters.
             </p>
           )}
+          {/* After the field, so Tab still goes from email to password. */}
+          {mode === "signin" && EMAIL_ENABLED && (
+            <Link href="/forgot-password" className={`self-end text-xs ${authLinkClass}`}>
+              Forgot password?
+            </Link>
+          )}
+        </div>
 
-          <Button
-            type="submit"
-            disabled={busy}
-            className="h-11 bg-white text-[0.95rem] font-semibold text-[#0d1226] hover:bg-[#eef0fa]"
-          >
-            {busy
-              ? mode === "signin"
-                ? "Signing in…"
-                : "Creating account…"
-              : mode === "signin"
-                ? "Sign in"
-                : "Create account"}
-          </Button>
-        </form>
-        <p className="mt-4 text-center text-sm" style={{ color: "var(--hl-mist)" }}>
-          {mode === "signin" ? "Need an account? " : "Already have an account? "}
-          <button
-            type="button"
-            onClick={() => {
-              setMode(mode === "signin" ? "signup" : "signin");
-              setError(null);
-            }}
-            className="font-semibold text-[var(--hl-accent)] transition-opacity hover:opacity-85"
-          >
-            {mode === "signin" ? "Sign up" : "Sign in"}
-          </button>
-        </p>
-      </CardContent>
-    </Card>
+        {error && (
+          <p role="alert" className="text-sm" style={{ color: "var(--hl-bad)" }}>
+            {error}
+          </p>
+        )}
+
+        <Button type="submit" disabled={busy} className={authSubmitClass}>
+          {busy
+            ? mode === "signin"
+              ? "Signing in…"
+              : "Creating account…"
+            : mode === "signin"
+              ? "Sign in"
+              : "Create account"}
+        </Button>
+      </form>
+      <p className="mt-4 text-center text-sm" style={{ color: "var(--hl-mist)" }}>
+        {mode === "signin" ? "Need an account? " : "Already have an account? "}
+        <button
+          type="button"
+          onClick={() => {
+            setMode(mode === "signin" ? "signup" : "signin");
+            setError(null);
+          }}
+          className={authLinkClass}
+        >
+          {mode === "signin" ? "Sign up" : "Sign in"}
+        </button>
+      </p>
+    </AuthCard>
   );
 }

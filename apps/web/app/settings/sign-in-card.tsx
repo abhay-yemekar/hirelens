@@ -5,11 +5,13 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { PasswordInput } from "@/components/password-input";
 import { ApiRequestError, addPassword } from "@/lib/api";
 import { authClient, useSession } from "@/lib/auth-client";
+import { EMAIL_ENABLED } from "@/lib/env";
 
 /**
  * Sign-in & security (Settings), for recruiters and candidates alike:
- * which ways the user can sign in, adding, changing or removing a
- * password, linking Google or GitHub, and signing out other devices.
+ * which ways the user can sign in, confirming the email address, adding,
+ * changing or removing a password, linking Google or GitHub, and signing
+ * out other devices.
  * Adding a first password goes through the API (Better Auth exposes it
  * server-side only); the rest uses the Better Auth client directly.
  */
@@ -36,6 +38,13 @@ const ERROR_MESSAGES: Record<string, string> = {
     "That account uses a different email address, so it can't be connected to this one.",
   account_already_linked_to_different_user: "That account is already connected to another user.",
   unable_to_link_account: "That account could not be connected. Try again.",
+  // From the email confirmation link.
+  TOKEN_EXPIRED: "That confirmation link has expired. Send a new one.",
+  INVALID_TOKEN: "That confirmation link isn't valid. Send a new one.",
+  USER_NOT_FOUND: "That confirmation link isn't valid. Send a new one.",
+  EMAIL_ALREADY_VERIFIED: "Your email address is already confirmed.",
+  TOO_MANY_EMAILS: "Too many emails to this address. Try again in an hour.",
+  EMAIL_QUOTA_REACHED: "This server has sent its email for today. Try again tomorrow.",
 };
 
 function messageFor(code: string | undefined, fallback: string): string {
@@ -107,6 +116,7 @@ export function SignInCard() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const email = session?.user?.email ?? "";
+  const emailVerified = session?.user?.emailVerified === true;
   // null while loading; "failed" when the request did not succeed.
   const [accounts, setAccounts] = useState<LinkedAccount[] | "failed" | null>(null);
   const [sessionCount, setSessionCount] = useState<number | "failed" | null>(null);
@@ -142,15 +152,22 @@ export function SignInCard() {
   }, [userId, load]);
 
   useEffect(() => {
-    // Back from a Google/GitHub connect attempt that failed. Drop the
-    // query afterwards so a reload doesn't show the message again.
-    const error = new URLSearchParams(window.location.search).get("error");
-    if (!error) return;
-    setStatus({
-      area: "methods",
-      kind: "error",
-      text: messageFor(error, "That account could not be connected."),
-    });
+    // Back from a Google/GitHub connect attempt that failed, or from the
+    // email confirmation link. Drop the query afterwards so a reload
+    // doesn't show the message again.
+    const query = new URLSearchParams(window.location.search);
+    const error = query.get("error");
+    if (error) {
+      setStatus({
+        area: "methods",
+        kind: "error",
+        text: messageFor(error, "That account could not be connected."),
+      });
+    } else if (query.get("verified") === "1") {
+      setStatus({ area: "methods", kind: "ok", text: "Your email address is confirmed." });
+    } else {
+      return;
+    }
     window.history.replaceState(null, "", window.location.pathname);
   }, []);
 
@@ -245,6 +262,36 @@ export function SignInCard() {
     await load();
   }
 
+  async function sendConfirmation() {
+    setStatus(null);
+    setBusy(true);
+    const res = await authClient
+      .sendVerificationEmail({
+        email,
+        callbackURL: `${window.location.origin}/settings?verified=1`,
+      })
+      .catch(() => ({ error: { code: undefined, status: 0 } }));
+    setBusy(false);
+    if (res.error) {
+      setStatus({
+        area: "methods",
+        kind: "error",
+        text: messageFor(
+          res.error.code,
+          res.error.status === 429
+            ? "Too many requests. Wait a minute, then try again."
+            : "Couldn't send the link. Try again in a few minutes.",
+        ),
+      });
+      return;
+    }
+    setStatus({
+      area: "methods",
+      kind: "ok",
+      text: `We sent a confirmation link to ${email}. It expires in 24 hours.`,
+    });
+  }
+
   async function signOutOtherDevices() {
     setStatus(null);
     setBusy(true);
@@ -289,6 +336,26 @@ export function SignInCard() {
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
+              <li className="flex flex-wrap items-center justify-between gap-3 text-sm">
+                <span style={{ color: "var(--hl-cream)" }}>Email address</span>
+                {emailVerified ? (
+                  <span style={{ color: "var(--hl-mist)" }}>Confirmed</span>
+                ) : (
+                  <span className="flex items-center gap-3">
+                    <span style={{ color: "var(--hl-mist)" }}>Not confirmed</span>
+                    {EMAIL_ENABLED && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={busy}
+                        onClick={() => void sendConfirmation()}
+                      >
+                        Send confirmation link
+                      </Button>
+                    )}
+                  </span>
+                )}
+              </li>
               <li className="flex items-center justify-between gap-3 text-sm">
                 <span style={{ color: "var(--hl-cream)" }}>Email and password</span>
                 {hasPassword ? (

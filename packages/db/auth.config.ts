@@ -2,15 +2,28 @@ import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { betterAuth } from "better-auth";
 import { organization } from "better-auth/plugins";
 import { createAccessControl } from "better-auth/plugins/access";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as authSchema from "./auth-schema.js";
 import { resolveAuthSecret } from "./src/auth-secret.js";
+import { createEmailCap } from "./src/email-cap.js";
+import {
+  CONFIRM_LINK_HOURS,
+  confirmEmailMessage,
+  passwordResetMessage,
+  RESET_LINK_HOURS,
+  sendMail,
+} from "./src/mail.js";
 
 const pool = new Pool({
   connectionString:
     process.env["DATABASE_URL"] ?? "postgres://postgres:postgres@localhost:5433/hirelens",
 });
+
+const db = drizzle(pool);
+
+const claimEmail = createEmailCap(db);
 
 // HireLens access statements — shared by every role definition below.
 const ac = createAccessControl({
@@ -31,6 +44,49 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    // Better Auth swallows and logs errors from this callback, so a failed
+    // or refused send still answers "check your email" and reveals nothing.
+    sendResetPassword: async ({ user, url }) => {
+      await claimEmail("reset", user.email);
+      await sendMail(passwordResetMessage(user.email, url));
+    },
+    resetPasswordTokenExpiresIn: RESET_LINK_HOURS * 60 * 60,
+    // A reset signs the account out everywhere: whoever had a session (or
+    // knew the old password) is out.
+    revokeSessionsOnPasswordReset: true,
+    // The reset link reached this inbox, which proves the address is the
+    // user's, so it counts as confirmed.
+    onPasswordReset: async ({ user }) => {
+      if (user.emailVerified) return;
+      await db
+        .update(authSchema.user)
+        .set({ emailVerified: true })
+        .where(eq(authSchema.user.id, user.id));
+    },
+  },
+  // Sign-up sends a confirmation link; signing in does not wait for it, so
+  // accounts made before confirmation existed keep working.
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url }) => {
+      await claimEmail("confirm", user.email);
+      await sendMail(confirmEmailMessage(user.email, url));
+    },
+    sendOnSignUp: true,
+    // The link only confirms the address. Signing in from it would let
+    // someone send their own link to another person and, when it is
+    // opened, swap that person's browser onto their account.
+    autoSignInAfterVerification: false,
+    expiresIn: CONFIRM_LINK_HOURS * 60 * 60,
+  },
+  account: {
+    accountLinking: {
+      // Google or GitHub never joins an existing account on its own, even
+      // when the emails match: someone could register a stranger's email
+      // with a password, get it confirmed (mail scanners open links), and
+      // share the account once the owner signs in with Google. Connecting
+      // happens only from Settings, signed in to the account.
+      disableImplicitLinking: true,
+    },
   },
   // `track` powers the one-time post-signup chooser ("I hire" /
   // "I'm a candidate"). Nullable until the user picks; client-writable via

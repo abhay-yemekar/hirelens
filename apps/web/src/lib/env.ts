@@ -19,3 +19,9 @@ export const AUTH_BASE_URL = normalizeOrigin(
 
 /** True when a separate API origin is configured (not the same-origin mount). */
 export const API_CONFIGURED = API_URL !== "";
+
+/**
+ * True when the server can send email (worked out in next.config.ts), so
+ * "Forgot password?" and email confirmation are offered only when they work.
+ */
+export const EMAIL_ENABLED = process.env["NEXT_PUBLIC_EMAIL_ENABLED"] === "true";
