@@ -3,7 +3,7 @@
 import { FileSearch, Lock, Scale } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { type ReactNode, useEffect } from "react";
 import { AuthForm } from "@/components/auth-form";
 import { Logo, LogoMark } from "@/components/brand";
 import { userTrack, useSession } from "@/lib/auth-client";
@@ -28,18 +28,27 @@ const PROOF = [
 
 /**
  * Split-panel sign-in: brand proof on the left, form on the right.
- * The form itself is AuthForm (email + social providers). Already-
- * signed-in visitors are redirected per their saved track (candidate →
- * candidate hub, everyone else → workspace).
+ * The form is AuthForm (email + social providers) unless a page passes
+ * its own (forgot / reset password). Already-signed-in visitors are
+ * redirected per their saved track (candidate → candidate hub, everyone
+ * else → workspace), except on pages that pass `redirectSignedIn={false}`:
+ * a reset link must work even in a browser that is signed in.
  */
-export function SignInPanel() {
+export function SignInPanel({
+  children,
+  redirectSignedIn = true,
+}: {
+  children?: ReactNode;
+  redirectSignedIn?: boolean;
+}) {
   const router = useRouter();
   const { data: session, isPending } = useSession();
 
   useEffect(() => {
+    if (!redirectSignedIn) return;
     const track = userTrack(session?.user);
     if (!isPending && session) router.replace(track === "candidate" ? "/candidate" : "/jobs");
-  }, [isPending, session, router]);
+  }, [redirectSignedIn, isPending, session, router]);
 
   return (
     <main className="relative flex min-h-screen">
@@ -113,7 +122,7 @@ export function SignInPanel() {
               <Logo />
             </Link>
           </div>
-          <AuthForm />
+          {children ?? <AuthForm />}
           <p className="mt-6 text-center text-sm">
             <Link
               href="/"

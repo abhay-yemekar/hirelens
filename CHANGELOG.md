@@ -10,6 +10,20 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Added
 
+- **Forgot password and email confirmation** — "Forgot password?" emails a
+  one-time link (valid 1 hour) to choose a new password; it also gives an
+  account made with Google or GitHub its first password, and signs the
+  account out everywhere. Sign-up emails a link to confirm the address,
+  and Settings can send it again. Email goes out over SMTP (a Gmail app
+  password works; see `CANDIDLENS_SMTP_*` in `.env.example`), capped per
+  address per hour and per kind per day (#162).
+
+### Security
+
+- Google or GitHub no longer joins an existing account just because the
+  email matches; connect them from Settings → Sign-in & security while
+  signed in. Otherwise someone could register a stranger's email first
+  and share the account once its owner signed in with Google (#162).
 - **Resume Doctor** (`/doctor`) — deterministic resume checks (contact,
   structure, dates, impact, brevity, parseability) with a 0–100 score and
   every flag pinned to the exact line. No model involved: the same text
