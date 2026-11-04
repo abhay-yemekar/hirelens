@@ -74,6 +74,12 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Fixed
 
+- The Resume Doctor said "No experience section detected" when role lines
+  used en or em dashes (`Engineer—Acme  Mar 2021 – Present`); they now
+  parse, and a found Experience heading with no readable roles says
+  "Couldn't read your roles" instead. "Table-style layout" no longer fires
+  for pipes in contact headers or skill lists, only for rows framed by
+  pipes or 3+ stacked rows of the same shape (#167).
 - Evidence quotes written with a different hyphen, dash or quote
   character than the resume were not found, so their scores were
   withheld (#143).

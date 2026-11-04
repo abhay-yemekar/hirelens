@@ -16,6 +16,7 @@
 import type { ExtractedDocument } from "../extract/types.js";
 import { parseCandidate } from "./candidate.js";
 import type { Candidate } from "./schema.js";
+import { segmentSections } from "./sections.js";
 
 /** A single parse hazard with an actionable fix. */
 export interface FormatFinding {
@@ -95,8 +96,7 @@ export function checkFormat(text: string, extracted?: ExtractedDocument): Format
         "Many very short lines suggest multi-column or table content read as fragments. Keep work and education entries on single lines.",
     });
   }
-  const pipeRows = nonEmpty.filter((l) => (l.match(/\|/g) ?? []).length >= 2).length;
-  if (pipeRows >= 4) {
+  if (countTableRows(nonEmpty) >= 4) {
     findings.push({
       code: "table-layout",
       label: "Table-style layout",
@@ -180,11 +180,23 @@ export function checkFormat(text: string, extracted?: ExtractedDocument): Format
       });
     }
     if (parsed.work.length === 0) {
-      findings.push({
-        code: "no-experience",
-        label: "No experience section detected",
-        detail: 'Add a heading named "Experience" with roles as "Title - Company - dates".',
-      });
+      // A heading with no readable role under it is a different fix from
+      // a missing heading, so say which one it is.
+      const hasHeading = segmentSections(text.split("\n")).has("experience");
+      findings.push(
+        hasHeading
+          ? {
+              code: "unreadable-roles",
+              label: "Couldn't read your roles",
+              detail:
+                'Your Experience heading was found, but no role under it could be read. Put each role on one line as "Title – Company – dates", e.g. "Software Engineer – Acme Corp – Mar 2021 – Present".',
+            }
+          : {
+              code: "no-experience",
+              label: "No experience section detected",
+              detail: 'Add a heading named "Experience" with roles as "Title - Company - dates".',
+            },
+      );
     }
     if (parsed.skills.length === 0) {
       findings.push({
@@ -202,6 +214,7 @@ export function checkFormat(text: string, extracted?: ExtractedDocument): Format
     "needs-ocr": 60,
     unparseable: 50,
     "no-experience": 20,
+    "unreadable-roles": 20,
     "no-email": 10,
     "no-phone": 5,
     "no-skills": 5,
@@ -223,4 +236,38 @@ export function checkFormat(text: string, extracted?: ExtractedDocument): Format
   const verdict: FormatCheck["verdict"] = failing ? "fail" : warning ? "warn" : "pass";
 
   return { verdict, score, findings };
+}
+
+/** "Languages: Go | Rust | C" — a labelled list, not a table row. */
+const LABELLED_LIST_RE = /^[\p{L}][\p{L}\p{N} &/+.()-]{0,30}:\s/u;
+
+/**
+ * Count lines that look like rows of a real table. Pipes alone are not
+ * enough: contact headers ("Title | City | site.com") and tech-stack lines
+ * ("TypeScript | Next.js | Postgres") use them as separators, and parsers
+ * read those fine. A line with 2+ pipes counts as a row when it is framed
+ * by a pipe ("| a | b |", Markdown or ASCII tables) or sits in a run of 3+
+ * consecutive such lines with the same number of cells. Labelled lists
+ * never count.
+ */
+function countTableRows(lines: string[]): number {
+  const cells = lines.map((l) => {
+    const pipes = (l.match(/\|/g) ?? []).length;
+    return pipes >= 2 && !LABELLED_LIST_RE.test(l) ? pipes + 1 : 0;
+  });
+  let rows = 0;
+  let runStart = 0;
+  for (let i = 1; i <= cells.length; i++) {
+    if (i < cells.length && cells[i] === cells[runStart]) continue;
+    // cells[runStart..i) is a run of lines with the same cell count.
+    if ((cells[runStart] ?? 0) > 0) {
+      const repeated = i - runStart >= 3;
+      for (let k = runStart; k < i; k++) {
+        const line = lines[k] ?? "";
+        if (repeated || line.startsWith("|") || line.endsWith("|")) rows++;
+      }
+    }
+    runStart = i;
+  }
+  return rows;
 }

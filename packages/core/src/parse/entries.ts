@@ -6,7 +6,8 @@ import type { Section } from "./sections.js";
 /**
  * Extract work entries from the experience section.
  *
- * Role header lines look like "Title - Company - 2021 - Present".
+ * Role header lines look like "Title - Company - 2021 - Present" (or
+ * with en/em dashes: "Title — Company, City  Mar 2021 – Present").
  * Dates may also sit on their own line under the title line.
  */
 export function extractWork(lines: string[], section: Section): CandidateWork[] {
@@ -95,21 +96,46 @@ export function extractEducation(lines: string[], section: Section): CandidateEd
   return entries;
 }
 
-/** Match a role header line: "Title - Company - dates" variants.
+/**
+ * Separators between title, company and dates on a role line: a spaced
+ * hyphen, pipe or bullet, an unspaced bullet, or an en/em dash with or
+ * without spaces ("Engineer—Acme", "Engineer – Acme"). An unspaced hyphen
+ * never splits, so "Front-end" and "Co-founder" stay whole; an unspaced
+ * dash between two digits is a number range ("10–20"), not a separator.
+ */
+const ROLE_SEPARATOR_RE =
+  /\s+[-|\u2022\u2013\u2014]\s+|\s*\u2022\s*|(?<!\d)[\u2013\u2014]|[\u2013\u2014](?!\d)/;
+/** Separator debris left at either end of a part once dates are cut out. */
+const PART_EDGE_RE = /^[\s\-|,;\u2022\u2013\u2014]+|[\s\-|,;\u2022\u2013\u2014]+$/g;
+/** Bullet glyph opening an achievement line. */
+const BULLET_PREFIX_RE = /^[-*>\u2022\u2023\u25aa\u25cf\u00b7\u2219]\s*/;
+/** Ends like a sentence ("...hot reads to Redis."); "Acme Inc." does not. */
+const SENTENCE_END_RE = /\p{Ll}{4,}[.!?]$/u;
+
+/** Match a role header line: "Title - Company - dates" variants, with
+ * hyphens, pipes, bullets, en dashes or em dashes between the parts.
  * Compact single-line form "Title at Company, 2021 - Present" (no dash
  * separator) is handled too: when the line carries a date range but no
  * dash/pipe split, " at " or " @ " separates title from company, and a
- * trailing date range is stripped from the company part. */
+ * trailing date range is stripped from the company part.
+ * Without a date range, bullet lines and sentences are achievements,
+ * never roles, even when a dash splits them in two. */
 export function matchRoleLine(line: string): CandidateWork | null {
-  const trimmed = line.trim();
+  let trimmed = line.trim();
   if (trimmed.length < 5 || trimmed.length > 120) return null;
   if (hasEmailToken(trimmed) || URL_RE.test(trimmed)) return null;
   if (/^(skills|technologies|tools)\b/i.test(trimmed)) return null;
 
   const dates = extractDateRange(trimmed);
+  if (!dates && (BULLET_PREFIX_RE.test(trimmed) || SENTENCE_END_RE.test(trimmed))) return null;
+  trimmed = trimmed.replace(BULLET_PREFIX_RE, "");
+
+  // Cut the date range out before splitting: its own dash ("2021 - 2023",
+  // "Mar 2026 – Present") must not split the line into extra parts.
   const parts = trimmed
-    .split(/\s+[-|\u2022]\s+|\s*\u2022\s*/)
-    .map((p) => p.trim().replace(/\s*[-|\u2022]\s*$/, ""))
+    .replace(DATE_RANGE_RE, " ")
+    .split(ROLE_SEPARATOR_RE)
+    .map((p) => p.replace(PART_EDGE_RE, ""))
     .filter((p) => p.length > 0 && !DATE_RANGE_RE.test(p));
 
   if (parts.length < 2 && dates) {

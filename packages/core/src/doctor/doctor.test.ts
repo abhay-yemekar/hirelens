@@ -131,6 +131,76 @@ describe("structural facts, not inventions", () => {
   });
 });
 
+describe("role lines and pipe separators", () => {
+  // Made-up resume: em/en dashes on role lines, pipes in the header and
+  // in labelled skill lines. None of it is a parse hazard.
+  const DASH_RESUME = [
+    "Riley Quinn",
+    "Data Engineer | Austin, TX | riley@example.com | +1 555 010 7788",
+    "",
+    "EXPERIENCE",
+    "Data Engineer—Northwind Labs, Remote (Austin, TX) Jan 2024 – Present",
+    "- Built the ingestion pipeline in Python, cutting load time 30%.",
+    "- Cut warehouse spend 25% by moving cold tables to Parquet.",
+    "Analytics Engineer – Contoso – 2021 – 2023",
+    "- Led a revenue model used by 12 teams.",
+    "",
+    "SKILLS",
+    "Languages: Python | SQL | TypeScript",
+    "Data: Airflow | dbt | Spark | Kafka",
+    "Cloud: AWS | Docker | Terraform",
+    "Tools: Git | Linux | Grafana",
+    "",
+    "EDUCATION",
+    "BSc Statistics - State University - 2021",
+  ].join("\n");
+
+  it("reads roles written with en and em dashes", () => {
+    const codes = runResumeDoctor(DASH_RESUME).findings.map((f) => f.code);
+    expect(codes).not.toContain("fmt-no-experience");
+    expect(codes).not.toContain("fmt-unreadable-roles");
+  });
+
+  it("does not call pipe-separated header and skill lines a table", () => {
+    const codes = runResumeDoctor(DASH_RESUME).findings.map((f) => f.code);
+    expect(codes).not.toContain("fmt-table-layout");
+  });
+
+  it("scores the dash version the same as the hyphen version", () => {
+    const hyphens = DASH_RESUME.replace(/\s*[–—]\s*/g, " - ");
+    const dash = runResumeDoctor(DASH_RESUME);
+    const hyphen = runResumeDoctor(hyphens);
+    expect(dash.findings.map((f) => f.code)).toEqual(hyphen.findings.map((f) => f.code));
+    expect(dash.score).toBe(hyphen.score);
+    expect(dash.band).toBe("excellent");
+  });
+
+  it("says the roles could not be read when the Experience heading exists", () => {
+    const report = runResumeDoctor(
+      [
+        "Riley Quinn",
+        "riley@example.com | +1 555 010 7788",
+        "",
+        "EXPERIENCE",
+        "Northwind Labs",
+        "Data Engineer",
+        "2021 to 2024",
+        "- Built the ingestion pipeline in Python, cutting load time 30%.",
+        "",
+        "SKILLS",
+        "Python, SQL, Airflow",
+        "",
+        "EDUCATION",
+        "BSc Statistics - State University - 2021",
+      ].join("\n"),
+    );
+    const flag = report.findings.find((f) => f.code === "fmt-unreadable-roles");
+    expect(flag?.title).toBe("Couldn't read your roles");
+    expect(flag?.detail).toContain("Title – Company – dates");
+    expect(report.findings.some((f) => f.code === "fmt-no-experience")).toBe(false);
+  });
+});
+
 describe("guardrails", () => {
   it("marks too-short input as insufficient", () => {
     expect(isDoctorInputEnough("too short")).toBe(false);

@@ -168,6 +168,114 @@ SKILLS: Kubernetes, Terraform, AWS`);
     });
   });
 
+  describe("role lines with en and em dashes", () => {
+    it("reads title, company and dates around en and em dashes, spaced or not", () => {
+      const c = parseCandidate(`RILEY QUINN
+riley@example.com
+
+EXPERIENCE
+
+Data Engineer—Northwind Labs, Remote (Austin, TX) Jan 2024 – Present
+- Built the ingestion pipeline.
+Analytics Engineer – Contoso – 2021 – 2023
+Junior Analyst—Fabrikam Inc. 2019—2021
+Research Intern — Tailspin — 2018 - 2019`);
+      expect(c.work).toHaveLength(4);
+      expect(c.work[0]).toMatchObject({
+        position: "Data Engineer",
+        name: "Northwind Labs, Remote (Austin, TX)",
+        startDate: "Jan 2024",
+        endDate: "present",
+        current: true,
+      });
+      expect(c.work[1]).toMatchObject({
+        position: "Analytics Engineer",
+        name: "Contoso",
+        startDate: "2021",
+        endDate: "2023",
+      });
+      expect(c.work[2]).toMatchObject({
+        position: "Junior Analyst",
+        name: "Fabrikam Inc.",
+        startDate: "2019",
+        endDate: "2021",
+      });
+      expect(c.work[3]).toMatchObject({ position: "Research Intern", name: "Tailspin" });
+    });
+
+    it("never splits hyphenated words", () => {
+      const c = parseCandidate(`SAM ORTIZ
+sam@example.com
+
+EXPERIENCE
+
+Front-end Engineer – Acme – 2022 – Present
+Co-founder—Startly—2019 – 2022
+Full-stack Developer - Globex - 2017 - 2019`);
+      expect(c.work.map((w) => [w.position, w.name])).toEqual([
+        ["Front-end Engineer", "Acme"],
+        ["Co-founder", "Startly"],
+        ["Full-stack Developer", "Globex"],
+      ]);
+    });
+
+    it("gives a date line under the title to that role, whatever the dash", () => {
+      const c = parseCandidate(`IVA NOVA
+iva@example.com
+
+EXPERIENCE
+
+Platform Engineer — Initech
+Mar 2020 - Present
+- Ran the on-call rotation for 40 services.
+Site Engineer – Hooli
+2017 – 2020`);
+      expect(c.work).toHaveLength(2);
+      expect(c.work[0]).toMatchObject({
+        position: "Platform Engineer",
+        name: "Initech",
+        startDate: "Mar 2020",
+        endDate: "present",
+      });
+      expect(c.work[1]).toMatchObject({
+        position: "Site Engineer",
+        name: "Hooli",
+        startDate: "2017",
+        endDate: "2020",
+      });
+    });
+
+    it("does not read achievement bullets or sentences with a dash as roles", () => {
+      const c = parseCandidate(`KIM DIAZ
+kim@example.com
+
+EXPERIENCE
+
+Site Reliability Engineer – Umbrella Corp – 2020 – Present
+- Cut p99 latency 40%—moved hot reads to Redis
+• Owned incident review – wrote the runbooks
+Rebuilt the alerting stack — paging volume fell by half.
+Cut build times 10–20% across services`);
+      expect(c.work).toHaveLength(1);
+      expect(c.work[0]).toMatchObject({
+        position: "Site Reliability Engineer",
+        name: "Umbrella Corp",
+      });
+    });
+
+    it("still reads a bulleted role line that carries dates", () => {
+      const c = parseCandidate(`NOOR KHAN
+noor@example.com
+
+EXPERIENCE
+
+• Cloud Engineer – Wingtip – 2021 – 2024`);
+      expect(c.work).toEqual([
+        { position: "Cloud Engineer", name: "Wingtip", startDate: "2021", endDate: "2024" },
+      ]);
+    });
+  });
+
   it("rejects content-free text with a typed error", () => {
     expect(() => parseCandidate("...")).toThrow(ParseError);
     expect(() => parseCandidate("a b c")).toThrow(/too little text/i);
