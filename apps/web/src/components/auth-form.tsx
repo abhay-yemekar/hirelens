@@ -128,17 +128,21 @@ export function AuthForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [socialBusy, setSocialBusy] = useState<"google" | "github" | null>(null);
   const passwordId = useId();
   const passwordHintId = useId();
 
   useEffect(() => {
-    // Back from Google or GitHub without a session: Better Auth adds
-    // ?error=. Show it once, then drop it so a reload starts clean.
-    const code = new URLSearchParams(window.location.search).get("error");
-    if (!code) return;
-    setError(socialErrorText(code));
+    // Back from Google or GitHub without a session (Better Auth adds
+    // ?error=), or from deleting the account (?deleted=1). Show it once,
+    // then drop it so a reload starts clean.
+    const query = new URLSearchParams(window.location.search);
+    const code = query.get("error");
+    if (code) setError(socialErrorText(code));
+    else if (query.get("deleted") === "1") setNotice("Your account is deleted.");
+    else return;
     window.history.replaceState(null, "", window.location.pathname);
   }, []);
 
@@ -325,6 +329,11 @@ export function AuthForm() {
         {error && (
           <p role="alert" className="text-sm" style={{ color: "var(--hl-bad)" }}>
             {error}
+          </p>
+        )}
+        {notice && !error && (
+          <p role="status" className="text-sm" style={{ color: "var(--color-success)" }}>
+            {notice}
           </p>
         )}
 
