@@ -12,16 +12,25 @@
 
 import { auditLog, type Database } from "@candidlens/db";
 import { eq, sql } from "drizzle-orm";
+import type { DbTransaction } from "./audit.js";
 
 export async function purgeOrg(db: Database, orgId: string): Promise<void> {
-  await db.transaction(async (tx) => {
-    await tx.execute(sql`ALTER TABLE audit_log DISABLE TRIGGER audit_log_no_update`);
-    await tx.execute(sql`ALTER TABLE audit_log DISABLE TRIGGER audit_log_no_delete`);
-    try {
-      await tx.delete(auditLog).where(eq(auditLog.orgId, orgId));
-    } finally {
-      await tx.execute(sql`ALTER TABLE audit_log ENABLE TRIGGER audit_log_no_update`);
-      await tx.execute(sql`ALTER TABLE audit_log ENABLE TRIGGER audit_log_no_delete`);
-    }
-  });
+  await db.transaction((tx) => purgeOrgIn(tx, orgId));
+}
+
+/**
+ * purgeOrg inside a transaction the caller already holds (deleting an
+ * account erases its only-member organizations this way, atomically with
+ * the rest). Disabling the triggers is part of the transaction, so other
+ * sessions never see them off; if anything fails, it all rolls back. The
+ * ALTER needs the role that owns audit_log and briefly blocks every org's
+ * audit writes, so it gives up after 5 seconds instead of queueing.
+ */
+export async function purgeOrgIn(tx: DbTransaction, orgId: string): Promise<void> {
+  await tx.execute(sql`SET LOCAL lock_timeout = '5s'`);
+  await tx.execute(sql`ALTER TABLE audit_log DISABLE TRIGGER audit_log_no_update`);
+  await tx.execute(sql`ALTER TABLE audit_log DISABLE TRIGGER audit_log_no_delete`);
+  await tx.delete(auditLog).where(eq(auditLog.orgId, orgId));
+  await tx.execute(sql`ALTER TABLE audit_log ENABLE TRIGGER audit_log_no_update`);
+  await tx.execute(sql`ALTER TABLE audit_log ENABLE TRIGGER audit_log_no_delete`);
 }
