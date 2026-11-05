@@ -10,10 +10,26 @@ export function createDb(databaseUrl: string): Database {
 }
 
 export { auth } from "../auth.config.js";
-export { member, organization, user } from "../auth-schema.js";
+export {
+  account,
+  invitation,
+  member,
+  organization,
+  session,
+  user,
+  verification,
+} from "../auth-schema.js";
 // Sign-in email: tests and local runs read the links from loggedMail.
 export { createEmailCap, type EmailLimits } from "./email-cap.js";
-export { loggedMail, type MailMessage, mailMode } from "./mail.js";
+export {
+  CHANGE_EMAIL_LINK_HOURS,
+  changeEmailMessage,
+  emailChangedNotice,
+  loggedMail,
+  type MailMessage,
+  mailMode,
+  sendMail,
+} from "./mail.js";
 // Checked-in journal snapshot for the API's migration-state health check.
 export {
   MIGRATION_SNAPSHOT,

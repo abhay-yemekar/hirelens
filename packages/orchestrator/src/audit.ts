@@ -16,6 +16,9 @@ import { hashLink } from "@candidlens/core";
 import { auditLog, type Database } from "@candidlens/db";
 import { desc, eq, sql } from "drizzle-orm";
 
+/** A transaction on the app database, as `db.transaction` hands it out. */
+export type DbTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+
 export interface AuditEntryInput {
   orgId: string;
   actorId?: string | undefined;
@@ -28,44 +31,53 @@ export async function appendAudit(
   db: Database,
   entry: AuditEntryInput,
 ): Promise<{ seq: number; hash: string }> {
-  return db.transaction(async (tx) => {
-    // Per-org write lock: serializes head reads + inserts across ALL
-    // processes touching this database, not just this one.
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${entry.orgId}))`);
+  return db.transaction((tx) => appendAuditIn(tx, entry));
+}
 
-    const [head] = await tx
-      .select({ hash: auditLog.hash })
-      .from(auditLog)
-      .where(eq(auditLog.orgId, entry.orgId))
-      .orderBy(desc(auditLog.seq))
-      .limit(1);
-    const prevHash = head?.hash ?? GENESIS;
-    const createdAt = new Date();
-    const hash = hashLink({
+/**
+ * appendAudit inside a transaction the caller already holds, so the
+ * record commits (or rolls back) with the caller's other writes.
+ */
+export async function appendAuditIn(
+  tx: DbTransaction,
+  entry: AuditEntryInput,
+): Promise<{ seq: number; hash: string }> {
+  // Per-org write lock: serializes head reads + inserts across ALL
+  // processes touching this database, not just this one.
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${entry.orgId}))`);
+
+  const [head] = await tx
+    .select({ hash: auditLog.hash })
+    .from(auditLog)
+    .where(eq(auditLog.orgId, entry.orgId))
+    .orderBy(desc(auditLog.seq))
+    .limit(1);
+  const prevHash = head?.hash ?? GENESIS;
+  const createdAt = new Date();
+  const hash = hashLink({
+    actorId: entry.actorId ?? null,
+    action: entry.action,
+    payload: entry.payload,
+    prevHash,
+    createdAt,
+  });
+
+  const [row] = await tx
+    .insert(auditLog)
+    .values({
+      orgId: entry.orgId,
       actorId: entry.actorId ?? null,
       action: entry.action,
       payload: entry.payload,
       prevHash,
+      hash,
+      // The hash covers this exact timestamp; the column default
+      // (defaultNow) would differ from it by microseconds.
       createdAt,
-    });
-
-    const [row] = await tx
-      .insert(auditLog)
-      .values({
-        orgId: entry.orgId,
-        actorId: entry.actorId ?? null,
-        action: entry.action,
-        payload: entry.payload,
-        prevHash,
-        hash,
-        // The hash covers this exact timestamp; the column default
-        // (defaultNow) would differ from it by microseconds.
-        createdAt,
-      })
-      .returning({ seq: auditLog.seq, hash: auditLog.hash });
-    if (!row) throw new Error("audit insert returned no row");
-    return { seq: row.seq, hash: row.hash };
-  });
+    })
+    .returning({ seq: auditLog.seq, hash: auditLog.hash });
+  if (!row) throw new Error("audit insert returned no row");
+  return { seq: row.seq, hash: row.hash };
 }
 
 /** Genesis hash for an empty chain (mirrors @candidlens/core). */

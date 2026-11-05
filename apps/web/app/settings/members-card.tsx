@@ -6,6 +6,12 @@ import { NoticeBanner } from "@/components/notice-banner";
 import { organization, useSession } from "@/lib/auth-client";
 
 const ROLE_OPTIONS = ["recruiter", "hiring_manager", "viewer"] as const;
+/**
+ * Roles an owner can give an existing member. "Owner" is how ownership is
+ * handed over, which deleting your account needs when you are the only
+ * owner of a shared organization.
+ */
+const MEMBER_ROLE_OPTIONS = ["owner", ...ROLE_OPTIONS] as const;
 
 const ROLE_LABEL: Record<string, string> = {
   owner: "Owner",
@@ -101,6 +107,14 @@ export function MembersCard() {
   }
 
   async function changeRole(member: MemberRow, next: string) {
+    if (
+      next === "owner" &&
+      !window.confirm(
+        `Make ${member.user?.email ?? "this member"} an owner? Owners can do everything you can, including changing your role or removing you.`,
+      )
+    ) {
+      return;
+    }
     setError(null);
     setNotice(null);
     try {
@@ -193,7 +207,7 @@ export function MembersCard() {
                         className="rounded-[var(--radius-control)] border px-2 py-1.5 text-xs text-[var(--hl-cream)] focus:border-[var(--hl-accent)] focus:outline-none"
                         style={{ borderColor: "var(--hl-border)", background: "var(--hl-input)" }}
                       >
-                        {ROLE_OPTIONS.map((r) => (
+                        {MEMBER_ROLE_OPTIONS.map((r) => (
                           <option key={r} value={r}>
                             {ROLE_LABEL[r]}
                           </option>

@@ -562,6 +562,36 @@ export const addPassword = (newPassword: string) =>
     body: JSON.stringify({ newPassword }),
   });
 
+const jsonPost = (body: unknown): RequestInit => ({
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+
+/** Email a single-use link to `newEmail`; the change applies once it's confirmed. */
+export const requestEmailChange = (newEmail: string) =>
+  apiFetch<{ ok: true }>("/api/account/email", jsonPost({ newEmail }));
+
+/** The new email waiting for confirmation, if any. */
+export const pendingEmailChange = () =>
+  apiFetch<{ ok: true; newEmail: string | null }>("/api/account/email/pending");
+
+export const confirmEmailChange = (token: string) =>
+  apiFetch<{ ok: true; email: string }>("/api/account/email/confirm", jsonPost({ token }));
+
+export interface DeletionPlan {
+  erase: Array<{ id: string; name: string }>;
+  leave: Array<{ id: string; name: string }>;
+  handOver: Array<{ id: string; name: string }>;
+}
+
+/** What deleting the account would do to each organization. */
+export const accountDeletionPlan = () =>
+  apiFetch<{ ok: true } & DeletionPlan>("/api/account/deletion");
+
+export const deleteAccount = (confirmEmail: string) =>
+  apiFetch<{ ok: true }>("/api/account/delete", jsonPost({ confirmEmail }));
+
 /** Run the Doctor on a PDF, DOCX, TXT or MD file; returns the extracted text too. */
 export const runDoctorFile = (file: File) => {
   const form = new FormData();

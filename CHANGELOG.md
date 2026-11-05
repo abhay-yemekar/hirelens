@@ -10,6 +10,15 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Added
 
+- **Change email and delete account** — Settings → Sign-in & security can
+  change your sign-in email through a link sent to the new address,
+  confirmed while signed in; the old address gets a notice. Settings →
+  Delete account shows what happens to each organization, then erases the
+  ones only you belong to, refuses while you are the only owner of a
+  shared one (Members can now make someone an owner), and leaves the
+  rest. Your name, email, sign-in methods and sessions are removed; the
+  audit log keeps an anonymous id so shared audit chains still verify
+  (#162).
 - **Forgot password and email confirmation** — "Forgot password?" emails a
   one-time link (valid 1 hour) to choose a new password; it also gives an
   account made with Google or GitHub its first password, and signs the

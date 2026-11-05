@@ -7,6 +7,7 @@ import { NoticeBanner } from "@/components/notice-banner";
 import { organization, userTrack, useSession } from "@/lib/auth-client";
 import { LlmProvidersCard } from "./ai-providers-card";
 import { ApiTokensCard } from "./api-tokens-card";
+import { DeleteAccountCard } from "./delete-account-card";
 import { MembersCard } from "./members-card";
 import { SignInCard } from "./sign-in-card";
 import { TrackCard } from "./track-card";
@@ -154,6 +155,7 @@ export default function SettingsPage() {
         {isRecruiter && <LlmProvidersCard />}
         {isRecruiter && <MembersCard />}
         {isRecruiter && <ApiTokensCard />}
+        <DeleteAccountCard />
       </div>
     </AppShell>
   );
