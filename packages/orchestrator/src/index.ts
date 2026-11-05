@@ -1,5 +1,5 @@
-export { appendAudit } from "./audit.js";
-export { purgeOrg } from "./audit-purge.js";
+export { appendAudit, appendAuditIn, type DbTransaction } from "./audit.js";
+export { purgeOrg, purgeOrgIn } from "./audit-purge.js";
 export { type RunBatchOptions, runBatch } from "./batch.js";
 export {
   type RunRubricRow,

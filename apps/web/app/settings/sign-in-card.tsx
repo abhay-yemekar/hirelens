@@ -3,7 +3,7 @@
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@candidlens/ui";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { PasswordInput } from "@/components/password-input";
-import { ApiRequestError, addPassword } from "@/lib/api";
+import { ApiRequestError, addPassword, requestEmailChange } from "@/lib/api";
 import { authClient, useSession } from "@/lib/auth-client";
 import { EMAIL_ENABLED } from "@/lib/env";
 
@@ -32,7 +32,6 @@ const ERROR_MESSAGES: Record<string, string> = {
   PASSWORD_TOO_LONG: "Use at most 128 characters.",
   FAILED_TO_UNLINK_LAST_ACCOUNT: "Keep at least one way to sign in.",
   SESSION_NOT_FRESH: "For your security, sign out and sign in again, then try again.",
-  session_not_fresh: "For your security, sign out and sign in again, then add the password.",
   password_already_set: "This account already has a password. Change it instead.",
   email_does_not_match:
     "That account uses a different email address, so it can't be connected to this one.",
@@ -45,6 +44,10 @@ const ERROR_MESSAGES: Record<string, string> = {
   EMAIL_ALREADY_VERIFIED: "Your email address is already confirmed.",
   TOO_MANY_EMAILS: "Too many emails to this address. Try again in an hour.",
   EMAIL_QUOTA_REACHED: "This server has sent its email for today. Try again tomorrow.",
+  // From changing the email.
+  same_email: "That's already your email.",
+  email_in_use: "Another account uses that email.",
+  email_unavailable: "This server can't send email, so the email can't be changed here.",
 };
 
 function messageFor(code: string | undefined, fallback: string): string {
@@ -126,6 +129,9 @@ export function SignInCard() {
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
   const [signOutOthers, setSignOutOthers] = useState(true);
+  const [changingEmail, setChangingEmail] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const newEmailId = useId();
   const loadSeq = useRef(0);
 
   const load = useCallback(async () => {
@@ -288,8 +294,31 @@ export function SignInCard() {
     setStatus({
       area: "methods",
       kind: "ok",
-      text: `We sent a confirmation link to ${email}. It expires in 24 hours.`,
+      text: `We sent a confirmation link to ${email}. It expires in 24 hours; check your spam folder too.`,
     });
+  }
+
+  async function requestChange(e: React.FormEvent) {
+    e.preventDefault();
+    const target = newEmail.trim();
+    setStatus(null);
+    setBusy(true);
+    try {
+      await requestEmailChange(target);
+      setStatus({
+        area: "methods",
+        kind: "ok",
+        text: `We sent a link to ${target}. Open it in this browser, signed in as you, and confirm. It expires in 1 hour; check your spam folder too.`,
+      });
+      setChangingEmail(false);
+      setNewEmail("");
+    } catch (err) {
+      const code = err instanceof ApiRequestError ? err.code : undefined;
+      const fallback = err instanceof Error ? err.message : "Couldn't send the link. Try again.";
+      setStatus({ area: "methods", kind: "error", text: messageFor(code, fallback) });
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function signOutOtherDevices() {
@@ -338,24 +367,81 @@ export function SignInCard() {
             <ul className="flex flex-col gap-2">
               <li className="flex flex-wrap items-center justify-between gap-3 text-sm">
                 <span style={{ color: "var(--hl-cream)" }}>Email address</span>
-                {emailVerified ? (
-                  <span style={{ color: "var(--hl-mist)" }}>Confirmed</span>
-                ) : (
-                  <span className="flex items-center gap-3">
-                    <span style={{ color: "var(--hl-mist)" }}>Not confirmed</span>
-                    {EMAIL_ENABLED && (
+                <span className="flex flex-wrap items-center gap-3">
+                  {emailVerified ? (
+                    <span style={{ color: "var(--hl-mist)" }}>Confirmed</span>
+                  ) : (
+                    <>
+                      <span style={{ color: "var(--hl-mist)" }}>Not confirmed</span>
+                      {EMAIL_ENABLED && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => void sendConfirmation()}
+                        >
+                          Send confirmation link
+                        </Button>
+                      )}
+                    </>
+                  )}
+                  {EMAIL_ENABLED && !changingEmail && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy}
+                      onClick={() => {
+                        setStatus(null);
+                        setChangingEmail(true);
+                      }}
+                    >
+                      Change
+                    </Button>
+                  )}
+                </span>
+              </li>
+              {changingEmail && (
+                <li>
+                  <form onSubmit={requestChange} className="flex flex-col gap-2 text-sm">
+                    <label htmlFor={newEmailId} style={{ color: "var(--hl-mist)" }}>
+                      New email
+                    </label>
+                    <input
+                      id={newEmailId}
+                      type="email"
+                      name="new-email"
+                      required
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      autoComplete="email"
+                      spellCheck={false}
+                      className={`w-full ${inputClass}`}
+                      style={inputStyle}
+                    />
+                    <p className="text-xs" style={{ color: "var(--hl-muted)" }}>
+                      We'll email a link to the new address. Your email changes once you open it and
+                      confirm. You need to have signed in within the last 15 minutes.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="submit" size="sm" disabled={busy}>
+                        {busy ? "Sending…" : "Send confirmation link"}
+                      </Button>
                       <Button
+                        type="button"
                         size="sm"
                         variant="outline"
                         disabled={busy}
-                        onClick={() => void sendConfirmation()}
+                        onClick={() => {
+                          setChangingEmail(false);
+                          setNewEmail("");
+                        }}
                       >
-                        Send confirmation link
+                        Cancel
                       </Button>
-                    )}
-                  </span>
-                )}
-              </li>
+                    </div>
+                  </form>
+                </li>
+              )}
               <li className="flex items-center justify-between gap-3 text-sm">
                 <span style={{ color: "var(--hl-cream)" }}>Email and password</span>
                 {hasPassword ? (
