@@ -147,7 +147,7 @@ describe("role lines and pipe separators", () => {
     "",
     "SKILLS",
     "Languages: Python | SQL | TypeScript",
-    "Data: Airflow | dbt | Spark | Kafka",
+    "Data: Airflow | dbt | Spark",
     "Cloud: AWS | Docker | Terraform",
     "Tools: Git | Linux | Grafana",
     "",
@@ -167,7 +167,7 @@ describe("role lines and pipe separators", () => {
   });
 
   it("scores the dash version the same as the hyphen version", () => {
-    const hyphens = DASH_RESUME.replace(/\s*[–—]\s*/g, " - ");
+    const hyphens = DASH_RESUME.replace(/\s*[\u2013\u2014]\s*/g, " - ");
     const dash = runResumeDoctor(DASH_RESUME);
     const hyphen = runResumeDoctor(hyphens);
     expect(dash.findings.map((f) => f.code)).toEqual(hyphen.findings.map((f) => f.code));

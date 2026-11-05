@@ -79,7 +79,9 @@ On `main` since v1.4.0; planned for v1.5.0.
   parse, and a found Experience heading with no readable roles says
   "Couldn't read your roles" instead. "Table-style layout" no longer fires
   for pipes in contact headers or skill lists, only for rows framed by
-  pipes or 3+ stacked rows of the same shape (#167).
+  pipes or 3+ stacked rows of the same shape. Employment dates no longer
+  read a company that starts like a month ("Marriott 2019") as a month,
+  and long month-like text no longer slows parsing (#167).
 - Evidence quotes written with a different hyphen, dash or quote
   character than the resume were not found, so their scores were
   withheld (#143).

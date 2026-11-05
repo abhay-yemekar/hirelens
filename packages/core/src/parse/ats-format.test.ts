@@ -76,8 +76,9 @@ BSc Statistics - State University - 2021
 
 SKILLS
 Languages: Python | SQL | TypeScript
-Data: Airflow | dbt | Spark | Kafka
-Cloud: AWS | Docker | Terraform`;
+Data: Airflow | dbt | Spark
+Cloud: AWS | Docker | Terraform
+Tools: Git | Linux | Grafana`;
     const check = checkFormat(text);
     expect(check.findings.some((f) => f.code === "table-layout")).toBe(false);
     expect(check.findings).toEqual([]);

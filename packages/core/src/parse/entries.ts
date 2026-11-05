@@ -17,7 +17,7 @@ export function extractWork(lines: string[], section: Section): CandidateWork[] 
     const line = lines[i];
     if (!line) continue;
 
-    const role = matchRoleLine(line);
+    const role = matchRoleLine(line, isDateLine(lines, i + 1, section.end));
     if (role) {
       roles.push(role);
       continue;
@@ -49,6 +49,20 @@ export function extractWork(lines: string[], section: Section): CandidateWork[] 
   }
 
   return roles.filter((r) => r.name.length > 0 || r.position);
+}
+
+/**
+ * Whether the next non-empty line (from `from`, before `end`) holds only
+ * dates for the role above it: it has a date range and is not a role line
+ * of its own.
+ */
+function isDateLine(lines: string[], from: number, end: number): boolean {
+  for (let i = from; i < end; i++) {
+    const line = lines[i]?.trim();
+    if (!line) continue;
+    return extractDateRange(line) !== null && matchRoleLine(line) === null;
+  }
+  return false;
 }
 
 /**
@@ -97,18 +111,33 @@ export function extractEducation(lines: string[], section: Section): CandidateEd
 }
 
 /**
- * Separators between title, company and dates on a role line: a spaced
- * hyphen, pipe or bullet, an unspaced bullet, or an en/em dash with or
- * without spaces ("Engineer—Acme", "Engineer – Acme"). An unspaced hyphen
- * never splits, so "Front-end" and "Co-founder" stay whole; an unspaced
- * dash between two digits is a number range ("10–20"), not a separator.
+ * Separators between title, company and dates on a role line. A hyphen
+ * splits only with spaces around it, so "Front-end" and "Co-founder" stay
+ * whole; bullets split with or without spaces.
  */
-const ROLE_SEPARATOR_RE =
+const SPACED_SEPARATOR_RE = /\s+[-|\u2022\u2013\u2014]\s+|\s*\u2022\s*/;
+/**
+ * An en/em dash without spaces ("Engineer—Acme") separates too, but only
+ * on a line with no spaced separator, so "Rolls–Royce" in "Engineer –
+ * Rolls–Royce" stays whole. A dash between two digits is a number range
+ * ("10–20"), never a separator.
+ */
+const ANY_SEPARATOR_RE =
   /\s+[-|\u2022\u2013\u2014]\s+|\s*\u2022\s*|(?<!\d)[\u2013\u2014]|[\u2013\u2014](?!\d)/;
+/**
+ * With no date range on or right under the line, a dash is more often
+ * prose ("Cut latency 40% — moved reads to Redis") than a separator, so
+ * only spaced hyphens, pipes and bullets split, as they always have.
+ */
+const UNDATED_SEPARATOR_RE = /\s+[-|\u2022]\s+|\s*\u2022\s*/;
 /** Separator debris left at either end of a part once dates are cut out. */
 const PART_EDGE_RE = /^[\s\-|,;\u2022\u2013\u2014]+|[\s\-|,;\u2022\u2013\u2014]+$/g;
-/** Bullet glyph opening an achievement line. */
-const BULLET_PREFIX_RE = /^[-*>\u2022\u2023\u25aa\u25cf\u00b7\u2219]\s*/;
+/**
+ * Bullet opening an achievement line: a glyph (including Word's Symbol-font
+ * bullet U+F0B7 and a leading dash), Word's level-2 "o", or "1." / "1)".
+ */
+const BULLET_PREFIX_RE =
+  /^(?:[-*>\u2013\u2014\u2022\u2023\u25a0\u25aa\u25cf\u25e6\u00b7\u2219\u27a2\uf0b7]|o(?=\s)|\d{1,2}[.)](?=\s))\s*/;
 /** Ends like a sentence ("...hot reads to Redis."); "Acme Inc." does not. */
 const SENTENCE_END_RE = /\p{Ll}{4,}[.!?]$/u;
 
@@ -118,9 +147,11 @@ const SENTENCE_END_RE = /\p{Ll}{4,}[.!?]$/u;
  * separator) is handled too: when the line carries a date range but no
  * dash/pipe split, " at " or " @ " separates title from company, and a
  * trailing date range is stripped from the company part.
- * Without a date range, bullet lines and sentences are achievements,
- * never roles, even when a dash splits them in two. */
-export function matchRoleLine(line: string): CandidateWork | null {
+ * `datesFollow` says the next line is a date line for this role
+ * ("Title — Company" over "Mar 2021 – Present"), which lets en/em dashes
+ * split it. Without a date range, bullet lines and sentences are
+ * achievements, never roles. */
+export function matchRoleLine(line: string, datesFollow = false): CandidateWork | null {
   let trimmed = line.trim();
   if (trimmed.length < 5 || trimmed.length > 120) return null;
   if (hasEmailToken(trimmed) || URL_RE.test(trimmed)) return null;
@@ -132,9 +163,18 @@ export function matchRoleLine(line: string): CandidateWork | null {
 
   // Cut the date range out before splitting: its own dash ("2021 - 2023",
   // "Mar 2026 – Present") must not split the line into extra parts.
-  const parts = trimmed
+  const body = trimmed
     .replace(DATE_RANGE_RE, " ")
-    .split(ROLE_SEPARATOR_RE)
+    .replace(/\(\s*\)/g, " ")
+    .replace(PART_EDGE_RE, "");
+  const separator =
+    !dates && !datesFollow
+      ? UNDATED_SEPARATOR_RE
+      : SPACED_SEPARATOR_RE.test(body)
+        ? SPACED_SEPARATOR_RE
+        : ANY_SEPARATOR_RE;
+  const parts = body
+    .split(separator)
     .map((p) => p.replace(PART_EDGE_RE, ""))
     .filter((p) => p.length > 0 && !DATE_RANGE_RE.test(p));
 
@@ -145,6 +185,7 @@ export function matchRoleLine(line: string): CandidateWork | null {
       const company = trimmed
         .slice(at.index + at[0].length)
         .replace(DATE_RANGE_RE, "")
+        .replace(/\(\s*\)/g, "")
         .trim()
         .replace(/[,;]+$/, "")
         .trim();

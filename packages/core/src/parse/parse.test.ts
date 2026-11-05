@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseCandidate } from "./candidate.js";
 import { findPhone } from "./contact.js";
+import { extractDateRange } from "./dates.js";
 import { ParseError } from "./schema.js";
 import { segmentSections } from "./sections.js";
 
@@ -245,7 +246,7 @@ Site Engineer – Hooli
       });
     });
 
-    it("does not read achievement bullets or sentences with a dash as roles", () => {
+    it("does not read achievement lines with a dash as roles", () => {
       const c = parseCandidate(`KIM DIAZ
 kim@example.com
 
@@ -255,12 +256,21 @@ Site Reliability Engineer – Umbrella Corp – 2020 – Present
 - Cut p99 latency 40%—moved hot reads to Redis
 • Owned incident review – wrote the runbooks
 Rebuilt the alerting stack — paging volume fell by half.
-Cut build times 10–20% across services`);
-      expect(c.work).toHaveLength(1);
-      expect(c.work[0]).toMatchObject({
-        position: "Site Reliability Engineer",
-        name: "Umbrella Corp",
-      });
+Cut build times 10–20% across services
+Cut p99 latency by 40% — moved hot reads to Redis
+Reduced AWS spend by 30% – saving $1.2M/yr.
+Grew the team from 5 – 12 engineers
+◦ Owned incident review – wrote the runbooks
+➢ Owned incident review – wrote the runbooks
+\uf0b7 Owned incident review – wrote the runbooks
+o Owned incident review – wrote the runbooks
+1. Owned incident review – wrote the runbooks
+– Owned incident review – wrote the runbooks
+Platform Engineer – Globex – 2017 – 2020`);
+      expect(c.work.map((w) => [w.position, w.name])).toEqual([
+        ["Site Reliability Engineer", "Umbrella Corp"],
+        ["Platform Engineer", "Globex"],
+      ]);
     });
 
     it("still reads a bulleted role line that carries dates", () => {
@@ -269,11 +279,69 @@ noor@example.com
 
 EXPERIENCE
 
-• Cloud Engineer – Wingtip – 2021 – 2024`);
+• Cloud Engineer – Wingtip – 2021 – 2024
+◦ Data Engineer – Contoso – 2019 – 2021`);
       expect(c.work).toEqual([
         { position: "Cloud Engineer", name: "Wingtip", startDate: "2021", endDate: "2024" },
+        { position: "Data Engineer", name: "Contoso", startDate: "2019", endDate: "2021" },
       ]);
     });
+
+    it("keeps a company that starts like a month name", () => {
+      const c = parseCandidate(`ALEX RIVERA
+alex@example.com
+
+EXPERIENCE
+
+Engineer - Marriott 2019 - 2021
+Analyst – Novartis 2016 – Present`);
+      expect(c.work).toEqual([
+        { position: "Engineer", name: "Marriott", startDate: "2019", endDate: "2021" },
+        {
+          position: "Analyst",
+          name: "Novartis",
+          startDate: "2016",
+          endDate: "present",
+          current: true,
+        },
+      ]);
+    });
+
+    it("reads month names written out or with a dot", () => {
+      const c = parseCandidate(`ALEX RIVERA
+alex@example.com
+
+EXPERIENCE
+
+Designer – Initech – September 2019 – June 2021
+Intern – Hooli – Sept. 2018 – Mar. 2019`);
+      expect(c.work[0]).toMatchObject({ startDate: "Sep 2019", endDate: "Jun 2021" });
+      expect(c.work[1]).toMatchObject({ startDate: "Sep 2018", endDate: "Mar 2019" });
+    });
+
+    it("keeps a dashed company name whole when spaced dashes separate the parts", () => {
+      const c = parseCandidate(`ALEX RIVERA
+alex@example.com
+
+EXPERIENCE
+
+Engineer – Rolls–Royce – 2019 – 2021
+Engineer | Acme (2015 - 2019)`);
+      expect(c.work.map((w) => [w.position, w.name])).toEqual([
+        ["Engineer", "Rolls–Royce"],
+        ["Engineer", "Acme"],
+      ]);
+    });
+  });
+
+  it("reads long month-like text in linear time", () => {
+    // The month pattern once ended in an open letter run, which took
+    // seconds on text like this (quadratic). Generous bound for slow CI.
+    const hostile = "Mar".repeat(50_000);
+    const t0 = performance.now();
+    expect(extractDateRange(hostile)).toBeNull();
+    expect(extractDateRange(`${"Mar ".repeat(20_000)}2019 - 2021`)?.start).toBe("Mar 2019");
+    expect(performance.now() - t0).toBeLessThan(1000);
   });
 
   it("rejects content-free text with a typed error", () => {
