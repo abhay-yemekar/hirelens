@@ -140,6 +140,13 @@ const BULLET_PREFIX_RE =
   /^(?:[-*>\u2013\u2014\u2022\u2023\u25a0\u25aa\u25cf\u25e6\u00b7\u2219\u27a2\uf0b7]|o(?=\s)|\d{1,2}[.)](?=\s))\s*/;
 /** Ends like a sentence ("...hot reads to Redis."); "Acme Inc." does not. */
 const SENTENCE_END_RE = /\p{Ll}{4,}[.!?]$/u;
+/**
+ * A short label and a colon opening the line ("Stack: Python | Airflow",
+ * "Tools & Tech: Git | Linux"): one to three words, so a title that merely
+ * holds a colon later ("Senior Engineer - Acme Corp: Payments") is not one.
+ */
+const LABEL_PREFIX_RE =
+  /^\p{L}[\p{L}\p{N}&/+.'-]*(?:\s+(?:&|\p{L}[\p{L}\p{N}&/+.'-]*)){0,2}\s*:\s/u;
 
 /** Match a role header line: "Title - Company - dates" variants, with
  * hyphens, pipes, bullets, en dashes or em dashes between the parts.
@@ -150,7 +157,8 @@ const SENTENCE_END_RE = /\p{Ll}{4,}[.!?]$/u;
  * `datesFollow` says the next line is a date line for this role
  * ("Title — Company" over "Mar 2021 – Present"), which lets en/em dashes
  * split it. Without a date range, bullet lines and sentences are
- * achievements, never roles. */
+ * achievements, and labelled lines ("Stack: Python | Airflow") are
+ * details, never roles. */
 export function matchRoleLine(line: string, datesFollow = false): CandidateWork | null {
   let trimmed = line.trim();
   if (trimmed.length < 5 || trimmed.length > 120) return null;
@@ -158,7 +166,14 @@ export function matchRoleLine(line: string, datesFollow = false): CandidateWork 
   if (/^(skills|technologies|tools)\b/i.test(trimmed)) return null;
 
   const dates = extractDateRange(trimmed);
-  if (!dates && (BULLET_PREFIX_RE.test(trimmed) || SENTENCE_END_RE.test(trimmed))) return null;
+  if (
+    !dates &&
+    (BULLET_PREFIX_RE.test(trimmed) ||
+      SENTENCE_END_RE.test(trimmed) ||
+      LABEL_PREFIX_RE.test(trimmed))
+  ) {
+    return null;
+  }
   trimmed = trimmed.replace(BULLET_PREFIX_RE, "");
 
   // Cut the date range out before splitting: its own dash ("2021 - 2023",
@@ -227,8 +242,10 @@ function matchDegreeLine(line: string): CandidateEducation | null {
   entry.studyType = titleCase(m[0]);
   const rest = trimmed.replace(m[0], "");
   const parts = rest
-    .split(/\s+[-|,]\s+|\s{3,}/)
-    .map((p) => p.trim().replace(/^[-\u2022]\s*/, ""))
+    // Spaced en/em dashes separate too, and an unspaced em dash; an unspaced
+    // en dash stays, as in "University of Illinois Urbana–Champaign".
+    .split(/\s+[-|,\u2013\u2014]\s+|\s{3,}|\u2014/)
+    .map((p) => p.trim().replace(/^[-\u2022\u2013\u2014]\s*/, ""))
     .filter((p) => p.length > 2);
   // Prefer the part that looks like an institution: contains a school
   // keyword, or is the last multi-word part (degree fields come first).

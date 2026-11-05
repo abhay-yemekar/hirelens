@@ -334,6 +334,41 @@ Engineer | Acme (2015 - 2019)`);
     });
   });
 
+  it("does not read labelled detail lines as roles", () => {
+    const c = parseCandidate(`RILEY QUINN
+riley@example.com
+
+EXPERIENCE
+
+Data Engineer – Northwind Labs – 2021 – Present
+Stack: Python | Airflow | Postgres
+Tech Stack: dbt | Snowflake
+Tools & Tech: Git | Linux
+Analytics Engineer - Contoso - 2018 - 2021
+Senior Engineer - Acme Corp: Payments`);
+    expect(c.work.map((w) => [w.position, w.name])).toEqual([
+      ["Data Engineer", "Northwind Labs"],
+      ["Analytics Engineer", "Contoso"],
+      ["Senior Engineer", "Acme Corp: Payments"],
+    ]);
+  });
+
+  it("reads education lines separated by en or em dashes", () => {
+    const c = parseCandidate(`RILEY QUINN
+riley@example.com
+
+EDUCATION
+
+BSc Statistics – State University – 2021
+MSc Data Science—University of Illinois Urbana–Champaign—2023
+BA Economics - Carnegie-Mellon Institute - 2015`);
+    expect(c.education.map((e) => [e.institution, e.endDate])).toEqual([
+      ["State University", "2021"],
+      ["University of Illinois Urbana–Champaign", "2023"],
+      ["Carnegie-Mellon Institute", "2015"],
+    ]);
+  });
+
   it("reads long month-like text in linear time", () => {
     // The month pattern once ended in an open letter run, which took
     // seconds on text like this (quadratic). Generous bound for slow CI.

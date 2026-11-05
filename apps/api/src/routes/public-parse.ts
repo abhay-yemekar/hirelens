@@ -23,6 +23,7 @@ import {
   type ExtractedDocument,
   ExtractionError,
   extractDocument,
+  type FormatCheck,
   MAX_DOCUMENT_BYTES,
   parseCandidate,
   readSetting,
@@ -58,10 +59,11 @@ function rateLimit(tokenId: string): { ok: boolean; retryAfter: number; limit: n
   return { ok: true, retryAfter: 0, limit };
 }
 
-/** Human-readable warnings derived from the extraction + parse result. */
+/** Human-readable warnings derived from the extraction, parse and format check. */
 function warningsFor(
   extracted: ExtractedDocument,
   parsed: ReturnType<typeof parseCandidate>,
+  formatCheck: FormatCheck,
 ): string[] {
   const warnings: string[] = [];
   if (extracted.layoutHints.lowTextDensity) {
@@ -71,7 +73,16 @@ function warningsFor(
   }
   if (parsed.email === null) warnings.push("No email address detected.");
   if (parsed.phone === null) warnings.push("No phone number detected.");
-  if (parsed.work.length === 0) warnings.push("No experience section detected.");
+  if (parsed.work.length === 0) {
+    // The format check tells a missing heading from roles it couldn't
+    // read; say the same here.
+    const unreadable = formatCheck.findings.some((f) => f.code === "unreadable-roles");
+    warnings.push(
+      unreadable
+        ? 'Experience heading found, but no role could be read. Put each role on one line as "Title – Company – dates".'
+        : "No experience section detected.",
+    );
+  }
   return warnings;
 }
 
@@ -245,6 +256,9 @@ export function publicParseRoutes(): Hono<AppEnv> {
       );
     }
 
+    // ATS format check (v1.4): verdict + parse-simulation score so
+    // integrations can drop or fix mangled resumes before ingesting.
+    const formatCheck = checkFormat(rawText, extracted ?? undefined);
     return c.json({
       ok: true,
       parsed,
@@ -252,10 +266,8 @@ export function publicParseRoutes(): Hono<AppEnv> {
       kind,
       pageCount,
       extractedChars: charCount,
-      warnings: extracted ? warningsFor(extracted, parsed) : [],
-      // ATS format check (v1.4): verdict + parse-simulation score so
-      // integrations can drop or fix mangled resumes before ingesting.
-      formatCheck: checkFormat(rawText, extracted ?? undefined),
+      warnings: extracted ? warningsFor(extracted, parsed, formatCheck) : [],
+      formatCheck,
       // Attribution only — no candidate data is stored anywhere.
       organizationId: auth.orgId,
     });

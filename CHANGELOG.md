@@ -91,6 +91,11 @@ On `main` since v1.4.0; planned for v1.5.0.
   pipes or 3+ stacked rows of the same shape. Employment dates no longer
   read a company that starts like a month ("Marriott 2019") as a month,
   and long month-like text no longer slows parsing (#167).
+- The public parse API says the roles couldn't be read when the
+  Experience heading is there, instead of "No experience section
+  detected." Labelled lines under a role (`Stack: Python | Airflow`) are
+  no longer read as roles, and education lines separated by en or em
+  dashes give the right institution (#170).
 - Evidence quotes written with a different hyphen, dash or quote
   character than the resume were not found, so their scores were
   withheld (#143).

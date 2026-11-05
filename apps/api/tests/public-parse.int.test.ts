@@ -210,6 +210,37 @@ describe.skipIf(!available && allowSkip)("public parser API", () => {
     expect(body.parsed.email).toBe("priya.sharma@example.com");
   });
 
+  it("warns that roles couldn't be read when the Experience heading exists", async () => {
+    const header = ["Riley Quinn", "riley@example.com | +1 415 555 0142", ""];
+    const upload = async (lines: string[]) => {
+      const form = new FormData();
+      form.append(
+        "file",
+        new File([[...header, ...lines].join("\n")], "resume.txt", { type: "text/plain" }),
+      );
+      const res = await parse(token, { method: "POST", body: form });
+      expect(res.status).toBe(200);
+      return ((await res.json()) as { warnings: string[] }).warnings;
+    };
+
+    const unreadable = await upload([
+      "EXPERIENCE",
+      "Northwind Labs",
+      "Data Engineer",
+      "2021 to 2024",
+      "",
+      "SKILLS",
+      "Python, SQL, Airflow",
+    ]);
+    expect(unreadable).toContain(
+      'Experience heading found, but no role could be read. Put each role on one line as "Title – Company – dates".',
+    );
+    expect(unreadable).not.toContain("No experience section detected.");
+
+    const missing = await upload(["SKILLS", "Python, SQL, Airflow"]);
+    expect(missing).toContain("No experience section detected.");
+  });
+
   it("rejects wrong content type, oversized text, and low-information text", async () => {
     const wrongType = await parse(token, {
       method: "POST",
