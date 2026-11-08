@@ -1,12 +1,12 @@
 # Support
 
-| Need | Where |
-| --- | --- |
-| Bug report | [Open an issue](https://github.com/abhay-yemekar/hirelens/issues/new?template=bug.yml) |
-| Feature request | [Open an issue](https://github.com/abhay-yemekar/hirelens/issues/new?template=feature.yml) |
-| Question or usage help | [GitHub Discussions](https://github.com/abhay-yemekar/hirelens/discussions) |
-| Security vulnerability | [SECURITY.md](SECURITY.md): report privately, never in a public issue |
-| Code of Conduct report | abhay.s.yemekar@gmail.com |
+| Need                   | Where                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------------------ |
+| Bug report             | [Open an issue](https://github.com/abhay-yemekar/hirelens/issues/new?template=bug.yml)     |
+| Feature request        | [Open an issue](https://github.com/abhay-yemekar/hirelens/issues/new?template=feature.yml) |
+| Question or usage help | [GitHub Discussions](https://github.com/abhay-yemekar/hirelens/discussions)                |
+| Security vulnerability | [SECURITY.md](SECURITY.md): report privately, never in a public issue                      |
+| Code of Conduct report | abhay.s.yemekar@gmail.com                                                                  |
 
 ## Before opening an issue
 
