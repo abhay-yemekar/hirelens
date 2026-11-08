@@ -10,7 +10,7 @@ cp .env.example .env    # set BETTER_AUTH_SECRET at minimum
 docker compose up --build -d
 ```
 
-That brings up **web (:3000)**, **api (:4000)**, and **postgres (:5433)**. On first boot the API applies database migrations automatically. Verify:
+It needs Docker Compose 2.24 or newer (`docker compose version`). That brings up **web (:3000)**, **api (:4000)**, and **postgres (:5433)**. On first boot the API applies database migrations automatically. Verify:
 
 ```bash
 docker compose ps                       # all three services healthy
@@ -30,15 +30,17 @@ Settings used to be named `HIRELENS_*`. Those names still work; when both are se
 | `CANDIDLENS_LLM_PROVIDER` | no | `google` \| `anthropic` \| `groq` \| `openrouter` \| `mistral` \| `cerebras` \| `ollama` |
 | `CANDIDLENS_LLM_MODEL` | no | Provider model id |
 | `CANDIDLENS_LLM_API_KEY` | no | Hosted providers; leave empty for no-LLM mode |
+| `CANDIDLENS_LLM_FALLBACKS` | no | Failover chain, e.g. `groq`; each fallback needs `CANDIDLENS_LLM_<ID>_MODEL` (plus `_API_KEY`, `_BASE_URL`) |
+| `CANDIDLENS_LLM_DEADLINE_MS` | no | Overall retry and failover budget (default 120000) |
+| `CANDIDLENS_SMTP_USER` / `_PASSWORD` | no | Email for password reset and confirmation; `_HOST`, `_PORT` and `CANDIDLENS_MAIL_FROM` change the Gmail defaults |
+| `NEXT_PUBLIC_EMAIL_ENABLED` | no | `true` makes the web app offer "Forgot password?" and email confirmation; set it with the SMTP settings |
 | `SENTRY_DSN` | no | Error tracking |
 | `LANGFUSE_PUBLIC_KEY` / `_SECRET_KEY` / `_BASE_URL` | no | LLM tracing |
 | `NEXT_PUBLIC_POSTHOG_KEY` | no | Product analytics (explicit events only, autocapture off) |
 
 Empty-string LLM variables are treated as unset — a partial `.env` degrades gracefully. The [configuration reference](/docs/reference/configuration) lists every setting.
 
-<Callout type="warn">
-Docker Compose doesn't pass every setting through to the containers yet: the model failover chain, the retry deadline and the email settings (`CANDIDLENS_SMTP_*`) are not forwarded, so password reset and email confirmation stay off in a Compose deployment. This is tracked in [#159](https://github.com/abhay-yemekar/hirelens/issues/159).
-</Callout>
+The API container reads every setting in the root `.env`; Compose fixes only `DATABASE_URL`, `NODE_ENV` and `PORT`. The web image takes the `NEXT_PUBLIC_*` settings when it is built, so rebuild it after changing one: `docker compose up --build -d web`.
 
 ## Data flow
 

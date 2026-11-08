@@ -134,6 +134,18 @@ docker compose up --build -d`}</code>
           </tr>
           <tr>
             <td>
+              <code>CANDIDLENS_SMTP_USER</code> / <code>_PASSWORD</code> (+ <code>_HOST</code>,{" "}
+              <code>_PORT</code>, <code>CANDIDLENS_MAIL_FROM</code>)
+            </td>
+            <td>no</td>
+            <td>
+              Email for password reset and address confirmation; the defaults fit a Gmail app
+              password. Also set <code>NEXT_PUBLIC_EMAIL_ENABLED=true</code> so the web image offers
+              &ldquo;Forgot password?&rdquo;.
+            </td>
+          </tr>
+          <tr>
+            <td>
               <code>SENTRY_DSN</code>, <code>LANGFUSE_*</code>, <code>NEXT_PUBLIC_POSTHOG_KEY</code>
             </td>
             <td>no</td>
@@ -141,6 +153,12 @@ docker compose up --build -d`}</code>
           </tr>
         </tbody>
       </table>
+      <p>
+        The API container reads every setting in the root <code>.env</code>; Compose fixes only{" "}
+        <code>DATABASE_URL</code>, <code>NODE_ENV</code> and <code>PORT</code>. The web image takes
+        the <code>NEXT_PUBLIC_*</code> settings when it is built, so rebuild it after changing them:{" "}
+        <code>docker compose up --build -d web</code>.
+      </p>
       <p>
         Settings used to be named <code>HIRELENS_*</code>. Those names still work; when both are
         set, the <code>CANDIDLENS_*</code> name wins.
