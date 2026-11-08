@@ -191,4 +191,11 @@ describe("locateEvidenceSpans", () => {
     expect(locateEvidenceSpans(JORDAN, " \n ")).toBeNull();
     expect(locateEvidenceSpans(JORDAN, "\u2026")).toBeNull();
   });
+
+  // A quadratic regex would take minutes on these; linear code takes milliseconds.
+  it("stays fast on long runs of spaces or punctuation", () => {
+    expect(locateEvidenceSpans(JORDAN, `a${" ".repeat(100_000)}b`)).toBeNull();
+    expect(locateEvidenceSpans(JORDAN, `${"!".repeat(100_000)}x`)).toBeNull();
+    expect(locateEvidenceSpans(JORDAN, `${LED}${" ".repeat(100_000)}`)?.[0]?.quotedText).toBe(LED);
+  });
 });

@@ -94,19 +94,28 @@ export function locateEvidenceSpan(documentText: string, rawQuote: string): Text
  * ellipsis, a line break, or the space after a sentence's closing
  * punctuation. Gemini quotes "Led X. Built Y." for two bullets that sit on
  * different lines (often under different roles), without the "- " markers.
+ * Every alternative is fixed-length so the split stays linear; the
+ * whitespace around a break is trimmed from the pieces afterwards.
  */
-const PIECE_BREAK = /\s*(?:\.{3}|…)\s*|\s*\n\s*|(?<=[.!?])\s+/;
+const PIECE_BREAK = /\.{3}|…|\n|(?<=[.!?])\s/;
 
 /** A list marker the model kept (or swapped for another glyph) at a piece start. */
 const LEADING_MARKER = /^[-*•·▪●◦‣⁃]\s+/;
 
-const TRAILING_PUNCTUATION = /[.,;:!?]+$/;
+const TRAILING_PUNCTUATION = ".,;:!?";
+
+/** Drop closing punctuation; a loop, since /[.,;:!?]+$/ is quadratic on "!!!!x". */
+function stripTrailingPunctuation(text: string): string {
+  let end = text.length;
+  while (end > 0 && TRAILING_PUNCTUATION.includes(text.charAt(end - 1))) end -= 1;
+  return text.slice(0, end);
+}
 
 function locatePiece(documentText: string, piece: string): TextSpan | null {
   const span = locateEvidenceSpan(documentText, piece);
   if (span) return span;
   // A closing period the resume line does not have ("..., Terraform, AWS.").
-  const bare = piece.replace(TRAILING_PUNCTUATION, "");
+  const bare = stripTrailingPunctuation(piece);
   return bare !== piece && bare.length > 0 ? locateEvidenceSpan(documentText, bare) : null;
 }
 
