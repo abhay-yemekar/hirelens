@@ -25,6 +25,10 @@ Rank candidates against a rubric you control, decide with stated reasons, and au
 
 <img src="docs/readme/hero.png" alt="CandidLens: a ranked review queue next to the evidence view, where the resume line behind a 5/5 score is highlighted" width="100%">
 
+<img src="docs/demo.gif" alt="The live demo scoring a synthetic resume: the overall score, a score per criterion, and the resume lines each score quotes, highlighted" width="100%">
+
+<sub>The <a href="https://candidlens.vercel.app/demo">live demo</a> scoring a synthetic resume. Click a criterion to see the resume lines it quotes.</sub>
+
 </div>
 
 > [!NOTE]
