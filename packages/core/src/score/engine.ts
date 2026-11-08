@@ -8,7 +8,7 @@
 
 import { z } from "zod";
 import type { TextSpan } from "../evidence/textSpan.js";
-import { locateEvidenceSpan } from "../evidence/textSpan.js";
+import { locateEvidenceSpans } from "../evidence/textSpan.js";
 import { type LanguageModel, modelIdOf } from "../llm/config.js";
 import { generateStructured } from "../llm/generate.js";
 import { promptHash } from "../llm/promptHash.js";
@@ -55,8 +55,17 @@ const ScoredSchema = z.object({
 });
 
 export interface ScoredCriterion extends CriterionScore {
-  /** Verbatim evidence span from the resume; null when no quote applies. */
+  /**
+   * The first verbatim evidence span from the resume; null when no quote
+   * applies or the quote was not found. Always `evidenceSpans[0] ?? null`.
+   */
   evidence: TextSpan | null;
+  /**
+   * Every span of the quote, in the order the model quoted them. A quote
+   * that joins separate resume lines gives one span per line; empty when
+   * `evidence` is null.
+   */
+  evidenceSpans: TextSpan[];
 }
 
 export interface ScoreRunResult {
@@ -134,11 +143,13 @@ export async function scoreResume(
         confidence: 0,
         rationale: "No score returned for this criterion.",
         evidence: null,
+        evidenceSpans: [],
       });
       continue;
     }
     const quote = s.quote.slice(0, MAX_QUOTE_CHARS);
-    const evidence = quote.length > 0 ? locateEvidenceSpan(trimmed, quote) : null;
+    const evidenceSpans = quote.length > 0 ? (locateEvidenceSpans(trimmed, quote) ?? []) : [];
+    const evidence = evidenceSpans[0] ?? null;
     // Never-a-naked-number: a positive score must be backed by evidence
     // actually found in the resume. Unverifiable positives are clamped to 0
     // and flagged for adjudication instead of being trusted.
@@ -151,6 +162,7 @@ export async function scoreResume(
         ? `Evidence quote not found in the resume text; score withheld pending adjudication. Original rationale: ${s.rationale}`
         : s.rationale,
       evidence,
+      evidenceSpans,
     });
     if (unverifiable) anyUnverifiable = true;
   }

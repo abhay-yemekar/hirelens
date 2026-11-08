@@ -88,3 +88,79 @@ export function locateEvidenceSpan(documentText: string, rawQuote: string): Text
     quotedText: documentText.slice(startOffset, endIdx),
   };
 }
+
+/**
+ * Where a model joins separate resume passages into one quote: an
+ * ellipsis, a line break, or the space after a sentence's closing
+ * punctuation. Gemini quotes "Led X. Built Y." for two bullets that sit on
+ * different lines (often under different roles), without the "- " markers.
+ * Every alternative is fixed-length so the split stays linear; the
+ * whitespace around a break is trimmed from the pieces afterwards.
+ */
+const PIECE_BREAK = /\.{3}|…|\n|(?<=[.!?])\s/;
+
+/** A list marker the model kept (or swapped for another glyph) at a piece start. */
+const LEADING_MARKER = /^[-*•·▪●◦‣⁃]\s+/;
+
+const TRAILING_PUNCTUATION = ".,;:!?";
+
+/** Drop closing punctuation; a loop, since /[.,;:!?]+$/ is quadratic on "!!!!x". */
+function stripTrailingPunctuation(text: string): string {
+  let end = text.length;
+  while (end > 0 && TRAILING_PUNCTUATION.includes(text.charAt(end - 1))) end -= 1;
+  return text.slice(0, end);
+}
+
+function locatePiece(documentText: string, piece: string): TextSpan | null {
+  const span = locateEvidenceSpan(documentText, piece);
+  if (span) return span;
+  // A closing period the resume line does not have ("..., Terraform, AWS.").
+  const bare = stripTrailingPunctuation(piece);
+  return bare !== piece && bare.length > 0 ? locateEvidenceSpan(documentText, bare) : null;
+}
+
+/**
+ * Locate a model's evidence quote as one or more spans of the document.
+ *
+ * A quote found as one passage gives one span. Otherwise the quote is
+ * split at ellipses, line breaks and sentence ends, and every piece must
+ * itself be verbatim resume text (whitespace- and dash-tolerant, as in
+ * locateEvidenceSpan). Pieces that follow each other in the resume with
+ * only whitespace between them become one span. If any piece is missing
+ * the whole quote is rejected (null), so a quote that is not really in
+ * the resume is still withheld.
+ */
+export function locateEvidenceSpans(documentText: string, rawQuote: string): TextSpan[] | null {
+  const whole = locateEvidenceSpan(documentText, rawQuote);
+  if (whole) return [whole];
+
+  const pieces = fold(rawQuote)
+    .split(PIECE_BREAK)
+    .map((piece) => piece.trim().replace(LEADING_MARKER, "").trim())
+    .filter((piece) => piece.length > 0);
+  if (pieces.length === 0) return null;
+
+  const spans: TextSpan[] = [];
+  for (const piece of pieces) {
+    const span = locatePiece(documentText, piece);
+    if (!span) return null;
+    const last = spans.at(-1);
+    if (
+      last &&
+      span.startOffset >= last.endOffset &&
+      /^\s*$/.test(documentText.slice(last.endOffset, span.startOffset))
+    ) {
+      spans[spans.length - 1] = {
+        startOffset: last.startOffset,
+        endOffset: span.endOffset,
+        quotedText: documentText.slice(last.startOffset, span.endOffset),
+      };
+      continue;
+    }
+    const covered = spans.some(
+      (s) => s.startOffset <= span.startOffset && span.endOffset <= s.endOffset,
+    );
+    if (!covered) spans.push(span);
+  }
+  return spans;
+}

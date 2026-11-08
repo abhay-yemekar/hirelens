@@ -49,13 +49,18 @@ function HighlightedResume({
   const sorted = [...spans.entries()].sort((a, b) => a[0] - b[0]);
   let cursor = 0;
   for (const [start, { end, color }] of sorted) {
-    if (start > cursor) nodes.push(text.slice(cursor, start));
+    // Spans can overlap (two criteria quoting the same line, or one quote
+    // inside a longer one): start each mark where the last one ended so no
+    // resume text is drawn twice.
+    const from = Math.max(start, cursor);
+    if (end <= from) continue;
+    if (from > cursor) nodes.push(text.slice(cursor, from));
     nodes.push(
-      <mark key={start} style={{ backgroundColor: color, borderRadius: 4, padding: "0 2px" }}>
-        {text.slice(start, Math.max(end, start + 1))}
+      <mark key={from} style={{ backgroundColor: color, borderRadius: 4, padding: "0 2px" }}>
+        {text.slice(from, end)}
       </mark>,
     );
-    cursor = Math.max(end, start + 1);
+    cursor = end;
   }
   if (cursor < text.length) nodes.push(text.slice(cursor));
   return <pre className="whitespace-pre-wrap font-mono text-[13px] leading-6">{nodes}</pre>;

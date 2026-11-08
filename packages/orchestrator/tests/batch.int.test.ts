@@ -66,6 +66,7 @@ Senior Backend Engineer - jordan@example.com
 EXPERIENCE
 Senior Backend Engineer - Acme Corp - 2021 - Present
 - Led migration of the payments platform to Kubernetes, cutting deploy time 80%.
+- Introduced SLO dashboards and on-call runbooks; MTTR down 45%.
 `;
 
 const QUOTE = "Led migration of the payments platform to Kubernetes";
@@ -78,14 +79,14 @@ function documentId(n: number): string {
   return `44444444-4444-4444-8444-44444444444${n}`;
 }
 
-function mockScores(): unknown {
+function mockScores(quote = QUOTE): unknown {
   return {
     criteria: CRITERIA.map((c) => ({
       key: c.key,
       score: 3,
       confidence: 0.8,
       rationale: `Solid ${c.title}.`,
-      quote: c.key === "system-design" ? QUOTE : "",
+      quote: c.key === "system-design" ? quote : "",
     })),
   };
 }
@@ -178,6 +179,33 @@ describe.skipIf(!available && allowSkip)("batch orchestrator (integration)", () 
     // Exactly one criterion carries the mock's QUOTE; find it deterministically.
     const quoted = runEvidence.find((e) => e.quotedText.includes("Kubernetes"));
     expect(quoted?.quotedText).toContain("Kubernetes");
+  });
+
+  // gemini-2.5-flash joins bullets from separate lines into one quote; each
+  // line becomes its own evidence row so the evidence view highlights both.
+  it("stores one evidence row per line of a quote that joins resume lines", async () => {
+    const led = "Led migration of the payments platform to Kubernetes, cutting deploy time 80%.";
+    const slo = "Introduced SLO dashboards and on-call runbooks; MTTR down 45%.";
+    const { model } = createMockModel({ args: mockScores(`${led} ${slo}`) });
+    const summary = await runBatch(db, model as LanguageModel, {
+      jobId: JOB_ID,
+      orgId: ORG_ID,
+      actorId: USER_ID,
+    });
+    expect(summary.scored).toBe(5);
+
+    const scoreRows = await db.select().from(scores).where(eq(scores.runId, summary.runId));
+    const quotedScores = scoreRows.filter((s) => s.criterionKey === "system-design");
+    expect(quotedScores.map((s) => s.score)).toEqual([3, 3, 3, 3, 3]);
+
+    const evidenceRows = await db.select().from(evidence);
+    const runEvidence = evidenceRows.filter((e) => scoreRows.some((s) => s.id === e.scoreId));
+    expect(runEvidence).toHaveLength(10); // 5 candidates x 2 lines
+    for (const row of quotedScores) {
+      const lines = runEvidence.filter((e) => e.scoreId === row.id);
+      expect(lines.map((e) => e.quotedText).sort()).toEqual([led, slo].sort());
+      for (const e of lines) expect(RESUME.slice(e.startOffset, e.endOffset)).toBe(e.quotedText);
+    }
   });
 
   it("appends a verifiable hash chain to the audit log", async () => {
