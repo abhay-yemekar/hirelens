@@ -159,6 +159,38 @@ describe("scoreResume", () => {
     expect(missing?.rationale).toContain("No score returned");
   });
 
+  // gemini-2.5-flash joins bullets from separate lines into one quote.
+  it("keeps a score whose quote joins resume lines, with a span per line", async () => {
+    const led = "Led migration of the payments platform to Kubernetes, cutting deploy time 80%.";
+    const built = "Built event-driven services in TypeScript handling 40k req/s.";
+    const { model } = createMockModel({
+      args: mockScores({ "system-design": { quote: `${led} ${built}` } }),
+    });
+    const res = await scoreResume(model as LanguageModel, makeRubric(), RESUME);
+    const sd = res.criteria.find((c) => c.key === "system-design");
+    expect(sd?.score).toBe(4);
+    expect(sd?.evidenceSpans.map((s) => s.quotedText)).toEqual([led, built]);
+    expect(sd?.evidence).toEqual(sd?.evidenceSpans[0]);
+    expect(res.needsAdjudication).toBe(false);
+  });
+
+  it("withholds a joined quote when one of its lines is not in the resume", async () => {
+    const { model } = createMockModel({
+      args: mockScores({
+        "system-design": {
+          quote:
+            "Led migration of the payments platform to Kubernetes. Ran a 40-node Kafka cluster.",
+        },
+      }),
+    });
+    const res = await scoreResume(model as LanguageModel, makeRubric(), RESUME);
+    const sd = res.criteria.find((c) => c.key === "system-design");
+    expect(sd?.score).toBe(0);
+    expect(sd?.evidence).toBeNull();
+    expect(sd?.evidenceSpans).toEqual([]);
+    expect(res.needsAdjudication).toBe(true);
+  });
+
   it("yields null evidence for fabricated quotes", async () => {
     const fabricated = mockScores({ ops: { quote: "This sentence is nowhere in the resume" } });
     const { model } = createMockModel({ args: fabricated });

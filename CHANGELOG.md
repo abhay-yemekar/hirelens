@@ -81,6 +81,11 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Fixed
 
+- The live demo withheld most scores because Gemini quotes several resume
+  lines as one ("Led X. Built Y."), which matched no single passage. A
+  quote now matches when every sentence in it is verbatim resume text;
+  each line is kept and highlighted as its own evidence span. A quote with
+  any line that isn't in the resume is still withheld (#175).
 - A Docker Compose stack ignored the model failover chain, the retry
   deadline and the email settings in `.env`, and its web app never showed
   "Forgot password?" or the Google and GitHub buttons. The API container

@@ -23,7 +23,7 @@ export {
   runResumeDoctor,
   type Severity,
 } from "./doctor/index.js";
-export { locateEvidenceSpan, type TextSpan } from "./evidence/textSpan.js";
+export { locateEvidenceSpan, locateEvidenceSpans, type TextSpan } from "./evidence/textSpan.js";
 export {
   type ExtractedDocument,
   type ExtractedKind,

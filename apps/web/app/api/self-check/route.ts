@@ -358,7 +358,7 @@ export async function POST(req: NextRequest) {
       result.criteria.map((c) => ({
         title: rubric.criteria.find((x) => x.key === c.key)?.title ?? c.key,
         score: c.score,
-        evidence: c.evidence ? [c.evidence.quotedText] : [],
+        evidence: c.evidenceSpans.map((span) => span.quotedText),
       })),
       graph.missing,
     );
@@ -379,15 +379,11 @@ export async function POST(req: NextRequest) {
           title: crit?.title ?? c.key,
           score: c.score,
           rationale: c.rationale,
-          evidence: c.evidence
-            ? [
-                {
-                  quotedText: c.evidence.quotedText,
-                  start: c.evidence.startOffset,
-                  end: c.evidence.endOffset,
-                },
-              ]
-            : [],
+          evidence: c.evidenceSpans.map((span) => ({
+            quotedText: span.quotedText,
+            start: span.startOffset,
+            end: span.endOffset,
+          })),
         };
       }),
     });
