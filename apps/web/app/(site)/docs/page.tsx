@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Documentation — CandidLens",
   description:
-    "CandidLens documentation: quickstart, CLI reference, self-hosting guide, blind review methodology, API reference, and troubleshooting.",
+    "CandidLens documentation: quickstart, self-hosting, CLI reference, the Resume Doctor, accounts and sign-in, ATS integration, blind review methodology, configuration, API reference, and troubleshooting.",
 };
 
 const SECTIONS = [
@@ -25,6 +25,26 @@ const SECTIONS = [
         href: "/docs/cli",
         title: "CLI reference",
         text: "The whole pipeline from a terminal: login, jobs, rubric derive, score.",
+      },
+    ],
+  },
+  {
+    title: "Use",
+    pages: [
+      {
+        href: "/docs/resume-doctor",
+        title: "Resume Doctor",
+        text: "About 30 deterministic checks, a score that starts at 100, every finding pinned to its line.",
+      },
+      {
+        href: "/docs/accounts-and-sign-in",
+        title: "Accounts & sign-in",
+        text: "Sign-in methods, password reset, email confirmation, changing your email, deleting your account.",
+      },
+      {
+        href: "/docs/ats-integration",
+        title: "ATS integration",
+        text: "Greenhouse, Lever, Ashby or any ATS: API tokens, webhooks, CSV round-trip and the CLI.",
       },
     ],
   },
@@ -51,6 +71,11 @@ const SECTIONS = [
   {
     title: "Operate",
     pages: [
+      {
+        href: "/docs/configuration",
+        title: "Configuration",
+        text: "Every setting, grouped by what it turns on: core, sign-in, email, models, observability.",
+      },
       {
         href: "/troubleshooting",
         title: "Troubleshooting",

@@ -115,6 +115,10 @@
   letter-spacing: -0.01em;
   color: var(--hl-cream);
 }
+/* In-page links land below the sticky 4rem site header, not under it. */
+.hl-prose [id] {
+  scroll-margin-top: 5.5rem;
+}
 .hl-prose h3 {
   margin-top: 1rem;
   font-size: 1.02rem;
@@ -205,6 +209,22 @@
 }
 .hl-prose td {
   color: var(--hl-mist);
+}
+/* Long code (URLs, commands) in a table cell may wrap anywhere rather than
+   push the page sideways on a phone. */
+.hl-prose td code:not(.hl-setting-name) {
+  overflow-wrap: anywhere;
+}
+/* Setting names (docs tables): on phones they wrap only after an underscore
+   (<wbr>); from 640px they stay on one line. Chrome breaks at <wbr> even
+   under nowrap, so the <wbr> elements are hidden there instead. */
+@media (min-width: 640px) {
+  .hl-prose .hl-setting-name {
+    white-space: nowrap;
+  }
+  .hl-prose .hl-setting-name wbr {
+    display: none;
+  }
 }
 
 /* Web-app specific base: full-height shell. */
