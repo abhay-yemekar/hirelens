@@ -105,14 +105,18 @@ export async function scoreOneCandidate(
       .returning({ id: scores.id });
     if (!scoreRow) throw new Error("score insert returned no row");
 
-    if (c.evidence) {
-      await ctx.db.insert(evidence).values({
-        scoreId: scoreRow.id,
-        documentId: candidate.documentId,
-        startOffset: c.evidence.startOffset,
-        endOffset: c.evidence.endOffset,
-        quotedText: c.evidence.quotedText,
-      });
+    // One row per span: a quote that joins separate resume lines is stored
+    // as each line, so the evidence view highlights them all.
+    if (c.evidenceSpans.length > 0) {
+      await ctx.db.insert(evidence).values(
+        c.evidenceSpans.map((span) => ({
+          scoreId: scoreRow.id,
+          documentId: candidate.documentId,
+          startOffset: span.startOffset,
+          endOffset: span.endOffset,
+          quotedText: span.quotedText,
+        })),
+      );
     }
   }
 

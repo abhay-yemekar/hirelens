@@ -175,15 +175,11 @@ export async function POST(req: NextRequest) {
           title: DEMO_RUBRIC.criteria.find((x) => x.key === c.key)?.title ?? c.key,
           score: c.score,
           rationale: c.rationale,
-          evidence: c.evidence
-            ? [
-                {
-                  quotedText: c.evidence.quotedText,
-                  start: c.evidence.startOffset,
-                  end: c.evidence.endOffset,
-                },
-              ]
-            : [],
+          evidence: c.evidenceSpans.map((span) => ({
+            quotedText: span.quotedText,
+            start: span.startOffset,
+            end: span.endOffset,
+          })),
         })),
       };
       llmCache.set(resume.id, payload);

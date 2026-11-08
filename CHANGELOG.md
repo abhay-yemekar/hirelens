@@ -81,6 +81,11 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Fixed
 
+- The live demo withheld most scores because Gemini quotes several resume
+  lines as one ("Led X. Built Y."), which matched no single passage. A
+  quote now matches when every sentence in it is verbatim resume text;
+  each line is kept and highlighted as its own evidence span. A quote with
+  any line that isn't in the resume is still withheld (#175).
 - The Resume Doctor said "No experience section detected" when role lines
   used en or em dashes (`Engineer—Acme  Mar 2021 – Present`); they now
   parse, and a found Experience heading with no readable roles says
