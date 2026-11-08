@@ -27,22 +27,26 @@ Settings used to be named `HIRELENS_*`. Those names still work; when both are se
 |---|---|---|
 | `BETTER_AUTH_SECRET` | yes | Session signing; generate with `openssl rand -base64 32` |
 | `DATABASE_URL` | no | Defaults to the compose Postgres |
-| `CANDIDLENS_LLM_PROVIDER` | no | `google` \| `anthropic` \| `groq` \| `openrouter` \| `ollama` |
+| `CANDIDLENS_LLM_PROVIDER` | no | `google` \| `anthropic` \| `groq` \| `openrouter` \| `mistral` \| `cerebras` \| `ollama` |
 | `CANDIDLENS_LLM_MODEL` | no | Provider model id |
 | `CANDIDLENS_LLM_API_KEY` | no | Hosted providers; leave empty for no-LLM mode |
 | `SENTRY_DSN` | no | Error tracking |
 | `LANGFUSE_PUBLIC_KEY` / `_SECRET_KEY` / `_BASE_URL` | no | LLM tracing |
 | `NEXT_PUBLIC_POSTHOG_KEY` | no | Product analytics (explicit events only, autocapture off) |
 
-Empty-string LLM variables are treated as unset — a partial `.env` degrades gracefully.
+Empty-string LLM variables are treated as unset — a partial `.env` degrades gracefully. The [configuration reference](/docs/reference/configuration) lists every setting.
+
+<Callout type="warn">
+Docker Compose doesn't pass every setting through to the containers yet: the model failover chain, the retry deadline and the email settings (`CANDIDLENS_SMTP_*`) are not forwarded, so password reset and email confirmation stay off in a Compose deployment. This is tracked in [#159](https://github.com/abhay-yemekar/hirelens/issues/159).
+</Callout>
 
 ## Data flow
 
-Resumes never leave your machine. Documents are parsed locally, text is stored in your Postgres, and the **only** external calls are the LLM scoring requests to the provider you configured. No third-party API sits in between. Stop here and you have a fully functional air-gapped deployment minus scoring.
+Resumes never leave your machine. Documents are parsed locally, text is stored in your Postgres, and the **only** external calls are the scoring requests to the model provider you configured and, if you set up email, the messages to your SMTP server. No third-party API sits in between. Use Ollama and leave email off for a deployment where nothing leaves your machine; see the [configuration reference](/docs/reference/configuration) for every setting.
 
 ## Backups
 
-Everything lives in the `hirelens-postgres-data` volume:
+Everything lives in the `hirelens_pgdata` volume defined in `docker-compose.yml`:
 
 ```bash
 docker exec hirelens-postgres pg_dump -U postgres hirelens > backup.sql

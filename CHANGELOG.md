@@ -27,12 +27,6 @@ On `main` since v1.4.0; planned for v1.5.0.
   password works; see `CANDIDLENS_SMTP_*` in `.env.example`), capped per
   address per hour and per kind per day (#162).
 
-### Security
-
-- Google or GitHub no longer joins an existing account just because the
-  email matches; connect them from Settings → Sign-in & security while
-  signed in. Otherwise someone could register a stranger's email first
-  and share the account once its owner signed in with Google (#162).
 - **Resume Doctor** (`/doctor`) — deterministic resume checks (contact,
   structure, dates, impact, brevity, parseability) with a 0–100 score and
   every flag pinned to the exact line. No model involved: the same text
@@ -57,6 +51,10 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Changed
 
+- The README, docs and repository files describe CandidLens: a new front
+  page with the product shot, features by audience, a how-it-works
+  diagram, the real-model evaluation numbers and a complete settings
+  reference (#173).
 - Every password field has a show/hide button. Sign-up says passwords
   need 8 characters, and messages in Settings → Sign-in & security show
   next to the part of the card they belong to (#164).
@@ -111,6 +109,10 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Security
 
+- Google or GitHub no longer joins an existing account just because the
+  email matches; connect them from Settings → Sign-in & security while
+  signed in. Otherwise someone could register a stranger's email first
+  and share the account once its owner signed in with Google (#162).
 - Next.js 16.4.3 closes critical framework advisories (#116).
 - The ATS webhook's resume fetch is limited to public HTTPS hosts, with
   every redirect re-checked and a streamed size cap (#125).

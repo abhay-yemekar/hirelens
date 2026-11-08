@@ -1,0 +1,66 @@
+---
+title: Configuration
+description: Every setting, grouped by what it turns on.
+---
+
+Each package that needs secrets has a `.env.example` documenting its variables: the root `.env.example` for Docker Compose, plus `packages/db`, `apps/api` and `apps/web`. Settings used to be named `HIRELENS_*`; those names still work, and the `CANDIDLENS_*` name wins when both are set. Empty values count as unset.
+
+On Vercel, changed variables reach only new deployments, so redeploy after editing them. Variables that start with `NEXT_PUBLIC_` are built into the web app, so they also need a rebuild.
+
+## Core
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | Postgres connection, e.g. `postgres://postgres:postgres@localhost:5433/hirelens` |
+| `BETTER_AUTH_SECRET` | Signs sessions. At least 32 random characters (`openssl rand -base64 32`); production refuses to start without one |
+| `BETTER_AUTH_URL` | The app's public address; sign-in callbacks and email links are built from it |
+| `TRUSTED_ORIGINS` / `CORS_ORIGINS` | Comma-separated origins allowed to start sign-in or call the API |
+| `NEXT_PUBLIC_SITE_URL` | Canonical address for the sitemap, robots and link previews |
+| `NEXT_PUBLIC_API_URL` | Leave empty when the API runs inside the web app (Vercel); set it for a separate API service |
+| `PORT` | API port when it runs on its own (default 4000) |
+
+## Sign-in
+
+| Variable | Purpose |
+| --- | --- |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google sign-in. Redirect URL: `<origin>/api/auth/callback/google` |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub sign-in. Redirect URL: `<origin>/api/auth/callback/github` |
+| `NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED` / `NEXT_PUBLIC_GITHUB_OAUTH_ENABLED` | Show the matching button. Set to `true` only when the server keys above exist |
+
+## Email
+
+Email powers password reset, email confirmation and changing an email. See [Accounts and sign-in](/docs/guides/accounts-and-sign-in#email-features).
+
+| Variable | Purpose |
+| --- | --- |
+| `CANDIDLENS_SMTP_USER` / `CANDIDLENS_SMTP_PASSWORD` | SMTP sign-in. The defaults fit a Gmail account with 2-Step Verification and an app password; use a dedicated account, not a personal one |
+| `CANDIDLENS_SMTP_HOST` / `CANDIDLENS_SMTP_PORT` | Another provider. Port 465 starts with TLS; any other port must upgrade to TLS before the password is sent |
+| `CANDIDLENS_MAIL_FROM` | The sender, e.g. `"CandidLens" <you@example.com>` |
+| `NEXT_PUBLIC_EMAIL_ENABLED` | Only with a separate API service: whether the web app offers the email features. On Vercel it is worked out from the SMTP settings |
+
+Without the SMTP settings, a development server prints each email (with its link) to its log, and a production server hides the email features. Gmail sends about 500 emails a day; mail from a new Gmail account may land in spam at first.
+
+## Models
+
+| Variable | Purpose |
+| --- | --- |
+| `CANDIDLENS_LLM_PROVIDER` / `CANDIDLENS_LLM_MODEL` | Turns on scoring: `google`, `anthropic`, `groq`, `openrouter`, `mistral`, `cerebras` or `ollama` |
+| `CANDIDLENS_LLM_API_KEY` / `CANDIDLENS_LLM_BASE_URL` | The provider's key, and its address for Ollama or a compatible gateway |
+| `CANDIDLENS_LLM_FALLBACKS` | Failover chain, e.g. `groq,openrouter`, tried only when the primary is overloaded or rate-limited. Each fallback needs `CANDIDLENS_LLM_<ID>_MODEL` (plus `_API_KEY`, `_BASE_URL`); a fallback never borrows the primary's model id |
+| `CANDIDLENS_LLM_DEADLINE_MS` | Overall retry and failover budget (default 120000 ms, at most 600000) so a request can't outlive a serverless limit |
+
+Without a model, the model-backed features (scoring, rubric drafting and Ask) are off and the rest of the app works; the public demo falls back to a deterministic heuristic.
+
+## Observability
+
+All optional, and off until set. Nothing phones home by default.
+
+| Variable | Purpose |
+| --- | --- |
+| `SENTRY_DSN` | Error tracking |
+| `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` / `LANGFUSE_BASE_URL` | Model tracing |
+| `NEXT_PUBLIC_POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_HOST` | Product analytics: explicit events only, autocapture off |
+
+## Checking a deployment
+
+`GET /api/health` answers quickly without touching the database. `GET /api/health?db=1` also compares the applied migrations with the code, and answers `503 migrations_pending` with the command to run when the schema is behind.

@@ -1,6 +1,6 @@
 ---
 title: Evaluation harness
-description: How HireLens measures its own scorer.
+description: How CandidLens measures its own scorer.
 ---
 
 An unevaluated ranker in hiring is a liability. `packages/evals` measures the scorer along four axes and publishes the numbers.
@@ -31,4 +31,4 @@ The live runner paces calls (default 8s) to stay inside free-tier rate limits an
 
 `eval-report.json` carries each metric's headline number plus per-criterion detail. Direction accuracy near 1.0 with zero self-consistency variance and τ ≈ 1 is the target band; name-swap deltas above the tolerance are release blockers.
 
-Numbers for the current release are published in the README's [Evaluation harness](https://github.com/abhay-yemekar/hirelens#evaluation-harness--an-unevaluated-ranker-is-a-liability) section. The suite is wired into CI so regressions surface at PR time.
+Numbers for the current release are published in the README's [Measured in the open](https://github.com/abhay-yemekar/hirelens#measured-in-the-open) section and on the [evaluation page](https://candidlens.vercel.app/evaluation). The suite is wired into CI so regressions surface at PR time.

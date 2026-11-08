@@ -1,5 +1,5 @@
 import { DocsBody, DocsDescription, DocsPage, DocsTitle } from "fumadocs-ui/layouts/notebook/page";
-import { createRelativeLink } from "fumadocs-ui/mdx";
+import defaultMdxComponents, { createRelativeLink } from "fumadocs-ui/mdx";
 import { notFound } from "next/navigation";
 import { source } from "@/lib/source";
 
@@ -17,6 +17,8 @@ export default async function Page(props: { params: Promise<{ slug?: string[] }>
       <DocsBody>
         <page.data.body
           components={{
+            // Callouts, cards and code blocks, with links resolved to docs pages.
+            ...defaultMdxComponents,
             a: createRelativeLink(source, page),
           }}
         />

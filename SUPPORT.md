@@ -4,16 +4,16 @@
 | ---------------------- | ------------------------------------------------------------------------------------------ |
 | Bug report             | [Open an issue](https://github.com/abhay-yemekar/hirelens/issues/new?template=bug.yml)     |
 | Feature request        | [Open an issue](https://github.com/abhay-yemekar/hirelens/issues/new?template=feature.yml) |
-| Question / usage help  | [GitHub Discussions](https://github.com/abhay-yemekar/hirelens/discussions)                |
-| Security vulnerability | [SECURITY.md](SECURITY.md) — email, never a public issue                                   |
+| Question or usage help | [GitHub Discussions](https://github.com/abhay-yemekar/hirelens/discussions)                |
+| Security vulnerability | [SECURITY.md](SECURITY.md): report privately, never in a public issue                      |
 | Code of Conduct report | abhay.s.yemekar@gmail.com                                                                  |
 
 ## Before opening an issue
 
-- Search [existing issues](https://github.com/abhay-yemekar/hirelens/issues) — your bug may already be reported.
-- Include your OS, Node version, and the exact command that failed.
-- For LLM-provider errors: include which provider you configured (OpenAI vs Ollama) and the model names — **never include API keys**.
+- Search [existing issues](https://github.com/abhay-yemekar/hirelens/issues); your bug may already be reported.
+- Include your operating system, Node version, how you run CandidLens (the live site, Docker Compose or from source) and the exact command or page that failed.
+- For model errors, name the provider and model you configured (for example Gemini, Groq or Ollama). **Never include API keys, passwords or real resumes.**
 
 ## Response expectations
 
-This is a pre-1.0 open-source project maintained by one person. Expect best-effort responses; security reports get priority per [SECURITY.md](SECURITY.md).
+CandidLens is open source and maintained by one person, so answers are best effort. Security reports come first, as described in [SECURITY.md](SECURITY.md).
