@@ -3,9 +3,9 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata = {
-  title: { default: "HireLens Docs", template: "%s — HireLens Docs" },
+  title: { default: "CandidLens Docs", template: "%s — CandidLens Docs" },
   description:
-    "Glass-box AI resume screening: LLM scoring against versioned rubrics with evidence spans, audit trails, and adverse-impact reporting.",
+    "CandidLens documentation: open-source resume screening where every score quotes the resume line behind it, with audit trails and adverse-impact reporting.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -16,7 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <header className="sticky top-0 z-40 border-b border-[var(--color-border)] backdrop-blur">
             <div className="mx-auto flex h-14 w-full max-w-[1600px] items-center gap-4 px-4">
               <Link href="/" className="font-semibold tracking-tight">
-                HireLens
+                Candid<span style={{ color: "#ff6b57" }}>Lens</span>
                 <span className="ml-2 text-sm" style={{ color: "var(--color-fg-muted)" }}>
                   Docs
                 </span>

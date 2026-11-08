@@ -1,269 +1,284 @@
-# HireLens
+<div align="center">
+
+<a href="https://candidlens.vercel.app">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/mark-on-dark.svg">
+    <img src="docs/brand/mark.svg" alt="CandidLens" width="88">
+  </picture>
+</a>
+
+# CandidLens
 
 **See why, not just who.**
 
-The open-source, glass-box hiring intelligence platform. Rank candidates against a rubric you control — with evidence-linked scores, tamper-evident audit trails, blind review, and built-in adverse-impact reporting.
+Open-source resume screening where every score quotes the resume line behind it.<br/>
+Rank candidates against a rubric you control, decide with stated reasons, and audit yourself for adverse impact.
 
-**[▶ Try the live demo — no signup](https://hirelens-rosy.vercel.app/demo)** · [📖 Documentation](#documentation) · [⚡ Self-host in one command](#quickstart)
-
-![HireLens demo — score a resume and open the evidence](docs/demo.gif)
-
-<p align="center"><sub>Pick a synthetic resume → score it → open any criterion to see the exact quoted evidence. The real engine, no signup.</sub></p>
+**[Live demo, no signup](https://candidlens.vercel.app/demo)** · [Resume Doctor](https://candidlens.vercel.app/doctor) · [Docs](https://candidlens.vercel.app/docs) · [Self-host](#self-host-in-one-command) · [Roadmap](https://candidlens.vercel.app/roadmap)
 
 [![CI](https://github.com/abhay-yemekar/hirelens/actions/workflows/ci.yml/badge.svg)](https://github.com/abhay-yemekar/hirelens/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/node-%E2%89%A520-brightgreen)](package.json)
-[![pnpm](https://img.shields.io/badge/pnpm-11-FC6D26)](https://pnpm.io)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![npm](https://img.shields.io/npm/v/hirelens?label=cli&color=ff6b57)](https://www.npmjs.com/package/hirelens)
+[![Node](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=node.js&logoColor=white)](package.json)
+[![pnpm](https://img.shields.io/badge/pnpm-11-F69220?logo=pnpm&logoColor=white)](https://pnpm.io)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-> **Status: v1.4.0 shipped (6 October 2026).** Production runs at **[hirelens-rosy.vercel.app](https://hirelens-rosy.vercel.app)** — the v1.4 line (talent-pool rediscovery, public parser API, ATS format check) is released; see the [changelog](CHANGELOG.md) and the [roadmap](#roadmap). Every feature in this README exists on `main` today, verified by tests.
+<img src="docs/readme/hero.png" alt="CandidLens: a ranked review queue next to the evidence view, where the resume line behind a 5/5 score is highlighted" width="100%">
 
----
+</div>
 
-## What works today
+> [!NOTE]
+> **HireLens is now CandidLens.** The app and the site use the new name. The GitHub repository, the `hirelens` npm CLI and the `hirelens-*` Docker images keep the old name until the next release.
 
-A pnpm + Turborepo monorepo shipping the full product:
+## Why CandidLens
 
-1. **Extract** — PDF (unpdf), DOCX (mammoth), TXT/MD; magic-byte sniffing; scanned-PDF detection that refuses sparse PDFs instead of returning garbage.
-2. **Parse** — deterministic heuristic parser → typed, Zod-validated `Candidate` record (JSON-Resume-compatible).
-3. **Rubric** — paste a job description, get 5–8 weighted criteria with an anchored 0–5 scale; recruiter reviews/edits before any scoring runs. Versioned, forkable, exportable JSON.
-4. **Score** — rubric + resume → per-criterion 0–5 with **evidence spans (exact character offsets in the document)**, confidence, rationale; never a naked number.
-5. **Batch orchestration** — fan-out scoring with bounded concurrency, retries, hash-chained audit records, and live progress.
-6. **Product UI** — sign-in/up, org onboarding, jobs, ranked review queue (advance/shortlist/reject with required reasons), the **evidence viewer** (click a criterion → the exact quoted span lights up), and **blind review** (identity cues masked with offsets preserved).
-7. **Bias audit** — one-click adverse-impact report: per-group selection rates, the EEOC four-fifths rule, demographic parity difference, JSON export. Opt-in self-reported demographics only.
-8. **Interview kits** — every scored candidate gets a printable debrief pack: probe questions derived from the rubric's anchored scale, plus the exact evidence quotes as a listen-for list. No extra LLM call.
-9. **Candidate portal** — a one-shot token link lets a candidate opt in to a demographics self-report (no account), feeding the same bias audit. Data policy stated on the page, every step hash-chain audited.
-10. **Teams & sharing** — invite teammates with roles (owner / recruiter / hiring manager / viewer); publish a read-only scored report behind a revocable public link; export the hash-chained audit log as verifiable CSV.
-    10b. **Candidates table** — server-side pagination (25/page with true totals) and identity search across uploaded filename, email, and phone; blind mode disables search so queries can't reveal who exists.
-11. **Semantic search & ask** — pgvector embeddings over every resume; keyword fallback keeps search alive before indexing; Ask answers with server-verified citations.
-12. **Rubric editor** — criteria, weights, anchored 0–5 scales, JSON power mode, AI draft, version pills.
-13. **Audit log** — immutable, hash-chained; tampering breaks the chain visibly.
-14. **API** — authenticated (Better Auth), org-scoped REST surface with a live **OpenAPI 3.1** contract at `GET /api/openapi.json`.
-15. **CLI** — `hirelens login / org / jobs / rubric derive / score` — the whole pipeline from a terminal, zero runtime dependencies.
-16. **Self-host** — `docker compose up --build -d` brings up web + API + Postgres with migrations applied automatically.
-17. **Observability** — structured logging always on; Sentry, Langfuse LLM tracing, and privacy-first PostHog behind env flags.
-18. **Eval harness** — seeded benchmark measuring direction accuracy, self-consistency, position bias, and name-swap bias, with a mock-model plumbing test in CI and a first real-model run published ([details below](#evaluation-harness--an-unevaluated-ranker-is-a-liability)).
-19. **Talent-pool rediscovery (v1.4)** — one org-wide search across every candidate from every job: identity search, skill facet chips, latest-stage filter, and a rubric-weighted minimum-score filter; shortlisting writes a regular, audited decision so rediscovered people re-enter the pipeline. Blind review honored.
-20. **Public parser API (v1.4)** — `POST /api/public/parse`: stateless resume → JSON-Resume-compatible profile with a Bearer org API token (multipart file or raw text), SHA-256 content hash for dedupe, per-token rate limiting, and nothing stored server-side.
-21. **ATS format check (v1.4)** — a deterministic parse simulation (`pass | warn | fail` + 0–100 score + actionable findings) run on every upload: catches scanned pages, table/multi-column layouts, mojibake encoding, and missing sections _before_ a scoring run is spent on a mangled resume. Also returned by the public parser API as `formatCheck`.
+Most hiring AI hands you a number with no reasons. That fails candidates, leaves recruiters guessing, and is a liability under rules like NYC Local Law 144 and the EU AI Act. CandidLens is built around a different contract:
 
-Everything is model-agnostic: bring your own key (**Google, Anthropic, Groq, OpenRouter**) or run fully local via **Ollama** — resumes never have to leave your machine. Providers that reject complex JSON schemas (e.g. Gemini's nested-array limits) are handled automatically by a validated JSON-text fallback.
+- **Every score links to its evidence.** Each criterion quotes the exact resume text that produced it, at its character offset. If the quote isn't really in the resume, the score is withheld instead of guessed.
+- **Every decision has a reason, and every action leaves a trail.** Decisions need a stated reason and land in a hash-chained audit log that shows any tampering.
+- **Fairness is measured, not promised.** Anyone with viewer access can run an adverse-impact report, and the scoring engine is benchmarked in the open, weaknesses included.
 
-## Live demo — no signup
+An AI score is a screening aid, not a hiring decision.
 
-The landing page's [/demo](apps/web/app/(site)/demo/page.tsx) runs the **same scoring engine, rubric schema, and evidence-span machinery as the product** against 12 synthetic resumes and one sample JD:
+## Get started
 
-- Pick a resume, press score, watch per-criterion scores arrive with rationales.
-- Every point highlights the exact quoted text it came from — at its exact character offset.
-- With an LLM key configured, scoring is real; without one, a deterministic heuristic fallback keeps the demo honest and functional.
-- Rate-limited per IP (20 runs/hour) and globally; results cached.
+### Try it online
 
-<!-- TODO(launch): replace with a real product GIF per the master plan §9. -->
+- **[Recruiter demo](https://candidlens.vercel.app/demo):** the real scoring engine on 12 synthetic resumes. Pick one, score it, click a criterion to see the quoted evidence.
+- **[Resume Doctor](https://candidlens.vercel.app/doctor):** paste a resume or upload a PDF or Word file for a deterministic 0–100 check, every finding pinned to its line.
+- **[Score my resume](https://candidlens.vercel.app/self-check):** score your resume against any job description with the same rubric engine. Free, no signup.
 
-## Documentation
-
-The [docs site](apps/docs) (Fumadocs) builds with the repo:
-
-| Page                                                                                         | Contents                                                     |
-| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| [Quickstart](docs/project_execution.md)                                                      | Clean machine → first scored candidate, with expected output |
-| [CLI](docs/project_execution.md#6-run-the-applications)                                      | Full command reference                                       |
-| [Self-hosting](apps/docs/content/docs/guides/self-hosting.mdx)                               | Docker Compose, env vars, backups, upgrades                  |
-| [Blind review & bias audits](apps/docs/content/docs/guides/blind-review-and-bias-audits.mdx) | Methodology and what we deliberately don't do                |
-| [API reference](apps/docs/content/docs/reference/api.mdx)                                    | The OpenAPI contract and auth flow                           |
-| [Evaluation harness](apps/docs/content/docs/reference/evaluation-harness.mdx)                | Metrics and how to run them                                  |
-| [Troubleshooting](docs/project_execution.md#8-troubleshooting--real-errors-real-fixes)       | Real errors from development, with fixes                     |
-
-## Repository layout
-
-```
-apps/
-  web/            Next.js product UI + marketing landing + /demo
-  api/            Hono server — auth, jobs, rubrics, upload, scoring, audits
-  cli/            hirelens CLI (zero-dep TypeScript)
-  docs/           Fumadocs documentation site
-packages/
-  core/           THE PRODUCT. Framework-free engines:
-                    extract/ parse/ rubric/ score/ evidence/ llm/ audit/ zip/ dedupe/
-  db/             Drizzle schema + migrations (Postgres + pgvector)
-  orchestrator/   Batch scoring fan-out → DB, hash-chained audit log
-  ui/             Design system — OKLCH tokens, components, Storybook
-  evals/          Benchmark dataset + accuracy/consistency/bias harness
-  config/         Shared tsconfig / biome preset
-```
-
-## Quickstart
-
-**Try the CLI without installing anything** (Node 20+, points at a running HireLens server):
-
-```bash
-npx hirelens --help
-```
-
-**60-second self-host** (Docker only):
+### Self-host in one command
 
 ```bash
 git clone https://github.com/abhay-yemekar/hirelens.git && cd hirelens
-cp .env.example .env                # set BETTER_AUTH_SECRET
-docker compose up --build -d        # web :3000 · api :4000 · postgres :5433
+cp .env.example .env                # set BETTER_AUTH_SECRET (openssl rand -base64 32)
+docker compose up --build -d        # web :3000 · API :4000 · Postgres :5433
 ```
 
-Prefer prebuilt images? Per-release images live on GHCR —
-[`ghcr.io/abhay-yemekar/hirelens-web`](https://ghcr.io/abhay-yemekar/hirelens-web)
-and
-[`ghcr.io/abhay-yemekar/hirelens-api`](https://ghcr.io/abhay-yemekar/hirelens-api)
-(`v1.4.0`, `1.4`, `latest` tags).
+Open [localhost:3000](http://localhost:3000), create an account and an organization, and add a model key to `.env` to score. Migrations run on first boot. Prebuilt images are on GHCR: [`hirelens-web`](https://ghcr.io/abhay-yemekar/hirelens-web) and [`hirelens-api`](https://ghcr.io/abhay-yemekar/hirelens-api).
 
-Migrations apply on first boot. Open [localhost:3000](http://localhost:3000), create an account and organization, add an LLM key in `.env` for scoring.
-
-**Development setup** (Node 20+, pnpm 11, Docker):
+### Develop
 
 ```bash
 pnpm install
-docker compose up -d                      # Postgres 16 + pgvector on :5433
+docker compose up -d postgres                 # Postgres 16 + pgvector on :5433
 cp packages/db/.env.example packages/db/.env
-pnpm --filter @candidlens/db db:migrate     # create tables
-pnpm test                                 # full suite incl. DB-backed integration tests
-pnpm --filter @candidlens/web dev           # product UI on :3000
-pnpm --filter @candidlens/api dev           # API on :4000
-pnpm --filter @candidlens/docs dev          # docs site on :3002
+pnpm --filter @candidlens/db db:migrate
+pnpm --filter @candidlens/api dev             # API on :4000
+pnpm --filter @candidlens/web dev             # app on :3000 (second terminal)
 ```
 
-The detailed walkthrough — every command, expected output, and a troubleshooting table built from real failures — is in **[docs/project_execution.md](docs/project_execution.md)**.
+Node 20+, pnpm 11 and Docker. The full walkthrough, with expected output and fixes for real errors, is in [docs/project_execution.md](docs/project_execution.md).
 
-### CLI
+## Features
 
-Published on npm as [`hirelens`](https://www.npmjs.com/package/hirelens):
+### For recruiters
 
-```bash
-npx hirelens login you@example.com
-npx hirelens jobs create "Senior Backend" --jd jd.md
-npx hirelens rubric derive <jobId>      # LLM JD → rubric
-npx hirelens score <jobId> ./resumes/   # upload + score + ranked table
+- **Rubrics you control:** paste a job description and get 5–8 weighted criteria with an anchored 0–5 scale. Review and edit before anything is scored; rubrics are versioned and exportable.
+- **Evidence-linked scoring:** each criterion gets a score, a rationale, a confidence and the quoted evidence. Click a criterion and the exact span lights up in the resume.
+- **A review queue with reasons:** advance, shortlist or reject, each with a required reason. Compare candidates side by side.
+- **Blind review:** names, emails and other identity cues are masked, with quote offsets kept aligned.
+- **Search and ask:** semantic search over every resume (pgvector), and answers with citations the server checks.
+- **Talent pool:** one search across every candidate from every job, with skill, stage and score filters, and "add to job" to bring a past applicant back.
+- **Interview kits:** a printable debrief per candidate, with probe questions from the rubric and the evidence to listen for.
+- **Format check on upload:** catches scanned pages, tables, broken encoding and missing sections before a scoring run is wasted.
+
+### For candidates
+
+- **[Resume Doctor](https://candidlens.vercel.app/doctor):** deterministic checks for contact details, structure, dates, impact, length and parseability. No model involved, so the same text always gets the same report.
+- **[Score my resume](https://candidlens.vercel.app/self-check)**, **[interview practice](https://candidlens.vercel.app/interview-practice)** from any job description, and an **[application tracker](https://candidlens.vercel.app/tracker)** that stays on your device.
+- **[Candidate reports](https://candidlens.vercel.app/for-candidates):** a recruiter can share your evidence-backed score with you through a single-use, revocable link.
+
+### For teams and compliance
+
+- **Bias audit:** per-group selection rates, the EEOC four-fifths rule and demographic parity, with scheduled snapshots and JSON export. Demographics are opt-in and self-reported only.
+- **Tamper-evident audit log:** every decision, override and share is hash-chained, and exports as a verifiable CSV.
+- **Teams and sharing:** owner, recruiter, hiring manager and viewer roles; read-only report links you can revoke.
+- **Accounts that hold up:** email or Google and GitHub sign-in, password reset and email confirmation, change of email, sign-out of other devices, and account deletion that keeps shared audit logs intact.
+
+### For developers
+
+- **Any model:** Google, Anthropic, Groq, OpenRouter, Mistral, Cerebras, or fully local with Ollama, so resumes never have to leave your machine. A failover chain moves to the next provider when one is overloaded.
+- **API:** an org-scoped REST API with a live [OpenAPI 3.1 contract](https://candidlens.vercel.app/api/openapi.json); CI fails if a route ships without a spec entry. A stateless [public parser API](https://candidlens.vercel.app/api-reference) turns a resume into JSON-Resume-compatible data.
+- **CLI:** `hirelens login · jobs · rubric derive · score`, the whole pipeline from a terminal, with no runtime dependencies.
+- **Observability:** structured logs always; Sentry, Langfuse and PostHog only when you set their keys. Nothing phones home by default.
+
+## How it works
+
+```mermaid
+flowchart LR
+    JD["Job description"] --> RUB["Rubric<br/>5–8 weighted criteria"]
+    RES["Resumes<br/>PDF · Word · text"] --> PARSE["Extract and parse"]
+    RUB --> SCORE["Score each criterion<br/>0–5 with a quote"]
+    PARSE --> SCORE
+    SCORE --> CHECK{"Quote found<br/>in the resume?"}
+    CHECK -- yes --> QUEUE["Review queue<br/>decide with a reason"]
+    CHECK -- no --> HOLD["Score withheld<br/>for review"]
+    HOLD --> QUEUE
+    QUEUE --> AUDIT[("Hash-chained<br/>audit log")]
+    QUEUE --> BIAS["Bias audit<br/>four-fifths rule"]
 ```
 
-`score` uploads every `.txt/.md/.pdf` in the path and prints a ranked table (`--breakdown` for per-criterion evidence, `--json` for machines). Sessions persist to `~/.hirelens/`. Requires Node ≥ 20.
+`packages/core` holds the engines: extraction, parsing, rubrics, scoring, evidence matching, blind review and the audit chain. They are plain TypeScript with no framework, so the web app, the API, the CLI and the evaluation harness all run the same code.
 
-Developing on the CLI itself? Run it from source with `pnpm --filter hirelens dev` (Node ≥ 22.6 native type stripping).
+<details>
+<summary><b>Repository layout</b></summary>
 
-### API contract
+```
+apps/
+  web/            Next.js app: product UI, marketing site, /demo; mounts the API at /api
+  api/            Hono API: auth, jobs, rubrics, upload, scoring, audits, accounts
+  cli/            The hirelens CLI (TypeScript, no runtime dependencies)
+  docs/           Fumadocs documentation site
+packages/
+  core/           The engines: extract, parse, rubric, score, evidence, llm, audit, doctor
+  db/             Drizzle schema and migrations (Postgres + pgvector), auth and email
+  orchestrator/   Batch scoring and the hash-chained audit writer
+  ui/             Design system: tokens, components, Storybook
+  evals/          Benchmark dataset and the accuracy, consistency and bias harness
+  config/         Shared TypeScript and Biome presets
+```
 
-The full public API is described by an **OpenAPI 3.1** document served live at [`GET /api/openapi.json`](apps/api/src/openapi.ts) — every mounted route, shapes, the error envelope, and auth. A CI test fails if a route ships without a spec entry.
+</details>
+
+## Measured in the open
+
+`packages/evals` runs a seeded benchmark through the same engine the product uses. The first real-model run (Groq `openai/gpt-oss-120b`, 30 October 2026, 6 synthetic resumes, seed 42) is published on the [evaluation page](https://candidlens.vercel.app/evaluation) and in [`packages/evals/reports/`](packages/evals/reports):
+
+| Metric             | Result                           | What it means                                                     |
+| ------------------ | -------------------------------- | ----------------------------------------------------------------- |
+| Direction accuracy | **29 / 30**                      | Agrees with the expected strong or weak call per criterion        |
+| Self-consistency   | mean σ **2.3**                   | Score spread across 3 repeated runs; lower is better              |
+| Position bias      | Kendall τ **0.87**               | 1.0 means the input order made no difference                      |
+| Name-swap bias     | mean Δ **2.7**, **33 %** flagged | Score change when only the name changes; over 5 points is flagged |
+| Rank agreement     | τ **1.0**                        | Overall ranking matches the expected order                        |
+
+Six resumes is a small sample, and the name-swap result is a real weakness we are working on. CI runs a mock-model version of the harness on every pull request to check the plumbing; run the live one with your own key: `pnpm --filter @candidlens/evals run evals`.
 
 ## Configuration
 
-One `.env` per package that needs secrets, with `.env.example` documenting every variable: `packages/db/.env.example`, `apps/api/.env.example`, `apps/web/.env.example`, and the root `.env.example` for the self-host stack.
+Each package that needs secrets has a `.env.example` documenting every variable: the root `.env.example` for Docker Compose, plus `packages/db`, `apps/api` and `apps/web`. Settings used to be named `HIRELENS_*`; those names still work, and the `CANDIDLENS_*` name wins when both are set.
 
-Settings used to be named `HIRELENS_*`. Those names still work; when both are set, the `CANDIDLENS_*` name wins.
+<details>
+<summary><b>All settings</b></summary>
 
-| Variable                                                                       | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                                                                 | Postgres connection (local: `postgres://postgres:postgres@localhost:5433/hirelens`)                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `BETTER_AUTH_SECRET`                                                           | Better Auth secret — generate: `openssl rand -base64 32`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `BETTER_AUTH_URL`                                                              | Public origin of the app (e.g. `https://hirelens-rosy.vercel.app`) — auth callbacks are built from it                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `TRUSTED_ORIGINS` / `CORS_ORIGINS`                                             | Comma-separated origins allowed to initiate auth / call the API                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`                                    | Google OAuth sign-in (redirect: `<origin>/api/auth/callback/google`)                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`                                    | GitHub OAuth sign-in (redirect: `<origin>/api/auth/callback/github`)                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `NEXT_PUBLIC_SITE_URL`                                                         | Canonical site URL used by sitemap/robots/metadata                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `NEXT_PUBLIC_API_URL`                                                          | Leave **empty** on Vercel (same-origin API mount at `/api/*`); set only for split-origin self-hosts                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `CANDIDLENS_LLM_PROVIDER` + `CANDIDLENS_LLM_MODEL` (+ `_API_KEY`, `_BASE_URL`) | Enables LLM routes (google/anthropic/groq/openrouter/mistral/cerebras/ollama)                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `CANDIDLENS_LLM_FALLBACKS`                                                     | Comma-separated **failover chain**, e.g. `groq,openrouter`. Fallbacks are tried only when the primary is overloaded/rate-limited. **Required for every fallback:** `CANDIDLENS_LLM_<ID>_MODEL` — a fallback never inherits the primary's model id (boot fails otherwise, because providers cannot serve each other's model names). Also per-provider: `CANDIDLENS_LLM_<ID>_API_KEY`, `_BASE_URL`. Example: `CANDIDLENS_LLM_FALLBACKS=groq` + `CANDIDLENS_LLM_GROQ_API_KEY=…` + `CANDIDLENS_LLM_GROQ_MODEL=openai/gpt-oss-120b`. |
-| `CANDIDLENS_LLM_DEADLINE_MS`                                                   | Optional overall retry/failover deadline (default 120000 ms, capped at 600000). Guarantees the 5s→20s retry ladder plus failover cannot outlive a serverless function limit.                                                                                                                                                                                                                                                                                                                                                    |
+**Core**
 
-**Deployment note (Vercel):** environment-variable changes only reach **new deployments** — after adding or editing any `CANDIDLENS_LLM_*` variable, redeploy. If the database schema is behind the code, `/api/health?db=1` returns `503 migrations_pending` with the migration command in the message instead of opaque 500s on org routes. |
-| `SENTRY_DSN` | Error tracking (optional) |
-| `LANGFUSE_PUBLIC_KEY` / `_SECRET_KEY` / `_BASE_URL` | LLM tracing (optional) |
-| `NEXT_PUBLIC_POSTHOG_KEY` | Product analytics — explicit events only, autocapture off (optional) |
-| `PORT` | API port (default 4000) |
+| Variable                           | Purpose                                                                                      |
+| ---------------------------------- | -------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                     | Postgres connection, e.g. `postgres://postgres:postgres@localhost:5433/hirelens`             |
+| `BETTER_AUTH_SECRET`               | Signs sessions; at least 32 random characters (`openssl rand -base64 32`)                    |
+| `BETTER_AUTH_URL`                  | The app's public address; sign-in callbacks and email links are built from it                |
+| `TRUSTED_ORIGINS` / `CORS_ORIGINS` | Comma-separated origins allowed to start sign-in or call the API                             |
+| `NEXT_PUBLIC_SITE_URL`             | Canonical address for the sitemap, robots and link previews                                  |
+| `NEXT_PUBLIC_API_URL`              | Leave empty when the API runs inside the web app (Vercel); set it for a separate API service |
+| `PORT`                             | API port when it runs on its own (default 4000)                                              |
 
-## Deployment — the free-tier stack
+**Sign-in**
 
-The production deployment runs entirely on free tiers — deliberate choices, documented so you can reproduce or audit them:
+| Variable                                                                | Purpose                                                                       |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`                             | Google sign-in; redirect URL `<origin>/api/auth/callback/google`              |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`                             | GitHub sign-in; redirect URL `<origin>/api/auth/callback/github`              |
+| `NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED` / `NEXT_PUBLIC_GITHUB_OAUTH_ENABLED` | Show the matching button; set to `true` only when the server keys above exist |
 
-| Need              | Service (free tier)           | Why this one                                                                                                                                                                                           |
-| ----------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Web + API hosting | **Vercel** (Hobby)            | Next.js-native with per-PR preview deploys. The **Hono API is embedded in the same deployment** (same-origin mount at `/api/*`), so auth cookies stay first-party and there's no second service to run |
-| Database          | **Neon** (Free plan)          | Serverless Postgres with scale-to-zero (idle costs nothing), built-in connection pooling for serverless, and pgvector in the same database                                                             |
-| LLM               | **Google Gemini** (free tier) | Generous free quota on `gemini-2.5-flash`; the engine is model-agnostic — Anthropic, Groq, OpenRouter, or local Ollama swap in via one env var                                                         |
-| Errors            | **Sentry** (Developer plan)   | Wired and active when `SENTRY_DSN` is set — nothing phones home until you opt in                                                                                                                       |
-| Product analytics | **PostHog** (free tier)       | Privacy-first configuration: explicit events only, autocapture off — matches the product's data-minimization stance                                                                                    |
-| LLM tracing       | **Langfuse** (free tier)      | Traces every prompt/score for eval reproducibility; no-op until keys exist                                                                                                                             |
-| CI                | **GitHub Actions**            | Free for public repos — lint, typecheck, tests (incl. the eval harness mock run), CodeQL, and secrets scanning on every PR                                                                             |
+**Email** (password reset, email confirmation, change of email)
 
-Deployment is a single Vercel project from the repo root (root directory `apps/web`); migrations run with `pnpm --filter @candidlens/db db:migrate` against the Neon pooled connection string. Self-hosters use the Docker path above instead — same app, your infrastructure.
+| Variable                                            | Purpose                                                                                                                                                                    |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CANDIDLENS_SMTP_USER` / `CANDIDLENS_SMTP_PASSWORD` | SMTP sign-in; the defaults fit a Gmail account with an app password. Without them, development prints each email to the server log and production hides the email features |
+| `CANDIDLENS_SMTP_HOST` / `CANDIDLENS_SMTP_PORT`     | Another provider (port 465 uses TLS; any other port must upgrade to TLS)                                                                                                   |
+| `CANDIDLENS_MAIL_FROM`                              | Sender, e.g. `"CandidLens" <you@example.com>`                                                                                                                              |
+| `NEXT_PUBLIC_EMAIL_ENABLED`                         | Only with a separate API service (Docker Compose): whether the web app offers the email features                                                                           |
 
-## Evaluation harness — an unevaluated ranker is a liability
+**Models**
 
-`packages/evals` runs a seeded synthetic benchmark through the **same scoring engine the product uses**, and reports four metrics:
+| Variable                                           | Purpose                                                                                                                                                                                  |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CANDIDLENS_LLM_PROVIDER` / `CANDIDLENS_LLM_MODEL` | Turns on scoring: `google`, `anthropic`, `groq`, `openrouter`, `mistral`, `cerebras` or `ollama`, plus `_API_KEY` and `_BASE_URL`                                                        |
+| `CANDIDLENS_LLM_FALLBACKS`                         | Failover chain, e.g. `groq,openrouter`, tried only when the primary is overloaded or rate-limited. Each fallback needs its own `CANDIDLENS_LLM_<ID>_MODEL` (and `_API_KEY`, `_BASE_URL`) |
+| `CANDIDLENS_LLM_DEADLINE_MS`                       | Overall retry and failover budget (default 120000 ms, at most 600000) so a request can't outlive a serverless limit                                                                      |
 
-- **Direction accuracy** — agreement with expected strong/weak per criterion
-- **Self-consistency** — score variance across repeated runs (lower is better)
-- **Position bias** — Kendall τ between the ranking from the original input order and from the reversed order (1.0 = order made no difference)
-- **Name-swap bias** — score movement when only the name changes (0 = invariant); movement above 5 points is flagged
+**Observability** (all optional)
 
-Latest committed numbers (`packages/eval-report.json`) — **this is the offline mock-model run, a plumbing check: the mock scores every criterion 3, so 0.47 is just the share of expected-strong labels and the σ/τ/Δ values are trivially perfect. A first real-model run (Groq `openai/gpt-oss-120b`, 30 Oct 2026: 29/30 direction accuracy on a 6-resume benchmark, with caveats) is on the [evaluation page](https://hirelens-rosy.vercel.app/evaluation) and in `packages/evals/reports/`.** Run them yourself with `pnpm --filter @candidlens/evals run evals` and your own key:
+| Variable                                                            | Purpose                                                  |
+| ------------------------------------------------------------------- | -------------------------------------------------------- |
+| `SENTRY_DSN`                                                        | Error tracking                                           |
+| `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` / `LANGFUSE_BASE_URL` | Model tracing                                            |
+| `NEXT_PUBLIC_POSTHOG_KEY`                                           | Product analytics: explicit events only, autocapture off |
 
-| Metric                                | Value           |
-| ------------------------------------- | --------------- |
-| Accuracy (vs. mock expectation)       | 14/30 · 0.47    |
-| Self-consistency (mean σ)             | 0.0             |
-| Position bias (mean τ)                | 1.0             |
-| Name-swap bias (mean Δ)               | 0.0 (0 flagged) |
-| Rank agreement (τ vs. expected order) | 1.0             |
+On Vercel, changed variables reach only new deployments, so redeploy after editing them. If the database schema is behind the code, `/api/health?db=1` answers `503 migrations_pending` with the command to run.
 
-Run it yourself: `pnpm --filter @candidlens/evals run evals:mock` (offline, CI) or `evals` (live). The unit suite runs on every PR.
+</details>
 
-## Why glass-box
+## Deployment
 
-Most hiring AI is a black box: a number with no justification. That is a liability — for candidates, for recruiters, and under emerging regulation (NYC LL144, EU AI Act). HireLens is built around a different contract: **every score must link to the exact evidence that produced it**, every decision requires a stated reason, and anyone with viewer access can run an adverse-impact audit. An AI score is a screening aid, not a hiring decision.
+The production site runs entirely on free tiers, chosen on purpose and listed so you can reproduce or audit them:
 
-## Comparison
+| Need                       | Service                                            | Why                                                                                                                             |
+| -------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Web and API                | **Vercel** (Hobby)                                 | Next.js with a preview per pull request; the API runs inside the same deployment at `/api`, so sign-in cookies stay first-party |
+| Database                   | **Neon** (Free)                                    | Serverless Postgres that scales to zero, with connection pooling and pgvector                                                   |
+| Models                     | **Google Gemini** (free tier)                      | A generous free quota; any supported provider can take over through one setting                                                 |
+| Email                      | **Gmail SMTP**                                     | A dedicated account with an app password; no paid domain needed                                                                 |
+| Errors, analytics, tracing | **Sentry**, **PostHog**, **Langfuse** (free tiers) | Off until their keys are set                                                                                                    |
+| CI                         | **GitHub Actions**                                 | Lint, typecheck, unit and database-backed integration tests, CodeQL and a secrets scan on every pull request                    |
 
-|                            | HireLens                               | Commercial AI screeners    | OpenATS      |
-| -------------------------- | -------------------------------------- | -------------------------- | ------------ |
-| Open source                | ✅ MIT                                 | ❌                         | ✅           |
-| Self-host / local LLM mode | ✅                                     | ❌                         | ✅           |
-| Score justification        | evidence spans with character offsets  | black box                  | none (no AI) |
-| Bias auditing              | ✅ four-fifths-rule report with export | opaque                     | n/a          |
-| Blind review               | ✅ identity masking with aligned spans | rare                       | ❌           |
-| Modern UX                  | ✅                                     | ✅                         | ❌           |
-| Cost                       | your own LLM key                       | per-seat + per-resume fees | free         |
+Self-hosters use [Docker Compose](#self-host-in-one-command) instead: the same app on your own infrastructure.
+
+## Built with
+
+[Next.js](https://nextjs.org) · [Hono](https://hono.dev) · [Better Auth](https://www.better-auth.com) · [Drizzle ORM](https://orm.drizzle.team) · [PostgreSQL](https://www.postgresql.org) + [pgvector](https://github.com/pgvector/pgvector) · [Vercel AI SDK](https://ai-sdk.dev) · [Turborepo](https://turbo.build) + [pnpm](https://pnpm.io) · [Biome](https://biomejs.dev) · [Vitest](https://vitest.dev) · [Fumadocs](https://fumadocs.dev)
+
+## How it compares
+
+|                        | CandidLens                           | Commercial AI screeners | OpenATS           |
+| ---------------------- | ------------------------------------ | ----------------------- | ----------------- |
+| Open source            | ✅ MIT                               | ❌                      | ✅                |
+| Self-host, local model | ✅                                   | ❌                      | ✅                |
+| Score justification    | quoted evidence at character offsets | black box               | none (no scoring) |
+| Bias auditing          | ✅ four-fifths report with export    | opaque                  | n/a               |
+| Blind review           | ✅ identity masking, aligned quotes  | rare                    | ❌                |
+| Cost                   | your own model key, or free locally  | per seat and per resume | free              |
+
+## Documentation
+
+| Guide                                                                                          | What's inside                                     |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| [Quickstart](apps/docs/content/docs/getting-started/quickstart.mdx)                            | A clean machine to the first scored candidate     |
+| [CLI](apps/docs/content/docs/getting-started/cli.mdx)                                          | Every command                                     |
+| [Self-hosting](apps/docs/content/docs/guides/self-hosting.mdx)                                 | Docker Compose, settings, backups, upgrades       |
+| [Blind review and bias audits](apps/docs/content/docs/guides/blind-review-and-bias-audits.mdx) | The method, and what we deliberately don't do     |
+| [API reference](apps/docs/content/docs/reference/api.mdx)                                      | The OpenAPI contract and how authentication works |
+| [Evaluation harness](apps/docs/content/docs/reference/evaluation-harness.mdx)                  | The metrics and how to run them                   |
+| [Architecture](ARCHITECTURE.md)                                                                | How the pieces fit, and why                       |
+| [Troubleshooting](docs/project_execution.md#8-troubleshooting--real-errors-real-fixes)         | Real errors from development, with fixes          |
 
 ## Roadmap
 
-- ✅ **Hardening** — a11y sweep (zero axe violations), SEO gate (sitemap/robots), API body/list caps with proper 413s, review-query optimization, 200-resume load test.
-- ✅ **Private beta** — live at [hirelens-rosy.vercel.app](https://hirelens-rosy.vercel.app); inviting 5–10 real recruiters, fixing what they actually hit, feature freeze.
-- ✅ **v1.0.0 launch** — tagged release, GHCR images, [`hirelens` on npm](https://www.npmjs.com/package/hirelens).
-- ✅ **Post-launch waves 1–4** — recruiter essentials (resume viewer, contacts, job lifecycle, org settings), semantic search + rubric editor + compare view, teams/sharing (members, public report links, audit CSV), interview kits + candidate portal.
-- ✅ **v1.1 — the candidate side, at equal level** — [candidate reports](https://hirelens-rosy.vercel.app/for-candidates) (recruiters share an evidence-backed score report with each candidate via a once-only, revocable token link) and [Score my resume](https://hirelens-rosy.vercel.app/self-check) (candidates score their resume against any job description with the same rubric engine — free, no signup).
-- ✅ **v1.2** — skill-graph adjacency (matched/adjacent/missing skills per candidate), org analytics dashboard, scheduled four-fifths audit snapshots, deterministic writing-style signals.
-- ✅ **v1.4.0 — shipped 6 October 2026** — [talent-pool rediscovery](https://hirelens-rosy.vercel.app/talent-pool) (org-wide candidate search + audited shortlist), the [public parser API](https://hirelens-rosy.vercel.app/api-reference) (`POST /api/public/parse`, token-gated, stateless, rate-limited), and the ATS format check (deterministic parse simulation surfaced on every candidate + as `formatCheck` on the parser API). Full notes in the [changelog](CHANGELOG.md).
-- ✅ **Post-1.4 backlog** — parser heuristic hardening (compact resumes, inline `Skills:` headers) and talent-pool "add to job" ([push a rediscovered candidate into any open job](https://hirelens-rosy.vercel.app/talent-pool)), shipped in [#100](https://github.com/abhay-yemekar/hirelens/pull/100).
-- **Next** — v1.5.0 (the Resume Doctor and the post-1.4 work on `main`, see the [changelog](CHANGELOG.md#unreleased)), then the CandidLens rename; i18n, SSO/SAML and advanced RBAC follow in 2027, per the [roadmap](https://hirelens-rosy.vercel.app/roadmap).
+- **Released, v1.4.0 (6 October 2026):** talent-pool rediscovery, the public parser API and the format check. Earlier releases brought blind review, the bias audit, teams and sharing, interview kits, the candidate portal and candidate reports. Full history in the [changelog](CHANGELOG.md).
+- **On `main`, planned for v1.5.0:** the Resume Doctor, multi-provider failover, a full account lifecycle (passwords, reset, email confirmation, change of email, deletion) and the CandidLens rename. See [Unreleased](CHANGELOG.md#unreleased).
+- **Next:** the v1.5.0 release under the new name (npm, Docker images, repository), then internationalization, SSO and finer-grained roles. Details on the [roadmap page](https://candidlens.vercel.app/roadmap).
 
-Follow along in [Issues](https://github.com/abhay-yemekar/hirelens/issues).
+Every feature in this README exists on `main` today and is covered by tests.
 
 ## Contributing
 
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Please read the [Code of Conduct](CODE_OF_CONDUCT.md).
+Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md), or pick up an [open issue](https://github.com/abhay-yemekar/hirelens/issues).
 
-## Security
+**Security:** please report vulnerabilities privately as described in [SECURITY.md](SECURITY.md), not in a public issue.
 
-Found a vulnerability? See [SECURITY.md](SECURITY.md). **Do not open a public issue for security reports.**
-
-## A note on privacy
-
-Resumes are personal data. Never commit real resumes to git, always know where your candidate data is stored, and use the local Ollama mode if resumes must not leave your infrastructure. HireLens itself never phones home — observability integrations are opt-in via env vars.
+**Privacy:** resumes are personal data. Never commit real resumes, know where your candidate data lives, and use local Ollama mode when resumes must not leave your infrastructure.
 
 ## Built by
 
-**HireLens is created and maintained by [Abhay Yemekar](https://github.com/abhay-yemekar).**
+CandidLens is created and maintained by **[Abhay Yemekar](https://github.com/abhay-yemekar)** · [LinkedIn](https://www.linkedin.com/in/abhayyemekar/). Questions or feedback? [Open an issue](https://github.com/abhay-yemekar/hirelens/issues) or reach out on LinkedIn.
 
-- LinkedIn: <https://www.linkedin.com/in/abhayyemekar/>
-- GitHub: <https://github.com/abhay-yemekar>
+<div align="center">
 
-Questions or feedback? Open an [issue](https://github.com/abhay-yemekar/hirelens/issues) or reach out on LinkedIn.
+**[Try the demo](https://candidlens.vercel.app/demo)** · **[Star the repo](https://github.com/abhay-yemekar/hirelens)** · **[Report a bug](https://github.com/abhay-yemekar/hirelens/issues/new/choose)**
 
-## License
+[MIT License](LICENSE)
 
-[MIT](LICENSE)
+</div>
