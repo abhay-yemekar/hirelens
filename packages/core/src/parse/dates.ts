@@ -1,7 +1,14 @@
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+/**
+ * Start and end months are matched only as whole words with real
+ * spellings ("Mar", "March", "Sept."), so a company that starts like a
+ * month ("Marriott 2019", "Novartis 2019") is never read as one. The fixed
+ * spellings, with no open-ended letter run, also keep the match linear on
+ * long month-like text.
+ */
 export const DATE_RANGE_RE =
-  /((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s*)?((?:19|20)\d{2})\s*(?:-|\u2013|\u2014|to|until)\s*((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s*)?((?:19|20)\d{2}|present|current|now)/i;
+  /(\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)(?![a-z])\.?\s*)?((?:19|20)\d{2})\s*(?:-|\u2013|\u2014|to|until)\s*(\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)(?![a-z])\.?\s*)?((?:19|20)\d{2}|present|current|now)/i;
 
 export interface DateRange {
   start: string;

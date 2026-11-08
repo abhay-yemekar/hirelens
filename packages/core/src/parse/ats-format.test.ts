@@ -58,6 +58,86 @@ TypeScript, Docker, Kubernetes, SQL, React, Git, CI/CD, Jest`;
     expect(check.verdict).toBe("warn");
   });
 
+  it("does not flag pipe-separated headers and tech-stack lines as a table", () => {
+    const text = `RILEY QUINN
+Data Engineer | Austin, TX | riley.example.com
+riley@example.com | 555-0142 | github.com/rquinn
+
+EXPERIENCE
+Data Engineer — Northwind Labs — Jan 2024 – Present
+- Built the ingestion pipeline in Python, cutting load time 30%.
+Stack: Python | Airflow | Postgres
+Analytics Engineer — Contoso — 2021 – 2023
+- Modelled revenue data for 12 teams.
+Stack: dbt | Snowflake | Looker
+
+EDUCATION
+BSc Statistics - State University - 2021
+
+SKILLS
+Languages: Python | SQL | TypeScript
+Data: Airflow | dbt | Spark
+Cloud: AWS | Docker | Terraform
+Tools: Git | Linux | Grafana`;
+    const check = checkFormat(text);
+    expect(check.findings.some((f) => f.code === "table-layout")).toBe(false);
+    expect(check.findings).toEqual([]);
+    expect(check.verdict).toBe("pass");
+  });
+
+  it("does not flag three stacked pipe rows on their own", () => {
+    const text = `${CLEAN_RESUME}
+
+PROJECTS
+Ledger | TypeScript | Postgres
+Tracer | Go | ClickHouse
+Pager | Rust | Redis`;
+    expect(checkFormat(text).findings.some((f) => f.code === "table-layout")).toBe(false);
+  });
+
+  it("flags a table framed by pipes (Markdown or ASCII)", () => {
+    const text = `${CLEAN_RESUME}
+
+PROJECTS
+| Project | Stack | Year |
+|---|---|---|
+| Ledger | TypeScript | 2023 |
+| Tracer | Go | 2022 |`;
+    const check = checkFormat(text);
+    expect(check.findings.some((f) => f.code === "table-layout")).toBe(true);
+    expect(check.verdict).toBe("warn");
+  });
+
+  it("says the roles could not be read when the Experience heading exists", () => {
+    const text = `JORDAN AVERY
+jordan@example.com | 555-0100
+
+EXPERIENCE
+Acme Corp
+Software Engineer
+2020 to 2023
+- Built the billing service.
+
+SKILLS
+TypeScript, PostgreSQL, Docker`;
+    const check = checkFormat(text);
+    const roles = check.findings.find((f) => f.code === "unreadable-roles");
+    expect(roles?.label).toBe("Couldn't read your roles");
+    expect(roles?.detail).toContain("Title – Company – dates");
+    expect(check.findings.some((f) => f.code === "no-experience")).toBe(false);
+    expect(check.score).toBe(80);
+  });
+
+  it("reports a missing Experience heading as no-experience", () => {
+    const text = `JORDAN AVERY
+jordan@example.com | 555-0100
+
+SKILLS
+TypeScript, PostgreSQL, Docker`;
+    const check = checkFormat(text);
+    expect(check.findings.map((f) => f.code)).toEqual(["no-experience"]);
+  });
+
   it("flags fragmented short-line column artifacts", () => {
     // Simulates a PDF whose two-column content got read in fragments:
     // many <=6 char lines among enough non-empty lines to cross the gate.

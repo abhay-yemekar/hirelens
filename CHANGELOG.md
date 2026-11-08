@@ -10,6 +10,15 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Added
 
+- **Change email and delete account** — Settings → Sign-in & security can
+  change your sign-in email through a link sent to the new address,
+  confirmed while signed in; the old address gets a notice. Settings →
+  Delete account shows what happens to each organization, then erases the
+  ones only you belong to, refuses while you are the only owner of a
+  shared one (Members can now make someone an owner), and leaves the
+  rest. Your name, email, sign-in methods and sessions are removed; the
+  audit log keeps an anonymous id so shared audit chains still verify
+  (#162).
 - **Forgot password and email confirmation** — "Forgot password?" emails a
   one-time link (valid 1 hour) to choose a new password; it also gives an
   account made with Google or GitHub its first password, and signs the
@@ -74,6 +83,19 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Fixed
 
+- The Resume Doctor said "No experience section detected" when role lines
+  used en or em dashes (`Engineer—Acme  Mar 2021 – Present`); they now
+  parse, and a found Experience heading with no readable roles says
+  "Couldn't read your roles" instead. "Table-style layout" no longer fires
+  for pipes in contact headers or skill lists, only for rows framed by
+  pipes or 3+ stacked rows of the same shape. Employment dates no longer
+  read a company that starts like a month ("Marriott 2019") as a month,
+  and long month-like text no longer slows parsing (#167).
+- The public parse API says the roles couldn't be read when the
+  Experience heading is there, instead of "No experience section
+  detected." Labelled lines under a role (`Stack: Python | Airflow`) are
+  no longer read as roles, and education lines separated by en or em
+  dashes give the right institution (#170).
 - Evidence quotes written with a different hyphen, dash or quote
   character than the resume were not found, so their scores were
   withheld (#143).

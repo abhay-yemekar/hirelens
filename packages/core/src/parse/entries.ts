@@ -6,7 +6,8 @@ import type { Section } from "./sections.js";
 /**
  * Extract work entries from the experience section.
  *
- * Role header lines look like "Title - Company - 2021 - Present".
+ * Role header lines look like "Title - Company - 2021 - Present" (or
+ * with en/em dashes: "Title — Company, City  Mar 2021 – Present").
  * Dates may also sit on their own line under the title line.
  */
 export function extractWork(lines: string[], section: Section): CandidateWork[] {
@@ -16,7 +17,7 @@ export function extractWork(lines: string[], section: Section): CandidateWork[] 
     const line = lines[i];
     if (!line) continue;
 
-    const role = matchRoleLine(line);
+    const role = matchRoleLine(line, isDateLine(lines, i + 1, section.end));
     if (role) {
       roles.push(role);
       continue;
@@ -48,6 +49,20 @@ export function extractWork(lines: string[], section: Section): CandidateWork[] 
   }
 
   return roles.filter((r) => r.name.length > 0 || r.position);
+}
+
+/**
+ * Whether the next non-empty line (from `from`, before `end`) holds only
+ * dates for the role above it: it has a date range and is not a role line
+ * of its own.
+ */
+function isDateLine(lines: string[], from: number, end: number): boolean {
+  for (let i = from; i < end; i++) {
+    const line = lines[i]?.trim();
+    if (!line) continue;
+    return extractDateRange(line) !== null && matchRoleLine(line) === null;
+  }
+  return false;
 }
 
 /**
@@ -95,21 +110,87 @@ export function extractEducation(lines: string[], section: Section): CandidateEd
   return entries;
 }
 
-/** Match a role header line: "Title - Company - dates" variants.
+/**
+ * Separators between title, company and dates on a role line. A hyphen
+ * splits only with spaces around it, so "Front-end" and "Co-founder" stay
+ * whole; bullets split with or without spaces.
+ */
+const SPACED_SEPARATOR_RE = /\s+[-|\u2022\u2013\u2014]\s+|\s*\u2022\s*/;
+/**
+ * An en/em dash without spaces ("Engineer—Acme") separates too, but only
+ * on a line with no spaced separator, so "Rolls–Royce" in "Engineer –
+ * Rolls–Royce" stays whole. A dash between two digits is a number range
+ * ("10–20"), never a separator.
+ */
+const ANY_SEPARATOR_RE =
+  /\s+[-|\u2022\u2013\u2014]\s+|\s*\u2022\s*|(?<!\d)[\u2013\u2014]|[\u2013\u2014](?!\d)/;
+/**
+ * With no date range on or right under the line, a dash is more often
+ * prose ("Cut latency 40% — moved reads to Redis") than a separator, so
+ * only spaced hyphens, pipes and bullets split, as they always have.
+ */
+const UNDATED_SEPARATOR_RE = /\s+[-|\u2022]\s+|\s*\u2022\s*/;
+/** Separator debris left at either end of a part once dates are cut out. */
+const PART_EDGE_RE = /^[\s\-|,;\u2022\u2013\u2014]+|[\s\-|,;\u2022\u2013\u2014]+$/g;
+/**
+ * Bullet opening an achievement line: a glyph (including Word's Symbol-font
+ * bullet U+F0B7 and a leading dash), Word's level-2 "o", or "1." / "1)".
+ */
+const BULLET_PREFIX_RE =
+  /^(?:[-*>\u2013\u2014\u2022\u2023\u25a0\u25aa\u25cf\u25e6\u00b7\u2219\u27a2\uf0b7]|o(?=\s)|\d{1,2}[.)](?=\s))\s*/;
+/** Ends like a sentence ("...hot reads to Redis."); "Acme Inc." does not. */
+const SENTENCE_END_RE = /\p{Ll}{4,}[.!?]$/u;
+/**
+ * A short label and a colon opening the line ("Stack: Python | Airflow",
+ * "Tools & Tech: Git | Linux"): one to three words, so a title that merely
+ * holds a colon later ("Senior Engineer - Acme Corp: Payments") is not one.
+ */
+const LABEL_PREFIX_RE =
+  /^\p{L}[\p{L}\p{N}&/+.'-]*(?:\s+(?:&|\p{L}[\p{L}\p{N}&/+.'-]*)){0,2}\s*:\s/u;
+
+/** Match a role header line: "Title - Company - dates" variants, with
+ * hyphens, pipes, bullets, en dashes or em dashes between the parts.
  * Compact single-line form "Title at Company, 2021 - Present" (no dash
  * separator) is handled too: when the line carries a date range but no
  * dash/pipe split, " at " or " @ " separates title from company, and a
- * trailing date range is stripped from the company part. */
-export function matchRoleLine(line: string): CandidateWork | null {
-  const trimmed = line.trim();
+ * trailing date range is stripped from the company part.
+ * `datesFollow` says the next line is a date line for this role
+ * ("Title — Company" over "Mar 2021 – Present"), which lets en/em dashes
+ * split it. Without a date range, bullet lines and sentences are
+ * achievements, and labelled lines ("Stack: Python | Airflow") are
+ * details, never roles. */
+export function matchRoleLine(line: string, datesFollow = false): CandidateWork | null {
+  let trimmed = line.trim();
   if (trimmed.length < 5 || trimmed.length > 120) return null;
   if (hasEmailToken(trimmed) || URL_RE.test(trimmed)) return null;
   if (/^(skills|technologies|tools)\b/i.test(trimmed)) return null;
 
   const dates = extractDateRange(trimmed);
-  const parts = trimmed
-    .split(/\s+[-|\u2022]\s+|\s*\u2022\s*/)
-    .map((p) => p.trim().replace(/\s*[-|\u2022]\s*$/, ""))
+  if (
+    !dates &&
+    (BULLET_PREFIX_RE.test(trimmed) ||
+      SENTENCE_END_RE.test(trimmed) ||
+      LABEL_PREFIX_RE.test(trimmed))
+  ) {
+    return null;
+  }
+  trimmed = trimmed.replace(BULLET_PREFIX_RE, "");
+
+  // Cut the date range out before splitting: its own dash ("2021 - 2023",
+  // "Mar 2026 – Present") must not split the line into extra parts.
+  const body = trimmed
+    .replace(DATE_RANGE_RE, " ")
+    .replace(/\(\s*\)/g, " ")
+    .replace(PART_EDGE_RE, "");
+  const separator =
+    !dates && !datesFollow
+      ? UNDATED_SEPARATOR_RE
+      : SPACED_SEPARATOR_RE.test(body)
+        ? SPACED_SEPARATOR_RE
+        : ANY_SEPARATOR_RE;
+  const parts = body
+    .split(separator)
+    .map((p) => p.replace(PART_EDGE_RE, ""))
     .filter((p) => p.length > 0 && !DATE_RANGE_RE.test(p));
 
   if (parts.length < 2 && dates) {
@@ -119,6 +200,7 @@ export function matchRoleLine(line: string): CandidateWork | null {
       const company = trimmed
         .slice(at.index + at[0].length)
         .replace(DATE_RANGE_RE, "")
+        .replace(/\(\s*\)/g, "")
         .trim()
         .replace(/[,;]+$/, "")
         .trim();
@@ -160,8 +242,10 @@ function matchDegreeLine(line: string): CandidateEducation | null {
   entry.studyType = titleCase(m[0]);
   const rest = trimmed.replace(m[0], "");
   const parts = rest
-    .split(/\s+[-|,]\s+|\s{3,}/)
-    .map((p) => p.trim().replace(/^[-\u2022]\s*/, ""))
+    // Spaced en/em dashes separate too, and an unspaced em dash; an unspaced
+    // en dash stays, as in "University of Illinois Urbana–Champaign".
+    .split(/\s+[-|,\u2013\u2014]\s+|\s{3,}|\u2014/)
+    .map((p) => p.trim().replace(/^[-\u2022\u2013\u2014]\s*/, ""))
     .filter((p) => p.length > 2);
   // Prefer the part that looks like an institution: contains a school
   // keyword, or is the last multi-word part (degree fields come first).

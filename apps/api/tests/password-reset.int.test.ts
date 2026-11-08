@@ -74,13 +74,16 @@ async function emailVerified(userId: string): Promise<boolean> {
   return result.rows[0]?.email_verified === true;
 }
 
-beforeAll(() => {
+beforeAll(async () => {
   if (!available) return;
   // Never send real email from a test run, whatever the local env holds.
   delete process.env["CANDIDLENS_SMTP_USER"];
   delete process.env["CANDIDLENS_SMTP_PASSWORD"];
   db = createDb(DATABASE_URL);
   app = createApp({ db, llm: null });
+  // The daily email caps are shared by everything that signed up in the
+  // last 24 hours on this database; start these tests with room to send.
+  await db.execute(sql`delete from "verification" where "identifier" like 'email-sent-day:%'`);
 });
 
 afterAll(async () => {

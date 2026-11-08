@@ -1,5 +1,7 @@
 /**
- * Account routes for the signed-in user, with or without an organization.
+ * Account routes for the signed-in user, with or without an organization:
+ * this file's password route, plus changing the email (account-email.ts)
+ * and deleting the account (account-deletion.ts).
  *
  * POST /api/account/password — give an account created with Google or
  * GitHub its first password, so it can also sign in with email. Better
@@ -13,21 +15,17 @@
 import { auth } from "@candidlens/db";
 import { Hono } from "hono";
 import { z } from "zod";
-import { sessionUserId } from "../auth.js";
 import { readJson } from "../http.js";
 import type { AppEnv } from "../types.js";
+import { accountDeletionRoutes } from "./account-deletion.js";
+import { accountEmailRoutes } from "./account-email.js";
+import { guardAccountRequest } from "./account-guards.js";
 
 const SetPasswordSchema = z
   .object({
     newPassword: z.string().min(1).max(256),
   })
   .strip();
-
-const SESSION_NOT_FRESH = {
-  status: 403 as const,
-  error: "session_not_fresh",
-  message: "For your security, sign out and sign in again, then add the password.",
-};
 
 /** Better Auth error codes this route answers with its own response. */
 const SET_PASSWORD_ERRORS: Record<
@@ -56,23 +54,6 @@ const SET_PASSWORD_ERRORS: Record<
   },
 };
 
-/**
- * Adding a password needs a sign-in within this window. It is shorter than
- * Better Auth's one-day freshAge because a password outlives the session.
- */
-const FRESH_SIGN_IN_MS = 15 * 60 * 1000;
-
-function signedInRecently(session: unknown): boolean {
-  const createdAt = (session as { session?: { createdAt?: unknown } } | null)?.session?.createdAt;
-  const at =
-    createdAt instanceof Date
-      ? createdAt.getTime()
-      : typeof createdAt === "string"
-        ? Date.parse(createdAt)
-        : Number.NaN;
-  return Number.isFinite(at) && Date.now() - at < FRESH_SIGN_IN_MS;
-}
-
 /** The error code Better Auth puts on its APIError body, if any. */
 function betterAuthCode(err: unknown): string | undefined {
   const code = (err as { body?: { code?: unknown } } | null)?.body?.code;
@@ -83,19 +64,8 @@ export function accountRoutes() {
   const routes = new Hono<AppEnv>();
 
   routes.post("/account/password", async (c) => {
-    if (sessionUserId(c.get("session")) === null) {
-      return c.json({ ok: false, error: "unauthorized" }, 401);
-    }
-    if (!c.req.header("content-type")?.toLowerCase().startsWith("application/json")) {
-      return c.json(
-        { ok: false, error: "unsupported_media_type", message: "Send the body as JSON." },
-        415,
-      );
-    }
-    if (!signedInRecently(c.get("session"))) {
-      const { status, ...body } = SESSION_NOT_FRESH;
-      return c.json({ ok: false, ...body }, status);
-    }
+    const guard = guardAccountRequest(c, "add the password");
+    if ("refused" in guard) return guard.refused;
     const parsed = SetPasswordSchema.safeParse(await readJson(c));
     if (!parsed.success) {
       return c.json(
@@ -122,5 +92,7 @@ export function accountRoutes() {
     return c.json({ ok: true });
   });
 
+  routes.route("/", accountEmailRoutes());
+  routes.route("/", accountDeletionRoutes());
   return routes;
 }
