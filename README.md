@@ -244,16 +244,19 @@ Self-hosters use [Docker Compose](#self-host-in-one-command) instead: the same a
 
 ## Documentation
 
-| Guide                                                                                          | What's inside                                     |
-| ---------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| [Quickstart](apps/docs/content/docs/getting-started/quickstart.mdx)                            | A clean machine to the first scored candidate     |
-| [CLI](apps/docs/content/docs/getting-started/cli.mdx)                                          | Every command                                     |
-| [Self-hosting](apps/docs/content/docs/guides/self-hosting.mdx)                                 | Docker Compose, settings, backups, upgrades       |
-| [Blind review and bias audits](apps/docs/content/docs/guides/blind-review-and-bias-audits.mdx) | The method, and what we deliberately don't do     |
-| [API reference](apps/docs/content/docs/reference/api.mdx)                                      | The OpenAPI contract and how authentication works |
-| [Evaluation harness](apps/docs/content/docs/reference/evaluation-harness.mdx)                  | The metrics and how to run them                   |
-| [Architecture](ARCHITECTURE.md)                                                                | How the pieces fit, and why                       |
-| [Troubleshooting](docs/project_execution.md#8-troubleshooting--real-errors-real-fixes)         | Real errors from development, with fixes          |
+| Guide                                                                                          | What's inside                                                       |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| [Quickstart](apps/docs/content/docs/getting-started/quickstart.mdx)                            | A clean machine to the first scored candidate                       |
+| [CLI](apps/docs/content/docs/getting-started/cli.mdx)                                          | Every command                                                       |
+| [Self-hosting](apps/docs/content/docs/guides/self-hosting.mdx)                                 | Docker Compose, settings, backups, upgrades                         |
+| [Resume Doctor](apps/docs/content/docs/guides/resume-doctor.mdx)                               | What it checks and how the score works                              |
+| [Accounts and sign-in](apps/docs/content/docs/guides/accounts-and-sign-in.mdx)                 | Sign-in methods, password reset, email changes, deleting an account |
+| [Configuration](apps/docs/content/docs/reference/configuration.mdx)                            | Every setting, grouped by what it turns on                          |
+| [Blind review and bias audits](apps/docs/content/docs/guides/blind-review-and-bias-audits.mdx) | The method, and what we deliberately don't do                       |
+| [API reference](apps/docs/content/docs/reference/api.mdx)                                      | The OpenAPI contract and how authentication works                   |
+| [Evaluation harness](apps/docs/content/docs/reference/evaluation-harness.mdx)                  | The metrics and how to run them                                     |
+| [Architecture](ARCHITECTURE.md)                                                                | How the pieces fit, and why                                         |
+| [Troubleshooting](docs/project_execution.md#8-troubleshooting--real-errors-real-fixes)         | Real errors from development, with fixes                            |
 
 ## Roadmap
 
