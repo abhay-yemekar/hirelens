@@ -69,10 +69,24 @@ export function createIndexer(db: Database, embeddingModel: EmbeddingModel): Can
   };
 }
 
+/**
+ * The key for embeddings. They always call Google (createEmbeddingModel),
+ * so only a Google key may be used: the dedicated embedding key, else the
+ * model key when Google is the model provider, else Google's key from the
+ * failover chain. Another provider's key must never be sent to Google, and
+ * resume text must not go to Google unless a Google key was configured.
+ */
+export function embeddingApiKeyFromEnv(env: NodeJS.ProcessEnv): string | undefined {
+  const dedicated = readSetting("EMBEDDING_API_KEY", env)?.trim();
+  if (dedicated) return dedicated;
+  const provider = readSetting("LLM_PROVIDER", env)?.trim().toLowerCase();
+  const modelKey = readSetting("LLM_API_KEY", env)?.trim();
+  if (provider === "google" && modelKey) return modelKey;
+  return readSetting("LLM_GOOGLE_API_KEY", env)?.trim() || undefined;
+}
+
 /** Resolve the embedding model from env. Null → keyword-search fallback. */
 export function embeddingModelFromEnv(env: NodeJS.ProcessEnv): EmbeddingModel | null {
-  const apiKey =
-    readSetting("EMBEDDING_API_KEY", env)?.trim() || readSetting("LLM_API_KEY", env)?.trim();
-  if (!apiKey) return null;
-  return createEmbeddingModel(apiKey);
+  const apiKey = embeddingApiKeyFromEnv(env);
+  return apiKey ? createEmbeddingModel(apiKey) : null;
 }

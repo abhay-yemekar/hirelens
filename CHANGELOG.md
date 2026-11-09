@@ -121,6 +121,13 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Security
 
+- Search embeddings, which always call Google, used the model key whatever
+  the provider was. A self-hosted instance on Anthropic, Groq,
+  OpenRouter, Mistral or Cerebras sent that key and each uploaded
+  resume's text to Google. Embeddings now use only a Google key:
+  `CANDIDLENS_EMBEDDING_API_KEY`, the model key when the provider is
+  `google`, or `CANDIDLENS_LLM_GOOGLE_API_KEY`; without one, search
+  matches keywords (#184).
 - Google or GitHub no longer joins an existing account just because the
   email matches; connect them from Settings → Sign-in & security while
   signed in. Otherwise someone could register a stranger's email first
