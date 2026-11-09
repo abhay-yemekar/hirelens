@@ -33,6 +33,13 @@ export default function EvaluationPage() {
       title="Evaluation harness"
       lede="Most “AI resume screeners” are an unevaluated wrapper around one API call. An unevaluated ranker in hiring is a liability — so CandidLens ships a seeded benchmark harness that runs through the same engine the product uses. A mock-model run checks the harness on every PR, and real-model runs are published with their provenance."
     >
+      <h2>The benchmark</h2>
+      <p>
+        The benchmark is six synthetic resumes, from strong to weak, under a fixed seed (42). They
+        describe no real people and hold no real personal data. Each resume has ground truth for
+        every criterion (strong or weak) and an expected place in the rank order.
+      </p>
+
       <h2>The four metrics</h2>
       <ul>
         <li>
@@ -41,13 +48,15 @@ export default function EvaluationPage() {
         </li>
         <li>
           <strong>Self-consistency</strong> — score variance across repeated runs of the same
-          resume. 0 is deterministic; high variance means the model is guessing.
+          resume, all at temperature 0. A variance of 0 is deterministic; high variance means the
+          model is guessing.
         </li>
         <li>
           <strong>Position bias</strong> — Kendall τ between the ranking from scoring the pool in
           its original order and the ranking from scoring it in reverse. 1.0 means order made no
-          difference. Each resume is scored in its own call, so this mainly measures how stable the
-          ranking is from run to run.
+          difference. Tied scores break by expected rank in both passes, so input order can&apos;t
+          change the ranking through a tie. Each resume is scored in its own call, so this mainly
+          measures how stable the ranking is from run to run.
         </li>
         <li>
           <strong>Name-swap bias</strong> — score movement when <em>only the name changes</em>.
@@ -168,6 +177,12 @@ export default function EvaluationPage() {
         <code>{`pnpm --filter @candidlens/evals run evals:mock   # offline, CI mode
 pnpm --filter @candidlens/evals run evals        # live, needs CANDIDLENS_LLM_*`}</code>
       </pre>
+      <p>
+        The mock run writes <code>packages/eval-report.json</code>. The live run waits 8 seconds
+        between model calls to stay inside free-tier rate limits. If the provider&apos;s quota runs
+        out, the run stops with a message instead of printing partial numbers. A finished live run
+        writes <code>{"packages/evals/reports/<date>-<provider>-<model>.json"}</code>.
+      </p>
       <p>
         The harness, benchmark dataset, and this report are plain files in{" "}
         <a href="https://github.com/abhay-yemekar/hirelens/tree/main/packages/evals">

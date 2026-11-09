@@ -134,7 +134,6 @@ apps/
   web/            Next.js app: product UI, marketing site, /demo; mounts the API at /api
   api/            Hono API: auth, jobs, rubrics, upload, scoring, audits, accounts
   cli/            The hirelens CLI (TypeScript, no runtime dependencies)
-  docs/           Fumadocs documentation site
 packages/
   core/           The engines: extract, parse, rubric, score, evidence, llm, audit, doctor
   db/             Drizzle schema and migrations (Postgres + pgvector), auth and email
@@ -233,7 +232,7 @@ Self-hosters use [Docker Compose](#self-host-in-one-command) instead: the same a
 
 ## Built with
 
-[Next.js](https://nextjs.org) · [Hono](https://hono.dev) · [Better Auth](https://www.better-auth.com) · [Drizzle ORM](https://orm.drizzle.team) · [PostgreSQL](https://www.postgresql.org) + [pgvector](https://github.com/pgvector/pgvector) · [Vercel AI SDK](https://ai-sdk.dev) · [Turborepo](https://turbo.build) + [pnpm](https://pnpm.io) · [Biome](https://biomejs.dev) · [Vitest](https://vitest.dev) · [Fumadocs](https://fumadocs.dev)
+[Next.js](https://nextjs.org) · [Hono](https://hono.dev) · [Better Auth](https://www.better-auth.com) · [Drizzle ORM](https://orm.drizzle.team) · [PostgreSQL](https://www.postgresql.org) + [pgvector](https://github.com/pgvector/pgvector) · [Vercel AI SDK](https://ai-sdk.dev) · [Turborepo](https://turbo.build) + [pnpm](https://pnpm.io) · [Biome](https://biomejs.dev) · [Vitest](https://vitest.dev)
 
 ## How it compares
 
@@ -248,19 +247,20 @@ Self-hosters use [Docker Compose](#self-host-in-one-command) instead: the same a
 
 ## Documentation
 
-| Guide                                                                                          | What's inside                                                       |
-| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| [Quickstart](apps/docs/content/docs/getting-started/quickstart.mdx)                            | A clean machine to the first scored candidate                       |
-| [CLI](apps/docs/content/docs/getting-started/cli.mdx)                                          | Every command                                                       |
-| [Self-hosting](apps/docs/content/docs/guides/self-hosting.mdx)                                 | Docker Compose, settings, backups, upgrades                         |
-| [Resume Doctor](apps/docs/content/docs/guides/resume-doctor.mdx)                               | What it checks and how the score works                              |
-| [Accounts and sign-in](apps/docs/content/docs/guides/accounts-and-sign-in.mdx)                 | Sign-in methods, password reset, email changes, deleting an account |
-| [Configuration](apps/docs/content/docs/reference/configuration.mdx)                            | Every setting, grouped by what it turns on                          |
-| [Blind review and bias audits](apps/docs/content/docs/guides/blind-review-and-bias-audits.mdx) | The method, and what we deliberately don't do                       |
-| [API reference](apps/docs/content/docs/reference/api.mdx)                                      | The OpenAPI contract and how authentication works                   |
-| [Evaluation harness](apps/docs/content/docs/reference/evaluation-harness.mdx)                  | The metrics and how to run them                                     |
-| [Architecture](ARCHITECTURE.md)                                                                | How the pieces fit, and why                                         |
-| [Troubleshooting](docs/project_execution.md#8-troubleshooting--real-errors-real-fixes)         | Real errors from development, with fixes                            |
+| Guide                                                                                           | What's inside                                                       |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| [Quickstart](https://candidlens.vercel.app/docs/quickstart)                                     | A clean machine to the first scored candidate                       |
+| [CLI](https://candidlens.vercel.app/docs/cli)                                                   | Every command                                                       |
+| [Self-hosting](https://candidlens.vercel.app/docs/self-hosting)                                 | Docker Compose, settings, backups, upgrades                         |
+| [Resume Doctor](https://candidlens.vercel.app/docs/resume-doctor)                               | What it checks and how the score works                              |
+| [Accounts and sign-in](https://candidlens.vercel.app/docs/accounts-and-sign-in)                 | Sign-in methods, password reset, email changes, deleting an account |
+| [ATS integration](https://candidlens.vercel.app/docs/ats-integration)                           | API tokens, webhooks, CSV round-trip and the CLI                    |
+| [Configuration](https://candidlens.vercel.app/docs/configuration)                               | Every setting, grouped by what it turns on                          |
+| [Blind review and bias audits](https://candidlens.vercel.app/docs/blind-review-and-bias-audits) | What is masked, decision reasons, and the adverse-impact audit      |
+| [API reference](https://candidlens.vercel.app/api-reference)                                    | Routes, authentication, roles and the OpenAPI contract              |
+| [Evaluation harness](https://candidlens.vercel.app/evaluation)                                  | The metrics and how to run them                                     |
+| [Architecture](ARCHITECTURE.md)                                                                 | How the pieces fit, and why                                         |
+| [Troubleshooting](docs/project_execution.md#8-troubleshooting--real-errors-real-fixes)          | Real errors from development, with fixes                            |
 
 ## Roadmap
 

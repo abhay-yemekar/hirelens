@@ -246,8 +246,8 @@ export default function ConfigurationDocsPage() {
       <p>
         <code>GET /api/health</code> answers quickly without touching the database.{" "}
         <code>GET /api/health?db=1</code> also compares the applied migrations with the code, and
-        answers <code>503 migrations_pending</code> with the command to run when the schema is
-        behind.
+        answers <code>503</code> with <code>&quot;migrationsPending&quot;: true</code> and a message
+        naming the command to run when the schema is behind.
       </p>
     </ProsePage>
   );
