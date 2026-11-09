@@ -1,7 +1,7 @@
 # CandidLens — one-command self-host.
 #
 #   cp .env.example .env   # set BETTER_AUTH_SECRET (required)
-#   docker compose up --build -d
+#   docker compose up --build -d   # Docker Compose 2.24 or newer
 #   → web  http://localhost:3000
 #   → api  http://localhost:4000/api/health
 #
@@ -36,7 +36,19 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    # The API reads every setting in the root .env, so the optional ones
+    # need no line here: the model failover chain (CANDIDLENS_LLM_FALLBACKS
+    # with CANDIDLENS_LLM_<ID>_MODEL / _API_KEY / _BASE_URL), the retry
+    # deadline (CANDIDLENS_LLM_DEADLINE_MS) and email (CANDIDLENS_SMTP_*,
+    # CANDIDLENS_MAIL_FROM), under their old HIRELENS_* names too. The
+    # entries under `environment` win over the file.
+    env_file:
+      - path: .env
+        required: false
     environment:
+      # The image's own values, whatever a development .env says.
+      NODE_ENV: production
+      PORT: "4000"
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/hirelens
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET in .env (openssl rand -base64 32)}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:4000}
@@ -75,9 +87,13 @@ services:
         NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY:-}
         NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED: ${NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED:-}
         NEXT_PUBLIC_GITHUB_OAUTH_ENABLED: ${NEXT_PUBLIC_GITHUB_OAUTH_ENABLED:-}
+        # The web app can't see the API's SMTP settings, so it offers
+        # "Forgot password?" and email confirmation only when this is true.
+        NEXT_PUBLIC_EMAIL_ENABLED: ${NEXT_PUBLIC_EMAIL_ENABLED:-}
     environment:
       NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED: ${NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED:-}
       NEXT_PUBLIC_GITHUB_OAUTH_ENABLED: ${NEXT_PUBLIC_GITHUB_OAUTH_ENABLED:-}
+      NEXT_PUBLIC_EMAIL_ENABLED: ${NEXT_PUBLIC_EMAIL_ENABLED:-}
     container_name: hirelens-web
     depends_on:
       - api

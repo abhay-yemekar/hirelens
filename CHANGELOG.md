@@ -86,6 +86,13 @@ On `main` since v1.4.0; planned for v1.5.0.
   quote now matches when every sentence in it is verbatim resume text;
   each line is kept and highlighted as its own evidence span. A quote with
   any line that isn't in the resume is still withheld (#175).
+- A Docker Compose stack ignored the model failover chain, the retry
+  deadline and the email settings in `.env`, and its web app never showed
+  "Forgot password?" or the Google and GitHub buttons. The API container
+  now reads the whole root `.env`; the web image takes
+  `NEXT_PUBLIC_EMAIL_ENABLED` and the sign-in button settings when it is
+  built. The `CANDIDLENS_MAIL_FROM` example in `.env.example` is quoted so
+  Compose can read the file (#159).
 - The Resume Doctor said "No experience section detected" when role lines
   used en or em dashes (`Engineer—Acme  Mar 2021 – Present`); they now
   parse, and a found Experience heading with no readable roles says
