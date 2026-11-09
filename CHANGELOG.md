@@ -90,6 +90,11 @@ On `main` since v1.4.0; planned for v1.5.0.
   quote now matches when every sentence in it is verbatim resume text;
   each line is kept and highlighted as its own evidence span. A quote with
   any line that isn't in the resume is still withheld (#175).
+- Shortlisting from the talent pool wrote no audit-log entry, so those
+  decisions were missing from the hash-chained trail and its export. It
+  now records `decision.recorded`, like a decision from the review queue
+  (with `source: "talent_pool"`), in the same transaction as the decision
+  (#187).
 - A Docker Compose stack ignored the model failover chain, the retry
   deadline and the email settings in `.env`, and its web app never showed
   "Forgot password?" or the Google and GitHub buttons. The API container

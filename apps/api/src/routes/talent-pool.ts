@@ -35,7 +35,7 @@ import {
   scoringRuns,
   stageEnum,
 } from "@candidlens/db";
-import { appendAudit } from "@candidlens/orchestrator";
+import { appendAudit, appendAuditIn } from "@candidlens/orchestrator";
 import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { ROLE_MIN, requireAuth } from "../auth.js";
@@ -322,18 +322,35 @@ export function talentPoolRoutes(): Hono<AppEnv> {
 
     // The candidate must belong to a job in the caller's org.
     const [row] = await db
-      .select({ id: candidates.id })
+      .select({ id: candidates.id, jobId: candidates.jobId })
       .from(candidates)
       .innerJoin(jobs, eq(candidates.jobId, jobs.id))
       .where(and(eq(candidates.id, candidateId), eq(jobs.orgId, auth.orgId)))
       .limit(1);
     if (!row) return c.json({ ok: false, error: "not_found" }, 404);
 
-    await db.insert(decisions).values({
-      candidateId,
-      stage: "shortlisted",
-      reason,
-      decidedBy: auth.userId,
+    // The decision and its audit entry commit together. The entry has the
+    // same action and fields as a decision recorded from the review queue,
+    // plus where it came from.
+    await db.transaction(async (tx) => {
+      await tx.insert(decisions).values({
+        candidateId,
+        stage: "shortlisted",
+        reason,
+        decidedBy: auth.userId,
+      });
+      await appendAuditIn(tx, {
+        orgId: auth.orgId,
+        actorId: auth.userId,
+        action: "decision.recorded",
+        payload: {
+          jobId: row.jobId,
+          candidateId,
+          stage: "shortlisted",
+          reason,
+          source: "talent_pool",
+        },
+      });
     });
 
     return c.json({ ok: true }, 201);
