@@ -13,9 +13,9 @@ export default function TermsPage() {
       <p>
         These terms cover two things: this website, and the CandidLens software itself. The software
         is licensed under the{" "}
-        <a href="https://github.com/abhay-yemekar/hirelens/blob/main/LICENSE">MIT license</a>, which
-        governs copying, modification, and distribution — these terms add the plain-language context
-        for how the project is intended to be used.
+        <a href="https://github.com/abhay-yemekar/candidlens/blob/main/LICENSE">MIT license</a>,
+        which governs copying, modification, and distribution — these terms add the plain-language
+        context for how the project is intended to be used.
       </p>
 
       <h2>The software is provided as-is</h2>

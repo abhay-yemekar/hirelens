@@ -16,7 +16,7 @@ Rank candidates against a rubric you control, decide with stated reasons, and au
 
 **[Live demo, no signup](https://candidlens.vercel.app/demo)** · [Resume Doctor](https://candidlens.vercel.app/doctor) · [Docs](https://candidlens.vercel.app/docs) · [Self-host](#self-host-in-one-command) · [Roadmap](https://candidlens.vercel.app/roadmap)
 
-[![CI](https://github.com/abhay-yemekar/hirelens/actions/workflows/ci.yml/badge.svg)](https://github.com/abhay-yemekar/hirelens/actions/workflows/ci.yml)
+[![CI](https://github.com/abhay-yemekar/candidlens/actions/workflows/ci.yml/badge.svg)](https://github.com/abhay-yemekar/candidlens/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![npm](https://img.shields.io/npm/v/hirelens?label=cli&color=ff6b57)](https://www.npmjs.com/package/hirelens)
 [![Node](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=node.js&logoColor=white)](package.json)
@@ -55,12 +55,12 @@ An AI score is a screening aid, not a hiring decision.
 ### Self-host in one command
 
 ```bash
-git clone https://github.com/abhay-yemekar/hirelens.git && cd hirelens
+git clone https://github.com/abhay-yemekar/candidlens.git && cd candidlens
 cp .env.example .env                # set BETTER_AUTH_SECRET (openssl rand -base64 32)
 docker compose up --build -d        # web :3000 · API :4000 · Postgres :5433
 ```
 
-Open [localhost:3000](http://localhost:3000), create an account and an organization, and add a model key to `.env` to score. Migrations run on first boot. Prebuilt images are on GHCR: [`hirelens-web`](https://ghcr.io/abhay-yemekar/hirelens-web) and [`hirelens-api`](https://ghcr.io/abhay-yemekar/hirelens-api).
+Open [localhost:3000](http://localhost:3000), create an account and an organization, and add a model key to `.env` to score. Migrations run on first boot. Prebuilt images are on GHCR: [`hirelens-web`](https://ghcr.io/abhay-yemekar/candidlens-web) and [`hirelens-api`](https://ghcr.io/abhay-yemekar/candidlens-api).
 
 ### Develop
 
@@ -272,7 +272,7 @@ Every feature in this README exists on `main` today and is covered by tests.
 
 ## Contributing
 
-Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md), or pick up an [open issue](https://github.com/abhay-yemekar/hirelens/issues).
+Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md), or pick up an [open issue](https://github.com/abhay-yemekar/candidlens/issues).
 
 **Security:** please report vulnerabilities privately as described in [SECURITY.md](SECURITY.md), not in a public issue.
 
@@ -280,11 +280,11 @@ Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and the
 
 ## Built by
 
-CandidLens is created and maintained by **[Abhay Yemekar](https://github.com/abhay-yemekar)** · [LinkedIn](https://www.linkedin.com/in/abhayyemekar/). Questions or feedback? [Open an issue](https://github.com/abhay-yemekar/hirelens/issues) or reach out on LinkedIn.
+CandidLens is created and maintained by **[Abhay Yemekar](https://github.com/abhay-yemekar)** · [LinkedIn](https://www.linkedin.com/in/abhayyemekar/). Questions or feedback? [Open an issue](https://github.com/abhay-yemekar/candidlens/issues) or reach out on LinkedIn.
 
 <div align="center">
 
-**[Try the demo](https://candidlens.vercel.app/demo)** · **[Star the repo](https://github.com/abhay-yemekar/hirelens)** · **[Report a bug](https://github.com/abhay-yemekar/hirelens/issues/new/choose)**
+**[Try the demo](https://candidlens.vercel.app/demo)** · **[Star the repo](https://github.com/abhay-yemekar/candidlens)** · **[Report a bug](https://github.com/abhay-yemekar/candidlens/issues/new/choose)**
 
 [MIT License](LICENSE)
 

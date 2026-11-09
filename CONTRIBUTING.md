@@ -5,8 +5,8 @@ Thanks for helping build hiring tools that show their work. This project follows
 ## Development setup
 
 ```bash
-git clone https://github.com/abhay-yemekar/hirelens.git
-cd hirelens
+git clone https://github.com/abhay-yemekar/candidlens.git
+cd candidlens
 pnpm install
 docker compose up -d postgres             # Postgres 16 + pgvector on :5433
 cp packages/db/.env.example packages/db/.env
@@ -49,7 +49,7 @@ pnpm lint && pnpm typecheck && pnpm test
 
 ## Reporting bugs and requesting features
 
-Use the [issue templates](https://github.com/abhay-yemekar/hirelens/issues/new/choose). For security vulnerabilities, follow [SECURITY.md](SECURITY.md) and don't open a public issue.
+Use the [issue templates](https://github.com/abhay-yemekar/candidlens/issues/new/choose). For security vulnerabilities, follow [SECURITY.md](SECURITY.md) and don't open a public issue.
 
 ## License
 

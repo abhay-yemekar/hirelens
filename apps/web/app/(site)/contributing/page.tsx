@@ -71,11 +71,11 @@ export default function ContributingPage() {
       <h2>Before you start</h2>
       <p>
         Dev setup lives in the <a href="/docs/quickstart">quickstart</a>. Read the full{" "}
-        <a href="https://github.com/abhay-yemekar/hirelens/blob/main/CONTRIBUTING.md">
+        <a href="https://github.com/abhay-yemekar/candidlens/blob/main/CONTRIBUTING.md">
           CONTRIBUTING.md
         </a>{" "}
         and the{" "}
-        <a href="https://github.com/abhay-yemekar/hirelens/blob/main/CODE_OF_CONDUCT.md">
+        <a href="https://github.com/abhay-yemekar/candidlens/blob/main/CODE_OF_CONDUCT.md">
           Code of Conduct
         </a>{" "}
         — both are short, and both are enforced.

@@ -60,7 +60,7 @@ export default function EvaluationPage() {
         <code>{live.provider}</code> / <code>{live.model}</code>, run on {live.date} with seed{" "}
         {live.seed} against rubric v{live.rubricVersion}: {live.resumes} synthetic resumes and{" "}
         {live.accuracy.total} expected strong/weak labels. Raw report:{" "}
-        <a href="https://github.com/abhay-yemekar/hirelens/tree/main/packages/evals/reports">
+        <a href="https://github.com/abhay-yemekar/candidlens/tree/main/packages/evals/reports">
           packages/evals/reports
         </a>
         .
@@ -170,7 +170,7 @@ pnpm --filter @candidlens/evals run evals        # live, needs CANDIDLENS_LLM_*`
       </pre>
       <p>
         The harness, benchmark dataset, and this report are plain files in{" "}
-        <a href="https://github.com/abhay-yemekar/hirelens/tree/main/packages/evals">
+        <a href="https://github.com/abhay-yemekar/candidlens/tree/main/packages/evals">
           packages/evals
         </a>{" "}
         — a unit test runs the harness against the mock model in CI, so a broken harness fails the

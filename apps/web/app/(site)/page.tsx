@@ -466,7 +466,7 @@ export default function LandingPage() {
               Everything lives in your own database, as plain JSON you can query.
             </p>
             <Link
-              href="https://github.com/abhay-yemekar/hirelens/blob/main/apps/docs/content/docs/guides/self-hosting.mdx"
+              href="/docs/self-hosting"
               className="mt-6 inline-block text-sm font-semibold"
               style={{ color: "var(--hl-accent)" }}
             >
@@ -498,8 +498,8 @@ export default function LandingPage() {
             >
               <code>
                 <span style={{ color: "var(--hl-muted)" }}>$ </span>git clone
-                https://github.com/abhay-yemekar/hirelens{"\n"}
-                <span style={{ color: "var(--hl-muted)" }}>$ </span>cd hirelens && cp .env.example
+                https://github.com/abhay-yemekar/candidlens{"\n"}
+                <span style={{ color: "var(--hl-muted)" }}>$ </span>cd candidlens && cp .env.example
                 .env{"\n"}
                 <span style={{ color: "var(--hl-muted)" }}>$ </span>docker compose up --build -d
                 {"\n\n"}

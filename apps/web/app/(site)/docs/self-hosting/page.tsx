@@ -16,7 +16,7 @@ export default function SelfHostingPage() {
     >
       <h2>The 60-second version</h2>
       <pre>
-        <code>{`git clone https://github.com/abhay-yemekar/hirelens.git && cd hirelens
+        <code>{`git clone https://github.com/abhay-yemekar/candidlens.git && cd candidlens
 cp .env.example .env        # set BETTER_AUTH_SECRET (openssl rand -base64 32)
 docker compose up --build -d`}</code>
       </pre>

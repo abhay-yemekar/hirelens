@@ -426,7 +426,7 @@ export default function CandidateReportPage() {
               · rubric v{report.rubricVersion} · This report shows only your own data and is
               revocable by the hiring team at any time. Powered by{" "}
               <Link
-                href="https://github.com/abhay-yemekar/hirelens"
+                href="https://github.com/abhay-yemekar/candidlens"
                 className="underline underline-offset-2"
                 style={{ color: "var(--hl-accent)" }}
               >

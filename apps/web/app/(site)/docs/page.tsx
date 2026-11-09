@@ -118,7 +118,7 @@ export default function DocsHubPage() {
             <a
               className="underline"
               style={{ color: "var(--hl-accent)" }}
-              href="https://github.com/abhay-yemekar/hirelens"
+              href="https://github.com/abhay-yemekar/candidlens"
             >
               public repo
             </a>{" "}
