@@ -1245,12 +1245,28 @@ export const openApiDocument = {
       post: {
         tags: ["Portal"],
         summary: "Submit the opt-in demographics self-report. Consumes the link.",
+        description:
+          "Send every answer in one request: the first accepted request uses up the link, and any later one gets 409. Each dimension may appear once. The older one-answer body `{ dimension, value }` is still accepted.",
         parameters: [{ name: "token", in: "path", required: true, schema: { type: "string" } }],
         security: [],
         requestBody: jsonBody({
           type: "object",
-          required: ["dimension", "value"],
-          properties: { dimension: { type: "string" }, value: { type: "string" } },
+          required: ["answers"],
+          properties: {
+            answers: {
+              type: "array",
+              minItems: 1,
+              maxItems: 10,
+              items: {
+                type: "object",
+                required: ["dimension", "value"],
+                properties: {
+                  dimension: { type: "string", maxLength: 64, examples: ["gender"] },
+                  value: { type: "string", maxLength: 64 },
+                },
+              },
+            },
+          },
         }),
         responses: {
           200: ok({ type: "object" }),

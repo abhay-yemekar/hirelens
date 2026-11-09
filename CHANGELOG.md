@@ -85,6 +85,13 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Fixed
 
+- The candidate portal lost the race/ethnicity answer when a candidate
+  answered both questions: it sent one request per answer, the first used
+  up the link, and the second got a 409 that the page showed as "Thank
+  you". The page now sends every answer in one request
+  (`{ answers: [...] }`), the API stores them and uses up the link in one
+  transaction (two requests at once can't both succeed), and a failed
+  submission shows an error instead of the thank-you screen (#186).
 - The live demo withheld most scores because Gemini quotes several resume
   lines as one ("Led X. Built Y."), which matched no single passage. A
   quote now matches when every sentence in it is verbatim resume text;
