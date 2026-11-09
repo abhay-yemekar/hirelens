@@ -51,6 +51,10 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Changed
 
+- The repository moved to `github.com/abhay-yemekar/candidlens` (the old
+  address redirects), and a fresh clone lands in `candidlens/`. Docker
+  Compose pins its project name to `hirelens`, so a stack keeps its
+  containers and data volume whatever the folder is called (#180).
 - The README, docs and repository files describe CandidLens: a new front
   page with the product shot, features by audience, a how-it-works
   diagram, the real-model evaluation numbers and a complete settings
@@ -290,4 +294,4 @@ First public release. 🎉
   Google Gemini free tier as the default LLM.
 - MIT licensed. Resumes never have to leave the operator's machine.
 
-[1.0.0]: https://github.com/abhay-yemekar/hirelens/releases/tag/v1.0.0
+[1.0.0]: https://github.com/abhay-yemekar/candidlens/releases/tag/v1.0.0

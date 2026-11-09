@@ -34,7 +34,7 @@ const COLUMNS: Array<{ title: string; links: Array<{ label: string; href: string
   {
     title: "Project",
     links: [
-      { label: "GitHub", href: "https://github.com/abhay-yemekar/hirelens" },
+      { label: "GitHub", href: "https://github.com/abhay-yemekar/candidlens" },
       { label: "Contributing", href: "/contributing" },
       { label: "Code of Conduct", href: "/code-of-conduct" },
       { label: "Security", href: "/security" },
@@ -64,13 +64,13 @@ export function SiteFooter() {
             Glass-box AI resume screening. Every score backed by evidence you can verify.
           </p>
           <a
-            href="https://github.com/abhay-yemekar/hirelens"
-            title="github.com/abhay-yemekar/hirelens"
+            href="https://github.com/abhay-yemekar/candidlens"
+            title="github.com/abhay-yemekar/candidlens"
             className="mt-4 inline-block"
           >
             <img
-              src="https://img.shields.io/github/stars/abhay-yemekar/hirelens?style=flat&labelColor=0d1226&color=ff6b57"
-              alt="GitHub stars for abhay-yemekar/hirelens"
+              src="https://img.shields.io/github/stars/abhay-yemekar/candidlens?style=flat&labelColor=0d1226&color=ff6b57"
+              alt="GitHub stars for abhay-yemekar/candidlens"
               width={110}
               height={20}
             />

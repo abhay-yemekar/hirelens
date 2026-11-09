@@ -10,10 +10,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/abhay-yemekar/hirelens.git"
+    "url": "git+https://github.com/abhay-yemekar/candidlens.git"
   },
-  "homepage": "https://github.com/abhay-yemekar/hirelens#readme",
-  "bugs": "https://github.com/abhay-yemekar/hirelens/issues",
+  "homepage": "https://github.com/abhay-yemekar/candidlens#readme",
+  "bugs": "https://github.com/abhay-yemekar/candidlens/issues",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",

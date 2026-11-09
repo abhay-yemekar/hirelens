@@ -66,8 +66,8 @@ export default function QuickstartPage() {
 
       <h2>1. Clone and install</h2>
       <pre>
-        <code>{`git clone https://github.com/abhay-yemekar/hirelens.git
-cd hirelens
+        <code>{`git clone https://github.com/abhay-yemekar/candidlens.git
+cd candidlens
 pnpm install`}</code>
       </pre>
       <p>

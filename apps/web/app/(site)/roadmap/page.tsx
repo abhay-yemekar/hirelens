@@ -149,7 +149,7 @@ export default function RoadmapPage() {
 
       <p>
         Follow along issue-by-issue in the{" "}
-        <a href="https://github.com/abhay-yemekar/hirelens/milestones">GitHub milestones</a>.
+        <a href="https://github.com/abhay-yemekar/candidlens/milestones">GitHub milestones</a>.
       </p>
     </ProsePage>
   );
