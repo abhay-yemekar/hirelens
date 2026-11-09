@@ -8,7 +8,7 @@
 | Latest release (currently 1.4.x)         | ✅                         |
 | Older releases (1.0.x, 1.2.x)            | ❌ — upgrade to the latest |
 
-Security fixes land on `main` first, then ship in the next release: the npm package `hirelens` and the GHCR images. Fixes are not backported to older releases.
+Security fixes land on `main` first, then ship in the next release: the npm CLI package (`hirelens` up to 1.4.x, `candidlens` from 1.5.0) and the GHCR images. Fixes are not backported to older releases.
 
 ## Reporting a vulnerability
 
@@ -30,4 +30,4 @@ In scope: all code in `apps/` and `packages/`, including algorithmic denial-of-s
 
 ## A note on PII
 
-HireLens handles resumes — personal data by definition. If you discover a path where uploaded documents leak (logs, error traces, git, caches), treat it as **critical** and report it immediately. Real resumes must never be committed to this repository; `uploads/` is git-ignored for exactly this reason.
+CandidLens handles resumes — personal data by definition. If you discover a path where uploaded documents leak (logs, error traces, git, caches), treat it as **critical** and report it immediately. Real resumes must never be committed to this repository; `uploads/` is git-ignored for exactly this reason.

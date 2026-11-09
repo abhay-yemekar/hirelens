@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Questions and usage help
-    url: https://github.com/abhay-yemekar/hirelens/discussions
+    url: https://github.com/abhay-yemekar/candidlens/discussions
     about: Ask how to run or extend CandidLens here.
   - name: Security vulnerability
-    url: https://github.com/abhay-yemekar/hirelens/security/policy
+    url: https://github.com/abhay-yemekar/candidlens/security/policy
     about: Report it privately as the security policy describes; never open a public issue.

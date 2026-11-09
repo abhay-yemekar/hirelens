@@ -9,6 +9,11 @@
 # database for local `pnpm dev` workflows, as documented in
 # docs/project_execution.md.
 
+# The project name is pinned, so the stack and its data volume keep the same
+# names whatever the folder is called: a fresh clone lands in candidlens/,
+# older checkouts in hirelens/. Changing it would start on an empty volume.
+name: hirelens
+
 services:
   postgres:
     image: pgvector/pgvector:pg16
