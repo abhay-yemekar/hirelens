@@ -144,7 +144,7 @@ describe.skipIf(!available && allowSkip)("bias audit", () => {
       [casey, "man"],
     ];
     for (const [cid, value] of demo) {
-      const res = await app.request(`/api/jobs/${jobId}/demographics/${cid}/demographics`, {
+      const res = await app.request(`/api/jobs/${jobId}/candidates/${cid}/demographics`, {
         method: "PUT",
         headers: { ...authHeaders, "content-type": "application/json" },
         body: JSON.stringify({ dimension: "gender", value }),
@@ -256,7 +256,7 @@ describe.skipIf(!available && allowSkip)("bias audit", () => {
         ).json()) as { candidates: Array<{ id: string; sourceFileKey: string | null }> }
       ).candidates.find((r) => r.sourceFileKey === `${name}.txt`)?.id;
       if (!cid) throw new Error(`fixture: candidate ${name} missing`);
-      const res = await app.request(`/api/jobs/${poweredJobId}/demographics/${cid}/demographics`, {
+      const res = await app.request(`/api/jobs/${poweredJobId}/candidates/${cid}/demographics`, {
         method: "PUT",
         headers: { ...authHeaders, "content-type": "application/json" },
         body: JSON.stringify({ dimension: "gender", value }),
@@ -296,7 +296,7 @@ describe.skipIf(!available && allowSkip)("bias audit", () => {
     expect(bad.status).toBe(400);
 
     const noCandidate = await app.request(
-      `/api/jobs/${jobId}/demographics/00000000-0000-0000-0000-000000000000/demographics`,
+      `/api/jobs/${jobId}/candidates/00000000-0000-0000-0000-000000000000/demographics`,
       {
         method: "PUT",
         headers: { ...authHeaders, "content-type": "application/json" },

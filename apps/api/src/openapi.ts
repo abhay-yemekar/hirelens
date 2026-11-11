@@ -4,17 +4,23 @@
  * asserts every mounted route appears in the document.
  */
 
+/** Every error body: `{ ok: false, error, message? }` (see `app.onError`). */
 const errorResponse = {
   description:
-    "Error envelope. `code` is a stable machine-readable identifier (e.g. `unauthorized`, `forbidden`, `llm_not_configured`, `internal_error`).",
+    "Error envelope. `error` is a stable machine-readable code (e.g. `unauthorized`, `forbidden`, `not_found`, `invalid_body`, `llm_not_configured`, `internal_error`); `message`, when present, explains it for people.",
   content: {
     "application/json": {
       schema: {
         type: "object",
-        required: ["error"],
+        required: ["ok", "error"],
         properties: {
-          error: { type: "string", description: "Human-readable message." },
-          code: { type: "string", description: "Stable machine-readable code." },
+          ok: { type: "boolean", const: false },
+          error: { type: "string", description: "Stable machine-readable code." },
+          message: { type: "string", description: "Human-readable explanation, when given." },
+          errorId: {
+            type: "string",
+            description: "On `internal_error` only: an id to quote when reporting the problem.",
+          },
         },
       },
     },
@@ -888,7 +894,7 @@ export const openApiDocument = {
       put: {
         tags: ["Bias audit"],
         summary:
-          "Opt-in demographic self-report (gender / race / age band / disability). Merged per dimension; used only for aggregate adverse-impact math.",
+          "Record a candidate's self-reported value for one demographic dimension (e.g. `gender`, `race_ethnicity`). Merged per dimension; used only for aggregate adverse-impact math.",
         parameters: [
           { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
           {
@@ -900,14 +906,27 @@ export const openApiDocument = {
         ],
         requestBody: jsonBody({
           type: "object",
+          required: ["dimension", "value"],
           properties: {
-            gender: { type: "string", nullable: true },
-            race: { type: "string", nullable: true },
-            ageBand: { type: "string", nullable: true },
-            disability: { type: "string", nullable: true },
+            dimension: { type: "string", minLength: 1, maxLength: 64, examples: ["gender"] },
+            value: { type: "string", minLength: 1, maxLength: 64 },
           },
         }),
-        responses: { 200: ok({ type: "object" }) },
+        responses: {
+          200: ok({
+            type: "object",
+            properties: {
+              ok: { type: "boolean" },
+              selfReported: {
+                type: "object",
+                additionalProperties: { type: "string" },
+                description: "Every dimension on record for the candidate after the merge.",
+              },
+            },
+          }),
+          400: errorResponse,
+          404: errorResponse,
+        },
       },
     },
     "/api/jobs/{jobId}/score": {

@@ -76,7 +76,7 @@ const ROUTES: Array<{ method: string; path: string; desc: string }> = [
   },
   {
     method: "PUT",
-    path: "/api/jobs/:id/demographics/:cid/demographics",
+    path: "/api/jobs/:id/candidates/:cid/demographics",
     desc: "Candidate's opt-in demographics self-report",
   },
   {
