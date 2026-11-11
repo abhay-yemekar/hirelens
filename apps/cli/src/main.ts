@@ -15,20 +15,13 @@
  * CANDIDLENS_CONFIG_DIR, the URL with CANDIDLENS_API_URL).
  */
 
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import { ApiError, get, login, post, upload } from "./api.ts";
 import { type CliConfig, clearSession, loadConfig, saveConfig, setting } from "./config.ts";
+import { CliExit, fail } from "./errors.ts";
 import { table } from "./output.ts";
-
-const MIME: Record<string, string> = {
-  ".pdf": "application/pdf",
-  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  ".txt": "text/plain",
-  ".md": "text/markdown",
-};
+import { collectResumes } from "./resumes.ts";
 
 interface ParsedArgs {
   positional: string[];
@@ -59,15 +52,6 @@ function parseArgs(argv: string[]): ParsedArgs {
     }
   }
   return { positional, flags };
-}
-
-function fail(message: string): never {
-  console.error(`error: ${message}`);
-  // Let stdio flush before the process ends (Windows libuv assertion
-  // otherwise fires when open sockets race the exit).
-  setImmediate(() => process.exit(1));
-  process.exitCode = 1;
-  throw new Error("unreachable");
 }
 
 async function requireAuth(): Promise<CliConfig> {
@@ -282,45 +266,6 @@ async function cmdRubric(args: ParsedArgs): Promise<void> {
   fail(`unknown subcommand "${sub}" (expected: list, derive, import)`);
 }
 
-interface ResumeFile {
-  name: string;
-  mime: string;
-  bytes: Uint8Array<ArrayBuffer>;
-}
-
-async function loadResume(path: string): Promise<ResumeFile> {
-  const ext = path.slice(path.lastIndexOf(".")).toLowerCase();
-  const mime = MIME[ext];
-  if (!mime) fail(`unsupported resume type "${ext}" (pdf, docx, txt, md) — ${path}`);
-  const buffer = await readFile(path);
-  const bytes = new Uint8Array(buffer.byteLength);
-  bytes.set(buffer);
-  return {
-    name: path.split(/[\\/]/).pop() ?? path,
-    mime,
-    bytes,
-  };
-}
-
-async function collectResumes(paths: string[]): Promise<ResumeFile[]> {
-  const out: ResumeFile[] = [];
-  for (const p of paths) {
-    const st = statSync(p);
-    if (st.isDirectory()) {
-      for (const entry of readdirSync(p)) {
-        if (entry.startsWith(".")) continue;
-        const full = join(p, entry);
-        if (statSync(full).isFile() && MIME[entry.slice(entry.lastIndexOf("."))] !== undefined) {
-          out.push(await loadResume(full));
-        }
-      }
-    } else {
-      out.push(await loadResume(p));
-    }
-  }
-  return out;
-}
-
 async function cmdScore(args: ParsedArgs): Promise<void> {
   const config = await requireAuth();
   const jobId = args.positional[0];
@@ -483,12 +428,14 @@ async function main(): Promise<void> {
       }
     }
   } catch (err) {
+    process.exitCode = 1;
+    // fail() already printed its message.
+    if (err instanceof CliExit) return;
     if (err instanceof ApiError) {
       console.error(`error [${err.status} ${err.code}]: ${err.message}`);
     } else {
       console.error(err instanceof Error ? err.message : err);
     }
-    process.exitCode = 1;
   }
 }
 

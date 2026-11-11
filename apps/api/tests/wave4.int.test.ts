@@ -5,8 +5,8 @@
  */
 
 import { createMockModel } from "@candidlens/core";
-import { auth, createDb, organization } from "@candidlens/db";
-import { eq } from "drizzle-orm";
+import { auditLog, auth, createDb, demographics } from "@candidlens/db";
+import { and, desc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 import { createOtherTenant, deleteOrgCompletely } from "./helpers.js";
@@ -231,6 +231,79 @@ describe.skipIf(!available && allowSkip)("interview kits + candidate portal", ()
     expect(bias.status).toBe(200);
     const biasBody = (await bias.json()) as { withDemographics: number };
     expect(biasBody.withDemographics).toBe(1);
+  });
+
+  /** A fresh, unused portal link for the test candidate. */
+  async function freshLink(): Promise<{ id: string; token: string }> {
+    const create = await app.request(`/api/jobs/${jobId}/portal/${candidateId}`, {
+      method: "POST",
+      headers: authHeaders,
+    });
+    expect(create.status).toBe(201);
+    return ((await create.json()) as { link: { id: string; token: string } }).link;
+  }
+
+  function submit(token: string, body: unknown): Promise<Response> {
+    return Promise.resolve(
+      app.request(`/api/portal/${token}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    );
+  }
+
+  it("records every answer from one submission", async () => {
+    const link = await freshLink();
+    const res = await submit(link.token, {
+      answers: [
+        { dimension: "gender", value: "man" },
+        { dimension: "race_ethnicity", value: "asian" },
+      ],
+    });
+    expect(res.status).toBe(200);
+
+    // Both answers landed; this submission's gender replaced the earlier one.
+    const [row] = await db
+      .select({ selfReported: demographics.selfReported })
+      .from(demographics)
+      .where(eq(demographics.candidateId, candidateId));
+    expect(row?.selfReported).toEqual({ gender: "man", race_ethnicity: "asian" });
+
+    // The audit entry names the dimensions, never the answers.
+    const [entry] = await db
+      .select({ payload: auditLog.payload })
+      .from(auditLog)
+      .where(and(eq(auditLog.orgId, orgId), eq(auditLog.action, "portal.submitted")))
+      .orderBy(desc(auditLog.seq))
+      .limit(1);
+    expect(entry?.payload).toMatchObject({ candidateId, dimensions: ["gender", "race_ethnicity"] });
+    expect(JSON.stringify(entry?.payload)).not.toContain("asian");
+
+    // The link is used up.
+    const again = await submit(link.token, { dimension: "gender", value: "woman" });
+    expect(again.status).toBe(409);
+  });
+
+  it("accepts only one of two submissions sent at the same moment", async () => {
+    const link = await freshLink();
+    const [a, b] = await Promise.all([
+      submit(link.token, { answers: [{ dimension: "gender", value: "woman" }] }),
+      submit(link.token, { answers: [{ dimension: "gender", value: "non-binary" }] }),
+    ]);
+    expect([a.status, b.status].sort()).toEqual([200, 409]);
+  });
+
+  it("rejects a submission that repeats a dimension, without using up the link", async () => {
+    const link = await freshLink();
+    const res = await submit(link.token, {
+      answers: [
+        { dimension: "gender", value: "woman" },
+        { dimension: "gender", value: "man" },
+      ],
+    });
+    expect(res.status).toBe(400);
+    expect((await app.request(`/api/portal/${link.token}`)).status).toBe(200);
   });
 
   it("rejects invalid submissions", async () => {

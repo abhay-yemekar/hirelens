@@ -6,7 +6,6 @@
       "!**/dist",
       "!**/node_modules",
       "!**/.next",
-      "!**/.source",
       "!apps/web/.hirelens-api",
       "!**/coverage",
       "!**/.turbo",

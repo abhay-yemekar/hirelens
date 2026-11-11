@@ -59,6 +59,13 @@ On `main` since v1.4.0; planned for v1.5.0.
   page with the product shot, features by audience, a how-it-works
   diagram, the real-model evaluation numbers and a complete settings
   reference (#173).
+- The docs live in one place, the site's `/docs` pages. The undeployed
+  Fumadocs copy in `apps/docs` is gone, and the README links the live
+  pages. Pages that disagreed with the code now match it: blind review
+  masks emails, phone numbers, links and the name line, not schools or
+  graduation years; the bias audit's reference group is the
+  highest-rate group with at least 4 candidates; API errors are
+  `{ ok: false, error, message? }` (#182).
 - Every password field has a show/hide button. Sign-up says passwords
   need 8 characters, and messages in Settings → Sign-in & security show
   next to the part of the card they belong to (#164).
@@ -85,11 +92,23 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Fixed
 
+- The candidate portal lost the race/ethnicity answer when a candidate
+  answered both questions: it sent one request per answer, the first used
+  up the link, and the second got a 409 that the page showed as "Thank
+  you". The page now sends every answer in one request
+  (`{ answers: [...] }`), the API stores them and uses up the link in one
+  transaction (two requests at once can't both succeed), and a failed
+  submission shows an error instead of the thank-you screen (#186).
 - The live demo withheld most scores because Gemini quotes several resume
   lines as one ("Led X. Built Y."), which matched no single passage. A
   quote now matches when every sentence in it is verbatim resume text;
   each line is kept and highlighted as its own evidence span. A quote with
   any line that isn't in the resume is still withheld (#175).
+- Shortlisting from the talent pool wrote no audit-log entry, so those
+  decisions were missing from the hash-chained trail and its export. It
+  now records `decision.recorded`, like a decision from the review queue
+  (with `source: "talent_pool"`), in the same transaction as the decision
+  (#187).
 - A Docker Compose stack ignored the model failover chain, the retry
   deadline and the email settings in `.env`, and its web app never showed
   "Forgot password?" or the Google and GitHub buttons. The API container
@@ -97,6 +116,14 @@ On `main` since v1.4.0; planned for v1.5.0.
   `NEXT_PUBLIC_EMAIL_ENABLED` and the sign-in button settings when it is
   built. The `CANDIDLENS_MAIL_FROM` example in `.env.example` is quoted so
   Compose can read the file (#159).
+- The demographics route was served at a doubled path,
+  `/api/jobs/:jobId/demographics/:candidateId/demographics`, while the
+  OpenAPI document listed `/api/jobs/:jobId/candidates/:candidateId/demographics`
+  (a 404). It now answers at the documented path. The document also had the
+  wrong request body for it, and its error schema said `{ error, code }`;
+  it now gives `{ dimension, value }` and the real error body,
+  `{ ok: false, error, message? }`. A test checks that every documented
+  route is served (#188).
 - The Resume Doctor said "No experience section detected" when role lines
   used en or em dashes (`Engineer—Acme  Mar 2021 – Present`); they now
   parse, and a found Experience heading with no readable roles says
@@ -105,6 +132,11 @@ On `main` since v1.4.0; planned for v1.5.0.
   pipes or 3+ stacked rows of the same shape. Employment dates no longer
   read a company that starts like a month ("Marriott 2019") as a month,
   and long month-like text no longer slows parsing (#167).
+- `hirelens score <jobId> <directory>` skipped files with uppercase
+  extensions such as `resume.PDF`; a directory now takes them in any
+  letter case. CLI errors no longer print a second line reading
+  `unreachable`. `apps/api/.env.example` lists all seven model providers,
+  adding Mistral and Cerebras (#190).
 - The public parse API says the roles couldn't be read when the
   Experience heading is there, instead of "No experience section
   detected." Labelled lines under a role (`Stack: Python | Airflow`) are
@@ -130,6 +162,13 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Security
 
+- Search embeddings, which always call Google, used the model key whatever
+  the provider was. A self-hosted instance on Anthropic, Groq,
+  OpenRouter, Mistral or Cerebras sent that key and each uploaded
+  resume's text to Google. Embeddings now use only a Google key:
+  `CANDIDLENS_EMBEDDING_API_KEY`, the model key when the provider is
+  `google`, or `CANDIDLENS_LLM_GOOGLE_API_KEY`; without one, search
+  matches keywords (#184).
 - Google or GitHub no longer joins an existing account just because the
   email matches; connect them from Settings → Sign-in & security while
   signed in. Otherwise someone could register a stranger's email first

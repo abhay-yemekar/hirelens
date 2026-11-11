@@ -51,7 +51,51 @@ describe("GET /api/openapi.json", () => {
       expect(doc.paths[key]).toBeDefined();
     }
   });
+
+  it("documents only routes the app actually serves", async () => {
+    const app = createApp({ db: {} as never, llm: {} as never });
+    // Path shape with parameter names dropped: "/api/jobs/{}/candidates/{}".
+    const shape = (path: string) => path.replace(/:\w+(\{[^}]*\})?|\{\w+\}/g, "{}");
+    const served = new Set(
+      app.routes.filter((r) => r.method !== "ALL").map((r) => `${r.method} ${shape(r.path)}`),
+    );
+    const res = await app.request("/api/openapi.json");
+    const doc = (await res.json()) as { paths: Record<string, Record<string, unknown>> };
+    for (const [path, operations] of Object.entries(doc.paths)) {
+      // Better Auth serves everything under /api/auth through one catch-all.
+      if (path.startsWith("/api/auth/")) continue;
+      for (const method of Object.keys(operations)) {
+        const key = `${method.toUpperCase()} ${shape(path)}`;
+        expect(served.has(key), `documented but not served: ${method} ${path}`).toBe(true);
+      }
+    }
+  });
+
+  it("describes the error body every route returns", async () => {
+    const app = createApp({ db: {} as never, llm: {} as never });
+    const doc = (await (await app.request("/api/openapi.json")).json()) as {
+      paths: Record<string, Record<string, { responses: Record<string, ErrorDoc> }>>;
+    };
+    const notFound = doc.paths["/api/jobs/{id}"]?.["get"]?.responses["404"];
+    const schema = notFound?.content["application/json"]?.schema as {
+      required: string[];
+      properties: Record<string, unknown>;
+    };
+    expect(schema.required).toEqual(["ok", "error"]);
+
+    // A real error from the app fits that schema.
+    const res = await app.request("/no-such-page");
+    expect(res.status).toBe(404);
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(body["ok"]).toBe(false);
+    expect(typeof body["error"]).toBe("string");
+    for (const key of Object.keys(body)) expect(Object.keys(schema.properties)).toContain(key);
+  });
 });
+
+interface ErrorDoc {
+  content: Record<string, { schema: unknown }>;
+}
 
 /** Concrete mounted patterns in the app (param segments in {brace} form). */
 const MOUNTED_ROUTES = [
