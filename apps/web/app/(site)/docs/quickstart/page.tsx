@@ -120,7 +120,7 @@ docker compose ps`}</code>
         </li>
         <li>
           <code>CANDIDLENS_LLM_MODEL</code>: a model id your provider serves, e.g.{" "}
-          <code>gemini-2.5-flash</code> for <code>google</code>.
+          <code>gemini-3.5-flash-lite</code> for <code>google</code>.
         </li>
         <li>
           <code>CANDIDLENS_LLM_API_KEY</code>: your provider&apos;s key. Every provider except
