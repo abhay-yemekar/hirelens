@@ -97,6 +97,14 @@ On `main` since v1.4.0; planned for v1.5.0.
   `NEXT_PUBLIC_EMAIL_ENABLED` and the sign-in button settings when it is
   built. The `CANDIDLENS_MAIL_FROM` example in `.env.example` is quoted so
   Compose can read the file (#159).
+- The demographics route was served at a doubled path,
+  `/api/jobs/:jobId/demographics/:candidateId/demographics`, while the
+  OpenAPI document listed `/api/jobs/:jobId/candidates/:candidateId/demographics`
+  (a 404). It now answers at the documented path. The document also had the
+  wrong request body for it, and its error schema said `{ error, code }`;
+  it now gives `{ dimension, value }` and the real error body,
+  `{ ok: false, error, message? }`. A test checks that every documented
+  route is served (#188).
 - The Resume Doctor said "No experience section detected" when role lines
   used en or em dashes (`Engineer—Acme  Mar 2021 – Present`); they now
   parse, and a found Experience heading with no readable roles says

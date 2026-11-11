@@ -22,7 +22,10 @@ const SelfReportSchema = z.object({
   value: GroupValueSchema,
 });
 
-/** PUT /candidates/:cid/demographics — candidate's own opt-in self-report. */
+/**
+ * PUT /jobs/:jobId/candidates/:candidateId/demographics — record a
+ * self-report for one dimension (mounted at /jobs/:jobId/candidates).
+ */
 export function demographicsRoutes(): Hono<AppEnv> {
   const routes = new Hono<AppEnv>();
 
