@@ -24,11 +24,6 @@ function shortDate(iso: string | null): string {
   }
 }
 
-/**
- * API tokens (Settings → Integrations) — mint machine credentials for ATS
- * webhooks. The raw token is displayed exactly once with a copy button;
- * after that only the …last4 hint remains. Owner-only server-side.
- */
 interface FullOrg {
   members?: Array<{ userId: string; role: string | string[] }>;
 }
@@ -38,6 +33,13 @@ function roleOf(m: { role: string | string[] }): string {
   return ((raw ?? "").split(",")[0] ?? "").trim();
 }
 
+/**
+ * API tokens (Settings → Integrations) — mint machine credentials for ATS
+ * webhooks. The raw token is displayed exactly once with a copy button;
+ * after that only the …last4 hint remains. The token API is owner-only, so
+ * the card asks for the member's role first and calls it only for owners;
+ * everyone else sees a short "owners only" note.
+ */
 export function ApiTokensCard() {
   const { data: session } = useSession();
   const [tokens, setTokens] = useState<TokenRow[]>([]);
@@ -46,7 +48,8 @@ export function ApiTokensCard() {
   const [label, setLabel] = useState("");
   const [minted, setMinted] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [myRole, setMyRole] = useState("");
+  /** The member's role in the active organization; null until known. */
+  const [myRole, setMyRole] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -60,25 +63,39 @@ export function ApiTokensCard() {
     }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
   // Owner check mirrors MembersCard: from the org's member rows.
   useEffect(() => {
     if (!session) return;
-    void organization
-      .getFullOrganization()
-      .then((res) => {
-        const data = (res as { data?: FullOrg | null }).data;
-        const me = session.user?.id;
-        const mine = data?.members?.find((m) => m.userId === me);
-        setMyRole(mine ? roleOf(mine) : "");
-      })
-      .catch(() => undefined);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await organization.getFullOrganization();
+        const { data, error: orgError } = res as {
+          data?: FullOrg | null;
+          error?: { message?: string } | null;
+        };
+        if (orgError || !data) {
+          throw new Error(orgError?.message ?? "Could not check your role in this organization");
+        }
+        const mine = data.members?.find((m) => m.userId === session.user?.id);
+        if (!cancelled) setMyRole(mine ? roleOf(mine) : "");
+      } catch (err) {
+        if (!cancelled) {
+          setError(err);
+          setMyRole("");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [session]);
 
   const isOwner = myRole === "owner";
+
+  useEffect(() => {
+    if (isOwner) void load();
+  }, [isOwner, load]);
 
   async function createToken(e: React.FormEvent) {
     e.preventDefault();
@@ -108,55 +125,73 @@ export function ApiTokensCard() {
     }
   }
 
+  const header = (
+    <CardHeader>
+      <CardTitle style={{ color: "var(--hl-cream)" }}>Integrations — API tokens</CardTitle>
+      <CardDescription style={{ color: "var(--hl-mist)" }}>
+        Machine credentials for ATS webhooks (Greenhouse, Lever, Zapier, …) and the public parser
+        API (`POST /api/public/parse` — stateless resume → structured profile). A token acts as your
+        organization — scope it per vendor and revoke instantly.{" "}
+        <a href="/docs/ats-integration" className="underline" style={{ color: "var(--hl-accent)" }}>
+          Integration guide →
+        </a>
+      </CardDescription>
+    </CardHeader>
+  );
+
+  // Until the role is known, and for everyone but owners, the card never
+  // calls the owner-only token API.
+  if (!isOwner) {
+    return (
+      <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
+        {header}
+        <CardContent className="flex flex-col gap-4">
+          {myRole === null ? (
+            <p className="text-sm" style={{ color: "var(--hl-mist)" }}>
+              Loading…
+            </p>
+          ) : error !== null ? (
+            <NoticeBanner error={error} />
+          ) : (
+            <p className="text-sm" style={{ color: "var(--hl-mist)" }}>
+              Only organization owners can create, view and revoke API tokens. If an integration
+              needs one, ask an owner of this organization.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
-      <CardHeader>
-        <CardTitle style={{ color: "var(--hl-cream)" }}>Integrations — API tokens</CardTitle>
-        <CardDescription style={{ color: "var(--hl-mist)" }}>
-          Machine credentials for ATS webhooks (Greenhouse, Lever, Zapier, …) and the public parser
-          API (`POST /api/public/parse` — stateless resume → structured profile). A token acts as
-          your organization — scope it per vendor and revoke instantly.{" "}
-          <a
-            href="/docs/ats-integration"
-            className="underline"
-            style={{ color: "var(--hl-accent)" }}
-          >
-            Integration guide →
-          </a>
-        </CardDescription>
-      </CardHeader>
+      {header}
       <CardContent className="flex flex-col gap-4">
         {error !== null && !loading ? <NoticeBanner error={error} /> : null}
 
-        {isOwner ? (
-          <form onSubmit={createToken} className="flex flex-wrap items-center gap-3">
-            <input
-              type="text"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder="Label, e.g. “Greenhouse webhook”"
-              aria-label="Token label"
-              maxLength={80}
-              className="min-w-[220px] flex-1 rounded-lg border px-3 py-2 text-sm placeholder:text-[var(--hl-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--hl-accent-soft)]"
-              style={{
-                borderColor: "var(--hl-border)",
-                background: "var(--hl-input)",
-                color: "var(--hl-cream)",
-              }}
-            />
-            <Button
-              type="submit"
-              style={{ background: "var(--hl-accent)", color: "var(--hl-ink)" }}
-              disabled={label.trim().length === 0}
-            >
-              Create token
-            </Button>
-          </form>
-        ) : (
-          <p className="text-sm" style={{ color: "var(--hl-mist)" }}>
-            Only organization owners can manage API tokens.
-          </p>
-        )}
+        <form onSubmit={createToken} className="flex flex-wrap items-center gap-3">
+          <input
+            type="text"
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            placeholder="Label, e.g. “Greenhouse webhook”"
+            aria-label="Token label"
+            maxLength={80}
+            className="min-w-[220px] flex-1 rounded-lg border px-3 py-2 text-sm placeholder:text-[var(--hl-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--hl-accent-soft)]"
+            style={{
+              borderColor: "var(--hl-border)",
+              background: "var(--hl-input)",
+              color: "var(--hl-cream)",
+            }}
+          />
+          <Button
+            type="submit"
+            style={{ background: "var(--hl-accent)", color: "var(--hl-ink)" }}
+            disabled={label.trim().length === 0}
+          >
+            Create token
+          </Button>
+        </form>
 
         {minted !== null ? (
           <div
@@ -227,7 +262,7 @@ export function ApiTokensCard() {
                       )}
                     </td>
                     <td className="px-3 py-2 text-right">
-                      {t.revokedAt === null && isOwner ? (
+                      {t.revokedAt === null ? (
                         <Button
                           variant="ghost"
                           onClick={() => void revoke(t.id)}
