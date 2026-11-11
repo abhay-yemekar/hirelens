@@ -142,6 +142,11 @@ On `main` since v1.4.0; planned for v1.5.0.
   detected." Labelled lines under a role (`Stack: Python | Airflow`) are
   no longer read as roles, and education lines separated by en or em
   dashes give the right institution (#170).
+- Settings → Integrations — API tokens showed recruiters, hiring managers
+  and viewers a "forbidden" error and a "Create one" hint, because it
+  called the owner-only token API for everyone. It now checks the
+  member's role first; only owners load and manage tokens, and everyone
+  else sees one "owners only" note (#189).
 - Evidence quotes written with a different hyphen, dash or quote
   character than the resume were not found, so their scores were
   withheld (#143).
