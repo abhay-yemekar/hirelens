@@ -59,7 +59,7 @@ Things I'm proud of:
 
 Try it without an account: https://hirelens-rosy.vercel.app/demo
 Self-host: docker compose up --build -d
-Code: https://github.com/abhay-yemekar/hirelens
+Code: https://github.com/abhay-yemekar/candidlens
 
 Honest caveats: it's a screening aid, not a hiring decision. The eval
 numbers published in the README are from the mock model — the harness
@@ -139,7 +139,7 @@ HireLens (open-source, MIT):
 → self-host in one command, or bring your own LLM key
 
 Live demo, no signup: https://hirelens-rosy.vercel.app/demo
-GitHub: https://github.com/abhay-yemekar/hirelens
+GitHub: https://github.com/abhay-yemekar/candidlens
 ```
 
 ---

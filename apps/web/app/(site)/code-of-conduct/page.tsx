@@ -50,7 +50,7 @@ export default function CodeOfConductPage() {
 
       <p>
         The full, authoritative text lives in{" "}
-        <a href="https://github.com/abhay-yemekar/hirelens/blob/main/CODE_OF_CONDUCT.md">
+        <a href="https://github.com/abhay-yemekar/candidlens/blob/main/CODE_OF_CONDUCT.md">
           CODE_OF_CONDUCT.md
         </a>{" "}
         in the repository.

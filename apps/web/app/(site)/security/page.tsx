@@ -63,7 +63,7 @@ export default function SecurityPage() {
 
       <p>
         Supported versions and the response process are detailed in{" "}
-        <a href="https://github.com/abhay-yemekar/hirelens/blob/main/SECURITY.md">SECURITY.md</a>.
+        <a href="https://github.com/abhay-yemekar/candidlens/blob/main/SECURITY.md">SECURITY.md</a>.
       </p>
     </ProsePage>
   );

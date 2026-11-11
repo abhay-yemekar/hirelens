@@ -31,8 +31,8 @@ Optional (not needed to run tests):
 ## 1. Clone and install
 
 ```bash
-git clone https://github.com/abhay-yemekar/hirelens.git
-cd hirelens
+git clone https://github.com/abhay-yemekar/candidlens.git
+cd candidlens
 pnpm install
 ```
 

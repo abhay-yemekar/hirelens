@@ -12,13 +12,13 @@ const CHANNELS = [
     title: "Bug or feature request",
     body: "Open a GitHub issue. Bugs: exact command, full error text, OS + Node/pnpm/Docker versions. Feature requests: the problem you're solving, not just the solution you imagine.",
     cta: "Open an issue",
-    href: "https://github.com/abhay-yemekar/hirelens/issues",
+    href: "https://github.com/abhay-yemekar/candidlens/issues",
   },
   {
     title: "Security vulnerability",
     body: "Do not open a public issue. Follow the private disclosure process in SECURITY.md — you'll get a response and a coordinated fix timeline.",
     cta: "Security policy",
-    href: "https://github.com/abhay-yemekar/hirelens/blob/main/SECURITY.md",
+    href: "https://github.com/abhay-yemekar/candidlens/blob/main/SECURITY.md",
   },
   {
     title: "Questions & self-hosting help",
@@ -104,10 +104,12 @@ export default function ContactPage() {
       <h2>The repository</h2>
       <p>Everything — source, docs, eval harness, this website — lives in one public repo:</p>
       <p>
-        <a href="https://github.com/abhay-yemekar/hirelens">github.com/abhay-yemekar/hirelens</a> ·
-        MIT licensed ·{" "}
+        <a href="https://github.com/abhay-yemekar/candidlens">
+          github.com/abhay-yemekar/candidlens
+        </a>{" "}
+        · MIT licensed ·{" "}
         <img
-          src="https://img.shields.io/github/stars/abhay-yemekar/hirelens?style=social"
+          src="https://img.shields.io/github/stars/abhay-yemekar/candidlens?style=social"
           alt="GitHub stars"
           width={90}
           height={20}
