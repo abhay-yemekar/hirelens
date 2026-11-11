@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ProsePage } from "@/components/prose-page";
 
 export const metadata: Metadata = {
@@ -110,23 +111,30 @@ Content-Type: application/json
 
       <h2 id="api">Pattern 3 — REST API / CLI (full pipeline control)</h2>
       <p>
-        The whole screening pipeline is scriptable. The <a href="/docs/cli">CLI</a> wraps it, and
-        every endpoint is in the <a href="/api-reference">OpenAPI 3.1 reference</a>:
+        The whole screening pipeline is scriptable. The <Link href="/docs/cli">CLI</Link> wraps the
+        main steps, and every endpoint is in the{" "}
+        <Link href="/api-reference">OpenAPI 3.1 reference</Link>:
       </p>
       <pre>
-        <code>{`# 1. create the job (or reuse one)
-hirelens jobs create --title "Senior Data Engineer"
+        <code>{`# 1. create the job from its description (or find one: hirelens jobs list)
+hirelens jobs create "Senior Data Engineer" --jd jd.md
 
-# 2. derive the rubric from the JD (LLM, one call)
-hirelens rubrics derive --job <job-id> --jd jd.md
+# 2. draft the rubric from the job description with the model
+#    (or bring your own: hirelens rubric import <jobId> --file rubric.json)
+hirelens rubric derive <jobId>
 
-# 3. screen a folder the ATS exported
-hirelens resumes upload --job <job-id> --zip export.zip
-hirelens scoring run --job <job-id>
-
-# 4. read results back into your ATS
-hirelens scoring results --job <job-id> --format json`}</code>
+# 3. upload the resumes the ATS exported, score every candidate on the job,
+#    and save the ranking to read back into your ATS
+hirelens score <jobId> ./export --json > ranking.json`}</code>
       </pre>
+      <p>
+        <code>jobs create</code> prints the new job&apos;s id. <code>score</code> takes a folder or
+        files (<code>.pdf</code>, <code>.docx</code>, <code>.txt</code>, <code>.md</code>), not a
+        ZIP: unzip the export first, or send the ZIP to{" "}
+        <code>POST /api/jobs/&lt;jobId&gt;/candidates/zip</code>. Progress lines go to stderr, so{" "}
+        <code>ranking.json</code> holds only the ranked list: rank, candidate id, file name and
+        overall score.
+      </p>
 
       <h2>What CandidLens deliberately does not do</h2>
       <ul>

@@ -12,7 +12,6 @@ apps/
   api/           Hono REST API. Runs standalone for self-hosters (Docker).
   cli/           `hirelens` on npm: jobs, rubrics, uploads and scoring
                  from a terminal.
-  docs/          Documentation site (Fumadocs).
 packages/
   core/          Framework-free engines (see below). THE PRODUCT.
   db/            Drizzle schema + migrations (Postgres 16 + pgvector) and
