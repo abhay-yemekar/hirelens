@@ -212,17 +212,20 @@
 }
 /* Long code (URLs, commands) in a table cell may wrap anywhere rather than
    push the page sideways on a phone. */
-.hl-prose td code:not(.hl-setting-name) {
+.hl-prose td code:not(.hl-setting-name):not(.hl-route-path) {
   overflow-wrap: anywhere;
 }
-/* Setting names (docs tables): on phones they wrap only after an underscore
-   (<wbr>); from 640px they stay on one line. Chrome breaks at <wbr> even
-   under nowrap, so the <wbr> elements are hidden there instead. */
+/* Setting names and API paths (docs tables): on phones they wrap only at a
+   <wbr>, after an underscore or a slash; from 640px they stay on one line.
+   Chrome breaks at <wbr> even under nowrap, so the <wbr> elements are
+   hidden there instead. */
 @media (min-width: 640px) {
-  .hl-prose .hl-setting-name {
+  .hl-prose .hl-setting-name,
+  .hl-prose .hl-route-path {
     white-space: nowrap;
   }
-  .hl-prose .hl-setting-name wbr {
+  .hl-prose .hl-setting-name wbr,
+  .hl-prose .hl-route-path wbr {
     display: none;
   }
 }

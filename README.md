@@ -16,7 +16,7 @@ Rank candidates against a rubric you control, decide with stated reasons, and au
 
 **[Live demo, no signup](https://candidlens.vercel.app/demo)** · [Resume Doctor](https://candidlens.vercel.app/doctor) · [Docs](https://candidlens.vercel.app/docs) · [Self-host](#self-host-in-one-command) · [Roadmap](https://candidlens.vercel.app/roadmap)
 
-[![CI](https://github.com/abhay-yemekar/hirelens/actions/workflows/ci.yml/badge.svg)](https://github.com/abhay-yemekar/hirelens/actions/workflows/ci.yml)
+[![CI](https://github.com/abhay-yemekar/candidlens/actions/workflows/ci.yml/badge.svg)](https://github.com/abhay-yemekar/candidlens/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![npm](https://img.shields.io/npm/v/hirelens?label=cli&color=ff6b57)](https://www.npmjs.com/package/hirelens)
 [![Node](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=node.js&logoColor=white)](package.json)
@@ -55,12 +55,12 @@ An AI score is a screening aid, not a hiring decision.
 ### Self-host in one command
 
 ```bash
-git clone https://github.com/abhay-yemekar/hirelens.git && cd hirelens
+git clone https://github.com/abhay-yemekar/candidlens.git && cd candidlens
 cp .env.example .env                # set BETTER_AUTH_SECRET (openssl rand -base64 32)
 docker compose up --build -d        # web :3000 · API :4000 · Postgres :5433
 ```
 
-Open [localhost:3000](http://localhost:3000), create an account and an organization, and add a model key to `.env` to score. Migrations run on first boot. Prebuilt images are on GHCR: [`hirelens-web`](https://ghcr.io/abhay-yemekar/hirelens-web) and [`hirelens-api`](https://ghcr.io/abhay-yemekar/hirelens-api).
+Open [localhost:3000](http://localhost:3000), create an account and an organization, and add a model key to `.env` to score. Migrations run on first boot. Prebuilt images are on GHCR: [`hirelens-web`](https://ghcr.io/abhay-yemekar/candidlens-web) and [`hirelens-api`](https://ghcr.io/abhay-yemekar/candidlens-api).
 
 ### Develop
 
@@ -134,7 +134,6 @@ apps/
   web/            Next.js app: product UI, marketing site, /demo; mounts the API at /api
   api/            Hono API: auth, jobs, rubrics, upload, scoring, audits, accounts
   cli/            The hirelens CLI (TypeScript, no runtime dependencies)
-  docs/           Fumadocs documentation site
 packages/
   core/           The engines: extract, parse, rubric, score, evidence, llm, audit, doctor
   db/             Drizzle schema and migrations (Postgres + pgvector), auth and email
@@ -233,7 +232,7 @@ Self-hosters use [Docker Compose](#self-host-in-one-command) instead: the same a
 
 ## Built with
 
-[Next.js](https://nextjs.org) · [Hono](https://hono.dev) · [Better Auth](https://www.better-auth.com) · [Drizzle ORM](https://orm.drizzle.team) · [PostgreSQL](https://www.postgresql.org) + [pgvector](https://github.com/pgvector/pgvector) · [Vercel AI SDK](https://ai-sdk.dev) · [Turborepo](https://turbo.build) + [pnpm](https://pnpm.io) · [Biome](https://biomejs.dev) · [Vitest](https://vitest.dev) · [Fumadocs](https://fumadocs.dev)
+[Next.js](https://nextjs.org) · [Hono](https://hono.dev) · [Better Auth](https://www.better-auth.com) · [Drizzle ORM](https://orm.drizzle.team) · [PostgreSQL](https://www.postgresql.org) + [pgvector](https://github.com/pgvector/pgvector) · [Vercel AI SDK](https://ai-sdk.dev) · [Turborepo](https://turbo.build) + [pnpm](https://pnpm.io) · [Biome](https://biomejs.dev) · [Vitest](https://vitest.dev)
 
 ## How it compares
 
@@ -248,19 +247,20 @@ Self-hosters use [Docker Compose](#self-host-in-one-command) instead: the same a
 
 ## Documentation
 
-| Guide                                                                                          | What's inside                                                       |
-| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| [Quickstart](apps/docs/content/docs/getting-started/quickstart.mdx)                            | A clean machine to the first scored candidate                       |
-| [CLI](apps/docs/content/docs/getting-started/cli.mdx)                                          | Every command                                                       |
-| [Self-hosting](apps/docs/content/docs/guides/self-hosting.mdx)                                 | Docker Compose, settings, backups, upgrades                         |
-| [Resume Doctor](apps/docs/content/docs/guides/resume-doctor.mdx)                               | What it checks and how the score works                              |
-| [Accounts and sign-in](apps/docs/content/docs/guides/accounts-and-sign-in.mdx)                 | Sign-in methods, password reset, email changes, deleting an account |
-| [Configuration](apps/docs/content/docs/reference/configuration.mdx)                            | Every setting, grouped by what it turns on                          |
-| [Blind review and bias audits](apps/docs/content/docs/guides/blind-review-and-bias-audits.mdx) | The method, and what we deliberately don't do                       |
-| [API reference](apps/docs/content/docs/reference/api.mdx)                                      | The OpenAPI contract and how authentication works                   |
-| [Evaluation harness](apps/docs/content/docs/reference/evaluation-harness.mdx)                  | The metrics and how to run them                                     |
-| [Architecture](ARCHITECTURE.md)                                                                | How the pieces fit, and why                                         |
-| [Troubleshooting](docs/project_execution.md#8-troubleshooting--real-errors-real-fixes)         | Real errors from development, with fixes                            |
+| Guide                                                                                           | What's inside                                                       |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| [Quickstart](https://candidlens.vercel.app/docs/quickstart)                                     | A clean machine to the first scored candidate                       |
+| [CLI](https://candidlens.vercel.app/docs/cli)                                                   | Every command                                                       |
+| [Self-hosting](https://candidlens.vercel.app/docs/self-hosting)                                 | Docker Compose, settings, backups, upgrades                         |
+| [Resume Doctor](https://candidlens.vercel.app/docs/resume-doctor)                               | What it checks and how the score works                              |
+| [Accounts and sign-in](https://candidlens.vercel.app/docs/accounts-and-sign-in)                 | Sign-in methods, password reset, email changes, deleting an account |
+| [ATS integration](https://candidlens.vercel.app/docs/ats-integration)                           | API tokens, webhooks, CSV round-trip and the CLI                    |
+| [Configuration](https://candidlens.vercel.app/docs/configuration)                               | Every setting, grouped by what it turns on                          |
+| [Blind review and bias audits](https://candidlens.vercel.app/docs/blind-review-and-bias-audits) | What is masked, decision reasons, and the adverse-impact audit      |
+| [API reference](https://candidlens.vercel.app/api-reference)                                    | Routes, authentication, roles and the OpenAPI contract              |
+| [Evaluation harness](https://candidlens.vercel.app/evaluation)                                  | The metrics and how to run them                                     |
+| [Architecture](ARCHITECTURE.md)                                                                 | How the pieces fit, and why                                         |
+| [Troubleshooting](docs/project_execution.md#8-troubleshooting--real-errors-real-fixes)          | Real errors from development, with fixes                            |
 
 ## Roadmap
 
@@ -272,7 +272,7 @@ Every feature in this README exists on `main` today and is covered by tests.
 
 ## Contributing
 
-Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md), or pick up an [open issue](https://github.com/abhay-yemekar/hirelens/issues).
+Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md), or pick up an [open issue](https://github.com/abhay-yemekar/candidlens/issues).
 
 **Security:** please report vulnerabilities privately as described in [SECURITY.md](SECURITY.md), not in a public issue.
 
@@ -280,11 +280,11 @@ Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and the
 
 ## Built by
 
-CandidLens is created and maintained by **[Abhay Yemekar](https://github.com/abhay-yemekar)** · [LinkedIn](https://www.linkedin.com/in/abhayyemekar/). Questions or feedback? [Open an issue](https://github.com/abhay-yemekar/hirelens/issues) or reach out on LinkedIn.
+CandidLens is created and maintained by **[Abhay Yemekar](https://github.com/abhay-yemekar)** · [LinkedIn](https://www.linkedin.com/in/abhayyemekar/). Questions or feedback? [Open an issue](https://github.com/abhay-yemekar/candidlens/issues) or reach out on LinkedIn.
 
 <div align="center">
 
-**[Try the demo](https://candidlens.vercel.app/demo)** · **[Star the repo](https://github.com/abhay-yemekar/hirelens)** · **[Report a bug](https://github.com/abhay-yemekar/hirelens/issues/new/choose)**
+**[Try the demo](https://candidlens.vercel.app/demo)** · **[Star the repo](https://github.com/abhay-yemekar/candidlens)** · **[Report a bug](https://github.com/abhay-yemekar/candidlens/issues/new/choose)**
 
 [MIT License](LICENSE)
 

@@ -224,7 +224,7 @@ export function SiteNav() {
             Try the demo
           </Link>
           <Link
-            href="https://github.com/abhay-yemekar/hirelens"
+            href="https://github.com/abhay-yemekar/candidlens"
             className="hidden rounded-lg border px-4 py-2 text-sm font-semibold text-[var(--hl-cream)] transition-colors hover:border-[var(--hl-mist)] md:inline-block"
             style={{ borderColor: "var(--hl-border)" }}
           >

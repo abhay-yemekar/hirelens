@@ -51,10 +51,21 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Changed
 
+- The repository moved to `github.com/abhay-yemekar/candidlens` (the old
+  address redirects), and a fresh clone lands in `candidlens/`. Docker
+  Compose pins its project name to `hirelens`, so a stack keeps its
+  containers and data volume whatever the folder is called (#180).
 - The README, docs and repository files describe CandidLens: a new front
   page with the product shot, features by audience, a how-it-works
   diagram, the real-model evaluation numbers and a complete settings
   reference (#173).
+- The docs live in one place, the site's `/docs` pages. The undeployed
+  Fumadocs copy in `apps/docs` is gone, and the README links the live
+  pages. Pages that disagreed with the code now match it: blind review
+  masks emails, phone numbers, links and the name line, not schools or
+  graduation years; the bias audit's reference group is the
+  highest-rate group with at least 4 candidates; API errors are
+  `{ ok: false, error, message? }` (#182).
 - Every password field has a show/hide button. Sign-up says passwords
   need 8 characters, and messages in Settings → Sign-in & security show
   next to the part of the card they belong to (#164).
@@ -290,4 +301,4 @@ First public release. 🎉
   Google Gemini free tier as the default LLM.
 - MIT licensed. Resumes never have to leave the operator's machine.
 
-[1.0.0]: https://github.com/abhay-yemekar/hirelens/releases/tag/v1.0.0
+[1.0.0]: https://github.com/abhay-yemekar/candidlens/releases/tag/v1.0.0

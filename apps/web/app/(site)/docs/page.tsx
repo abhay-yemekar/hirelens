@@ -113,12 +113,18 @@ export default function DocsHubPage() {
             Everything you need to run CandidLens.
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7" style={{ color: "var(--hl-mist)" }}>
+            CandidLens scores each candidate against a rubric of 5 to 8 criteria, each scored from 0
+            to 5. A score above 0 has to quote the resume text it rests on. When that quote
+            can&apos;t be found in the resume, the score is withheld and flagged for review. It was
+            called HireLens until November 2026.
+          </p>
+          <p className="mt-4 max-w-2xl text-base leading-7" style={{ color: "var(--hl-mist)" }}>
             The guides below are rendered right here — no repository detour. The full source of each
             lives in the{" "}
             <a
               className="underline"
               style={{ color: "var(--hl-accent)" }}
-              href="https://github.com/abhay-yemekar/hirelens"
+              href="https://github.com/abhay-yemekar/candidlens"
             >
               public repo
             </a>{" "}
