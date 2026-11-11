@@ -16,7 +16,7 @@ export type LlmProviderId =
 
 export interface ProviderConfig {
   id: LlmProviderId;
-  /** Model identifier as the provider expects it, e.g. "gemini-3-flash". */
+  /** Model identifier as the provider expects it, e.g. "gemini-3.5-flash-lite". */
   model: string;
   /** API key; required for hosted providers, ignored for ollama. */
   apiKey?: string;

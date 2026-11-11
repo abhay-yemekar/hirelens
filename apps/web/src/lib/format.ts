@@ -25,7 +25,7 @@ export function pagesLabel(pages: number | null | undefined): string | null {
   return `${pages} ${pages === 1 ? "page" : "pages"}`;
 }
 
-/** "gemini-2.5-flash" → "Gemini 2.5 Flash"; unknown shapes pass through. */
+/** "gemini-3.5-flash-lite" → "Gemini 3.5 Flash Lite"; unknown shapes pass through. */
 export function modelLabel(modelId: string): string {
   return modelId
     .split(/[-_]/)
