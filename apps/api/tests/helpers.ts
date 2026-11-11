@@ -1,16 +1,27 @@
 import { auth, type Database, organization } from "@candidlens/db";
-import { purgeOrg } from "@candidlens/orchestrator";
+import { purgeOrgIn } from "@candidlens/orchestrator";
 import { eq } from "drizzle-orm";
 
 /**
  * Test teardown for an org that wrote audit rows: the audit_log table is
  * append-only with an ON DELETE RESTRICT org FK, so erasure goes through
- * the sanctioned purgeOrg helper first; the org delete then cascades the
+ * the sanctioned purge helper first; the org delete then cascades the
  * remaining rows (jobs, candidates, rubrics, ...).
+ *
+ * Purge and delete share one transaction (#123). Test files run in
+ * parallel on one database, and the snapshots test's cron sweep appends
+ * audit rows for every org's jobs, so a row committed between a separate
+ * purge and delete made the delete fail. purgeOrgIn's ALTER TABLE holds a
+ * lock that makes every audit insert wait until this commits; a late one
+ * then fails on the FK, which the cron skips. Do not lock the org row
+ * first: an insert holds its audit_log lock while waiting on that row, so
+ * the two deadlock.
  */
 export async function deleteOrgCompletely(db: Database, orgId: string): Promise<void> {
-  await purgeOrg(db, orgId);
-  await db.delete(organization).where(eq(organization.id, orgId));
+  await db.transaction(async (tx) => {
+    await purgeOrgIn(tx, orgId);
+    await tx.delete(organization).where(eq(organization.id, orgId));
+  });
 }
 
 type RequestableApp = {
