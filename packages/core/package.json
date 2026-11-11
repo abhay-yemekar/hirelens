@@ -15,11 +15,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^4.0.94",
-    "@ai-sdk/google": "^4.0.109",
-    "@ai-sdk/groq": "^4.0.74",
-    "@ai-sdk/openai-compatible": "^3.0.82",
-    "ai": "^7.0.159",
+    "@ai-sdk/anthropic": "^4.0.99",
+    "@ai-sdk/google": "^4.0.114",
+    "@ai-sdk/groq": "^4.0.78",
+    "@ai-sdk/openai-compatible": "^3.0.87",
+    "ai": "^7.0.165",
     "fflate": "^0.8.3",
     "mammoth": "^1.13.0",
     "unpdf": "^1.8.1",
@@ -30,6 +30,6 @@
     "@types/node": "^26.6.6",
     "pdf-lib": "^1.17.1",
     "typescript": "~5.9.3",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.0"
   }
 }

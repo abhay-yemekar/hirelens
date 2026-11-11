@@ -11,11 +11,11 @@
     "typecheck": "pnpm run gen:source && tsc --noEmit"
   },
   "dependencies": {
-    "@shikijs/rehype": "^4.5.0",
-    "fumadocs-core": "16.17.9",
-    "fumadocs-mdx": "15.4.10",
-    "fumadocs-ui": "16.17.9",
-    "next": "^16.4.3",
+    "@shikijs/rehype": "^4.6.0",
+    "fumadocs-core": "16.18.2",
+    "fumadocs-mdx": "15.5.1",
+    "fumadocs-ui": "16.18.2",
+    "next": "^16.4.5",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

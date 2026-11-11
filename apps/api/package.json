@@ -22,11 +22,11 @@
     "@candidlens/core": "workspace:*",
     "@candidlens/db": "workspace:*",
     "@candidlens/orchestrator": "workspace:*",
-    "@hono/node-server": "^2.1.5",
-    "@sentry/node": "^11.10.0",
+    "@hono/node-server": "^2.1.6",
+    "@sentry/node": "^11.11.0",
     "dotenv": "^18.0.9",
     "drizzle-orm": "^0.45.4",
-    "hono": "^4.13.16",
+    "hono": "^4.13.17",
     "langfuse": "^3.39.2",
     "pino": "^10.4.0",
     "tsx": "^4.23.15",
@@ -40,6 +40,6 @@
     "pdf-lib": "^1.17.1",
     "pino-pretty": "^13.2.0",
     "typescript": "~5.9.3",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.0"
   }
 }
