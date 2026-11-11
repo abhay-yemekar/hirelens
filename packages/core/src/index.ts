@@ -123,6 +123,7 @@ export {
   createEmbeddingModel,
   EMBEDDING_DIMENSIONS,
   EMBEDDING_MODEL_ID,
+  type EmbeddingQueryTask,
   embedChunkTexts,
   embedQuery,
   type SearchHit,

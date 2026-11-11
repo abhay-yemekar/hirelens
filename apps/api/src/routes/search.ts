@@ -24,8 +24,10 @@ import { z } from "zod";
 import { ROLE_MIN, requireAuth } from "../auth.js";
 import { ApiInputError } from "../errors.js";
 import { readJson } from "../http.js";
+import { embeddingFailureReason } from "../indexing.js";
 import { labelFromFileKey } from "../labels.js";
 import { llmRouteError, requireLlmModel } from "../llm-error.js";
+import { logger } from "../observability.js";
 import type { AppEnv } from "../types.js";
 import { loadOrgJob } from "./jobs.js";
 
@@ -119,8 +121,12 @@ export function searchRoutes(): Hono<AppEnv> {
         }
         semantic = [...seen.values()].sort((a, b) => a.score - b.score).slice(0, MAX_HITS);
         embeddingMeta = indexer.modelId;
-      } catch {
+      } catch (err) {
         // Provider outage → fall through to keyword mode.
+        logger.warn(
+          { jobId: job.id, reason: embeddingFailureReason(err) },
+          "semantic search failed; answering from keywords",
+        );
       }
     }
 
@@ -222,7 +228,7 @@ export function searchRoutes(): Hono<AppEnv> {
     const indexer = c.get("indexer");
     if (indexer) {
       try {
-        const vector = await indexer.embedQuery(question);
+        const vector = await indexer.embedQuery(question, "question answering");
         const rows = await db
           .select({
             chunkId: chunks.id,
@@ -238,8 +244,12 @@ export function searchRoutes(): Hono<AppEnv> {
           .orderBy(sql`${chunks.embedding} <=> ${JSON.stringify(vector)}::vector`)
           .limit(12);
         pool.push(...rows.filter((r) => r.distance <= MAX_COSINE_DISTANCE));
-      } catch {
+      } catch (err) {
         // fall through to keyword windows
+        logger.warn(
+          { jobId: job.id, reason: embeddingFailureReason(err) },
+          "semantic retrieval for Ask failed; using keyword windows",
+        );
       }
     }
     if (pool.length === 0) {
@@ -348,15 +358,23 @@ export function searchRoutes(): Hono<AppEnv> {
       .where(eq(candidates.jobId, job.id));
 
     let indexed = 0;
+    let lastFailure: string | null = null;
     for (const d of docs) {
       try {
         await indexer.indexDocument(d.documentId, d.rawText);
         indexed += 1;
-      } catch {
+      } catch (err) {
         // Keep going — partial indexing is fine; keyword fallback covers gaps.
+        lastFailure = embeddingFailureReason(err);
       }
     }
     const total = docs.length;
+    if (lastFailure !== null) {
+      logger.warn(
+        { jobId: job.id, failed: total - indexed, total, reason: lastFailure },
+        "semantic indexing failed for some resumes",
+      );
+    }
     return c.json({ ok: true, indexed, total });
   });
 
@@ -365,7 +383,9 @@ export function searchRoutes(): Hono<AppEnv> {
 
 async function countIndexed(db: Database, jobId: string): Promise<number> {
   const [row] = await db
-    .select({ n: sql<number>`count(distinct ${documents.id})` })
+    // ::int — Postgres counts are bigint, which node-postgres returns as a
+    // string, and the web app's "Index resumes" button checks `indexed === 0`.
+    .select({ n: sql<number>`count(distinct ${documents.id})::int` })
     .from(documents)
     .innerJoin(candidates, eq(documents.candidateId, candidates.id))
     .innerJoin(chunks, eq(chunks.documentId, documents.id))

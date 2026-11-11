@@ -18,7 +18,8 @@ import type { Database } from "@candidlens/db";
 import { candidates, documents } from "@candidlens/db";
 import { and, eq } from "drizzle-orm";
 import { ApiInputError } from "./errors.js";
-import type { CandidLensIndexer } from "./indexing.js";
+import { type CandidLensIndexer, embeddingFailureReason } from "./indexing.js";
+import { logger } from "./observability.js";
 
 export type IngestResult =
   | { status: "created"; candidateId: string; documentId: string; filename: string }
@@ -116,8 +117,13 @@ export async function ingestBytes(
   if (indexer) {
     try {
       await indexer.indexDocument(document.id, rawText);
-    } catch {
-      // Swallow: search falls back to keyword mode for this document.
+    } catch (err) {
+      // Search falls back to keyword mode for this document. Log the reason:
+      // a swallowed failure hid a retired embedding model for months.
+      logger.warn(
+        { documentId: document.id, reason: embeddingFailureReason(err) },
+        "semantic indexing failed; search uses keywords for this resume",
+      );
     }
   }
 

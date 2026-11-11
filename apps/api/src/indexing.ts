@@ -7,7 +7,7 @@
  * working (semantically when embeddings exist, lexically otherwise).
  */
 
-import type { EmbeddingModel } from "@candidlens/core";
+import type { EmbeddingModel, EmbeddingQueryTask } from "@candidlens/core";
 import {
   chunkText,
   createEmbeddingModel,
@@ -32,16 +32,23 @@ export async function indexDocument(
 ): Promise<number> {
   const pieces = chunkText(rawText);
   if (pieces.length === 0) return 0;
-  // Clear prior chunks for this document so re-indexing is idempotent.
-  await db.delete(chunks).where(eq(chunks.documentId, documentId));
+  // Embed every chunk before touching the table: when the provider fails,
+  // the document keeps the chunks it already had.
+  const vectors: number[][] = [];
   for (let i = 0; i < pieces.length; i += MAX_CHUNKS_PER_CALL) {
     const batch = pieces.slice(i, i + MAX_CHUNKS_PER_CALL);
-    const vectors = await embedChunkTexts(
-      embeddingModel,
-      batch.map((p) => p.text),
+    vectors.push(
+      ...(await embedChunkTexts(
+        embeddingModel,
+        batch.map((p) => p.text),
+      )),
     );
-    await db.insert(chunks).values(
-      batch.map((p, j) => ({
+  }
+  // Replace the document's chunks in one step so re-indexing is idempotent.
+  await db.transaction(async (tx) => {
+    await tx.delete(chunks).where(eq(chunks.documentId, documentId));
+    await tx.insert(chunks).values(
+      pieces.map((p, j) => ({
         documentId,
         text: p.text,
         startOffset: p.startOffset,
@@ -49,7 +56,7 @@ export async function indexDocument(
         embedding: vectors[j],
       })),
     );
-  }
+  });
   return pieces.length;
 }
 
@@ -57,7 +64,7 @@ export async function indexDocument(
 export interface CandidLensIndexer {
   modelId: string;
   indexDocument(documentId: string, rawText: string): Promise<number>;
-  embedQuery(text: string): Promise<number[]>;
+  embedQuery(text: string, task?: EmbeddingQueryTask): Promise<number[]>;
 }
 
 export function createIndexer(db: Database, embeddingModel: EmbeddingModel): CandidLensIndexer {
@@ -65,8 +72,17 @@ export function createIndexer(db: Database, embeddingModel: EmbeddingModel): Can
     modelId: EMBEDDING_MODEL_ID,
     indexDocument: (documentId: string, rawText: string) =>
       indexDocument(db, embeddingModel, documentId, rawText),
-    embedQuery: (text: string) => embedQuery(embeddingModel, text),
+    embedQuery: (text: string, task?: EmbeddingQueryTask) => embedQuery(embeddingModel, text, task),
   };
+}
+
+/**
+ * The provider's reason an embedding call failed, for the log. Only the
+ * message: the SDK's error object also carries the request body, which is
+ * resume text.
+ */
+export function embeddingFailureReason(err: unknown): string {
+  return err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500);
 }
 
 /**
