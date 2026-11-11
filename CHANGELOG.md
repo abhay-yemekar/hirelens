@@ -101,6 +101,13 @@ On `main` since v1.4.0; planned for v1.5.0.
   because the API sent the indexed count as text; it is a number now.
   After upgrading, use that button once in each job to index the resumes
   uploaded before (#203).
+- Search by meaning listed every resume, whatever the query: its distance
+  cut-off kept them all. A resume now matches when it stands out from the
+  rest of the job by a set margin, so an unrelated query finds nobody and
+  Ask reads only the resumes that match. On the demo resumes, precision
+  went from 0.17 to 0.94 with the right resume still first. The Index
+  button now shows whenever some resumes are unindexed and the server can
+  embed them, and the results refresh once indexing finishes (#206).
 - The live demo withheld most scores because Gemini quotes several resume
   lines as one ("Led X. Built Y."), which matched no single passage. A
   quote now matches when every sentence in it is verbatim resume text;

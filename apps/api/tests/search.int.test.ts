@@ -19,11 +19,15 @@ const allowSkip = !process.env["CI"];
 let app: ReturnType<typeof createApp>;
 let appNoLlm: ReturnType<typeof createApp>;
 let appSemantic: ReturnType<typeof createApp>;
+/** Every prompt the Ask route's mock LLM received. */
+let llmCalls: Array<{ prompt: string }> = [];
 
 /**
  * A stand-in for gemini-embedding-2: one dimension per topic, so a query
  * about container orchestration lands on the Kubernetes resume although
- * it shares no word with it. Records every text it was asked to embed.
+ * it shares no word with it. Every text also shares one "resume" dimension,
+ * so unrelated text sits at cosine distance 0.29, not far apart, as with
+ * the real model. Records every text it was asked to embed.
  */
 const embeddedTexts: string[] = [];
 const TOPICS = [/kubernetes|orchestration|container/i, /pastry|bakery|dessert/i];
@@ -41,7 +45,7 @@ const topicEmbedder = {
         TOPICS.forEach((topic, i) => {
           if (topic.test(text)) v[i] = 1;
         });
-        v[767] = 0.1; // never a zero vector
+        v[767] = 1;
         return v;
       }),
       warnings: [],
@@ -78,13 +82,14 @@ beforeAll(async () => {
   if (!available) return;
   const db = createDb(DATABASE_URL);
   // The Ask route's LLM returns a canned AskSchema answer.
-  const { model } = createMockModel({
+  const { model, calls } = createMockModel({
     args: {
       answer: "Jordan Avery led the payments platform migration to Kubernetes.",
       usedChunkIds: [],
       confidence: "medium",
     },
   });
+  llmCalls = calls;
   app = createApp({ db, llm: model as never });
   appNoLlm = createApp({ db, llm: null });
   appSemantic = createApp({ db, llm: model as never, indexer: createIndexer(db, topicEmbedder) });
@@ -281,7 +286,18 @@ describe.skipIf(!available && allowSkip)("search & ask", () => {
     expect(body.hits.map((h) => h.label)).toEqual(["jordan"]);
     expect(embeddedTexts).toContain("task: search result | query: container orchestration");
 
-    // Ask embeds its question as one.
+    // Nothing stands out for an unrelated query, although both resumes are
+    // within the old 0.85 distance cut-off.
+    const unrelated = await appSemantic.request(
+      `/api/jobs/${job.id}/search?q=${encodeURIComponent("piano lessons")}`,
+      { headers: authHeaders },
+    );
+    const unrelatedBody = (await unrelated.json()) as { mode: string; hits: unknown[] };
+    expect(unrelatedBody.hits).toEqual([]);
+    expect(unrelatedBody.mode).toBe("keyword");
+
+    // Ask embeds its question as one, and the model sees only the resume
+    // that matches by meaning.
     const ask = await appSemantic.request(`/api/jobs/${job.id}/ask`, {
       method: "POST",
       headers: { ...authHeaders, "content-type": "application/json" },
@@ -291,6 +307,9 @@ describe.skipIf(!available && allowSkip)("search & ask", () => {
     expect(embeddedTexts).toContain(
       "task: question answering | query: Who runs container orchestration?",
     );
+    const askPrompt = llmCalls.at(-1)?.prompt ?? "";
+    expect(askPrompt).toContain("Kubernetes");
+    expect(askPrompt).not.toContain("Pastry");
 
     // The Index button re-embeds every resume in the job.
     const idx = await appSemantic.request(`/api/jobs/${job.id}/index`, {
@@ -299,5 +318,51 @@ describe.skipIf(!available && allowSkip)("search & ask", () => {
     });
     expect(idx.status).toBe(200);
     expect(await idx.json()).toEqual({ ok: true, indexed: 2, total: 2 });
+  });
+
+  it("offers indexing for a partly indexed job only where it can work", async () => {
+    const jobRes = await appSemantic.request("/api/jobs", {
+      method: "POST",
+      headers: { ...authHeaders, "content-type": "application/json" },
+      body: JSON.stringify({ title: "Partly indexed job", description: "Backfill test." }),
+    });
+    const { job } = (await jobRes.json()) as { job: { id: string } };
+    // One resume arrives while the server can't embed, one after.
+    for (const [server, name, text] of [
+      [app, "jordan.txt", RESUME],
+      [appSemantic, "baker.txt", BAKER_RESUME],
+    ] as const) {
+      const form = new FormData();
+      form.append("file", new File([text], name, { type: "text/plain" }));
+      const up = await server.request(`/api/jobs/${job.id}/candidates`, {
+        method: "POST",
+        headers: authHeaders,
+        body: form,
+      });
+      expect(up.status).toBe(201);
+    }
+
+    type Status = { indexed: number; total: number; indexingEnabled: boolean };
+    const status = async (server: typeof app): Promise<Status> =>
+      (await (
+        await server.request(`/api/jobs/${job.id}/search?q=${encodeURIComponent("experience")}`, {
+          headers: authHeaders,
+        })
+      ).json()) as Status;
+
+    expect(await status(appSemantic)).toMatchObject({
+      indexed: 1,
+      total: 2,
+      indexingEnabled: true,
+    });
+    // Without an embedding model the button would only fail, so it is off.
+    expect(await status(app)).toMatchObject({ indexed: 1, total: 2, indexingEnabled: false });
+
+    const idx = await appSemantic.request(`/api/jobs/${job.id}/index`, {
+      method: "POST",
+      headers: authHeaders,
+    });
+    expect(await idx.json()).toEqual({ ok: true, indexed: 2, total: 2 });
+    expect(await status(appSemantic)).toMatchObject({ indexed: 2, total: 2 });
   });
 });

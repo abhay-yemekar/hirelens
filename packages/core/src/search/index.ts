@@ -120,6 +120,31 @@ export async function embedQuery(
   return checkDimensions(embedding);
 }
 
+/**
+ * How far a resume's distance must sit below the average of the job's
+ * other resumes to count as a match by meaning. gemini-embedding-2 puts
+ * unrelated text close together, so no fixed cosine distance separates a
+ * match from noise; standing out from the rest of the job does. Chosen on
+ * the 12 demo resumes with 28 labelled queries, then checked on 12 more.
+ */
+export const MEANING_MATCH_MARGIN = 0.035;
+
+/**
+ * The resumes that match a query by meaning, nearest first. Each row is
+ * one resume with its nearest chunk's cosine distance; a resume matches
+ * when that distance is at least MEANING_MATCH_MARGIN below the mean of
+ * the other resumes' distances. A lone resume has nothing to compare with,
+ * so it is kept.
+ */
+export function matchesByMeaning<T extends { distance: number }>(rows: T[]): T[] {
+  const sorted = [...rows].sort((a, b) => a.distance - b.distance);
+  if (sorted.length < 2) return sorted;
+  const total = sorted.reduce((sum, r) => sum + r.distance, 0);
+  return sorted.filter(
+    (r) => (total - r.distance) / (sorted.length - 1) - r.distance >= MEANING_MATCH_MARGIN,
+  );
+}
+
 /** Sort key for ranking hits. */
 export interface SearchHit {
   candidateId: string;

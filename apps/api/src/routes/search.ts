@@ -1,24 +1,26 @@
 /**
  * Semantic search over a job's resumes.
  *
- * GET  /search?q=…   — ranked hits: pgvector cosine KNN when the corpus is
- *                      embedded, ILIKE keyword scoring otherwise (and a mix:
- *                      keyword rows fill in for unindexed documents).
- * POST /ask          — LLM answer over the top hits, citations verified
- *                      server-side against the retrieved chunk set.
- * POST /index        — backfill embeddings for every unindexed document in
- *                      the job (used after enabling an embedding key, or for
- *                      resumes uploaded before semantic search shipped).
+ * GET  /search?q=…   — ranked hits: resumes that match the query by meaning
+ *                      (pgvector cosine distance, kept by matchesByMeaning)
+ *                      merged with keyword scoring, which also covers
+ *                      unindexed documents.
+ * POST /ask          — LLM answer over the closest chunks of the resumes
+ *                      that match by meaning (keyword windows otherwise),
+ *                      citations verified against the retrieved chunk set.
+ * POST /index        — (re-)embed every resume in the job (used after
+ *                      enabling an embedding key, after an embedding model
+ *                      change, or for resumes uploaded while it failed).
  *
  * All routes are org-scoped via loadOrgJob and honor blind review: labels
  * are masked when the caller is in blind mode, exactly like the review
  * queue, so Ask answers and search results can't leak identities.
  */
 
-import { synthesizeAnswer } from "@candidlens/core";
+import { matchesByMeaning, synthesizeAnswer } from "@candidlens/core";
 import type { Database } from "@candidlens/db";
 import { candidates, chunks, documents } from "@candidlens/db";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { ROLE_MIN, requireAuth } from "../auth.js";
@@ -33,8 +35,6 @@ import { loadOrgJob } from "./jobs.js";
 
 /** Max hits returned; keeps Ask prompts and payloads bounded. */
 const MAX_HITS = 10;
-/** Cosine distance above this is treated as "not relevant". */
-const MAX_COSINE_DISTANCE = 0.85;
 /** Per-question cap on how much resume text we send to the LLM. */
 const ASK_CONTEXT_CHARS = 8000;
 
@@ -82,44 +82,29 @@ export function searchRoutes(): Hono<AppEnv> {
     const label = (key: string | null): string | null =>
       blind ? null : (labelFromFileKey(key) ?? null);
 
+    // Whether this server can embed: the web app offers its Index button
+    // only then, since POST /index can't succeed without it.
+    const indexer = c.get("indexer");
+    const indexingEnabled = indexer !== null;
+
     if (corpus.length === 0) {
-      return c.json({ ok: true, mode: "empty", hits: [], indexed: 0, total: 0 });
+      return c.json({ ok: true, mode: "empty", hits: [], indexed: 0, total: 0, indexingEnabled });
     }
 
     // --- semantic path (when embeddings exist) ---
     let semantic: CandidateHit[] = [];
     let embeddingMeta: string | null = null;
-    const indexer = c.get("indexer");
     if (indexer && !mode) {
       try {
         const vector = await indexer.embedQuery(q);
-        const rows = await db
-          .select({
-            chunkId: chunks.id,
-            candidateId: candidates.id,
-            sourceFileKey: candidates.sourceFileKey,
-            distance: sql<number>`${chunks.embedding} <=> ${JSON.stringify(vector)}::vector`,
-            text: chunks.text,
-          })
-          .from(chunks)
-          .innerJoin(documents, eq(chunks.documentId, documents.id))
-          .innerJoin(candidates, eq(documents.candidateId, candidates.id))
-          .where(and(eq(candidates.jobId, job.id), sql`${chunks.embedding} is not null`))
-          .orderBy(sql`${chunks.embedding} <=> ${JSON.stringify(vector)}::vector`)
-          .limit(MAX_HITS * 2);
-        const seen = new Map<string, CandidateHit>();
-        for (const r of rows) {
-          if (r.distance > MAX_COSINE_DISTANCE) continue;
-          const prev = seen.get(r.candidateId);
-          if (!prev || r.distance < prev.score) {
-            seen.set(r.candidateId, {
-              candidateId: r.candidateId,
-              label: label(r.sourceFileKey),
-              score: r.distance,
-            });
-          }
-        }
-        semantic = [...seen.values()].sort((a, b) => a.score - b.score).slice(0, MAX_HITS);
+        const nearest = await nearestByCandidate(db, job.id, vector);
+        semantic = matchesByMeaning(nearest)
+          .slice(0, MAX_HITS)
+          .map((r) => ({
+            candidateId: r.candidateId,
+            label: label(r.sourceFileKey),
+            score: r.distance,
+          }));
         embeddingMeta = indexer.modelId;
       } catch (err) {
         // Provider outage → fall through to keyword mode.
@@ -178,6 +163,7 @@ export function searchRoutes(): Hono<AppEnv> {
       embeddingModel: embeddingMeta,
       indexed: indexedCount,
       total: corpus.length,
+      indexingEnabled,
       hits,
     });
   });
@@ -229,21 +215,34 @@ export function searchRoutes(): Hono<AppEnv> {
     if (indexer) {
       try {
         const vector = await indexer.embedQuery(question, "question answering");
-        const rows = await db
-          .select({
-            chunkId: chunks.id,
-            candidateId: candidates.id,
-            sourceFileKey: candidates.sourceFileKey,
-            distance: sql<number>`${chunks.embedding} <=> ${JSON.stringify(vector)}::vector`,
-            text: chunks.text,
-          })
-          .from(chunks)
-          .innerJoin(documents, eq(chunks.documentId, documents.id))
-          .innerJoin(candidates, eq(documents.candidateId, candidates.id))
-          .where(and(eq(candidates.jobId, job.id), sql`${chunks.embedding} is not null`))
-          .orderBy(sql`${chunks.embedding} <=> ${JSON.stringify(vector)}::vector`)
-          .limit(12);
-        pool.push(...rows.filter((r) => r.distance <= MAX_COSINE_DISTANCE));
+        // The closest chunks of the resumes that match by meaning; none
+        // match → keyword windows below.
+        const matched = matchesByMeaning(await nearestByCandidate(db, job.id, vector)).map(
+          (r) => r.candidateId,
+        );
+        if (matched.length > 0) {
+          const distance = sql`${chunks.embedding} <=> ${JSON.stringify(vector)}::vector`;
+          const rows = await db
+            .select({
+              chunkId: chunks.id,
+              candidateId: candidates.id,
+              sourceFileKey: candidates.sourceFileKey,
+              text: chunks.text,
+            })
+            .from(chunks)
+            .innerJoin(documents, eq(chunks.documentId, documents.id))
+            .innerJoin(candidates, eq(documents.candidateId, candidates.id))
+            .where(
+              and(
+                eq(candidates.jobId, job.id),
+                inArray(candidates.id, matched),
+                sql`${chunks.embedding} is not null`,
+              ),
+            )
+            .orderBy(distance)
+            .limit(12);
+          pool.push(...rows);
+        }
       } catch (err) {
         // fall through to keyword windows
         logger.warn(
@@ -381,10 +380,35 @@ export function searchRoutes(): Hono<AppEnv> {
   return routes;
 }
 
+/**
+ * Each embedded resume in the job with the cosine distance of its chunk
+ * nearest to the query. matchesByMeaning compares every resume with the
+ * others, so this reads them all rather than the top few chunks.
+ */
+async function nearestByCandidate(
+  db: Database,
+  jobId: string,
+  vector: number[],
+): Promise<Array<{ candidateId: string; sourceFileKey: string | null; distance: number }>> {
+  return db
+    .select({
+      candidateId: candidates.id,
+      sourceFileKey: candidates.sourceFileKey,
+      distance: sql<number>`min(${chunks.embedding} <=> ${JSON.stringify(vector)}::vector)`.mapWith(
+        Number,
+      ),
+    })
+    .from(chunks)
+    .innerJoin(documents, eq(chunks.documentId, documents.id))
+    .innerJoin(candidates, eq(documents.candidateId, candidates.id))
+    .where(and(eq(candidates.jobId, jobId), sql`${chunks.embedding} is not null`))
+    .groupBy(candidates.id, candidates.sourceFileKey);
+}
+
 async function countIndexed(db: Database, jobId: string): Promise<number> {
   const [row] = await db
     // ::int — Postgres counts are bigint, which node-postgres returns as a
-    // string, and the web app's "Index resumes" button checks `indexed === 0`.
+    // string, and the web app compares the count with the total.
     .select({ n: sql<number>`count(distinct ${documents.id})::int` })
     .from(documents)
     .innerJoin(candidates, eq(documents.candidateId, candidates.id))

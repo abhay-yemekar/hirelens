@@ -126,6 +126,8 @@ export {
   type EmbeddingQueryTask,
   embedChunkTexts,
   embedQuery,
+  MEANING_MATCH_MARGIN,
+  matchesByMeaning,
   type SearchHit,
   synthesizeAnswer,
   type TextChunk,

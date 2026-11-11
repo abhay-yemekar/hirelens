@@ -29,26 +29,40 @@ export function SearchAskCard({ jobId }: { jobId: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [indexNote, setIndexNote] = useState<string | null>(null);
+  const [searching, setSearching] = useState(false);
+  // Bumped after indexing so the current search runs again.
+  const [searchRun, setSearchRun] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Debounced live search in search mode.
+  // Debounced live search in search mode. A search by meaning takes about
+  // a second, so an answer that arrives after the query changed is dropped.
+  // `searchRun` is only there to run the search again.
   useEffect(() => {
     if (mode !== "search" || q.trim().length < 2) {
       setSearch(null);
+      setSearching(false);
       return;
     }
+    let current = true;
     const t = setTimeout(() => {
       void (async () => {
         setError(null);
+        setSearching(true);
         try {
-          setSearch(await searchCandidates(jobId, q.trim()));
+          const res = await searchCandidates(jobId, q.trim());
+          if (current) setSearch(res);
         } catch (err) {
-          setError(err);
+          if (current) setError(err);
+        } finally {
+          if (current) setSearching(false);
         }
       })();
     }, 350);
-    return () => clearTimeout(t);
-  }, [jobId, q, mode]);
+    return () => {
+      current = false;
+      clearTimeout(t);
+    };
+  }, [jobId, q, mode, searchRun]);
 
   async function runAsk() {
     if (q.trim().length < 3) return;
@@ -72,6 +86,8 @@ export function SearchAskCard({ jobId }: { jobId: string }) {
       const res = await indexJobResumes(jobId);
       setIndexNote(`Indexed ${res.indexed} of ${res.total} resumes for semantic search.`);
       trackEvent("search.indexed", { jobId });
+      // Rerun the search so the matches, the counts and the button catch up.
+      setSearchRun((n) => n + 1);
     } catch (err) {
       setError(err);
     } finally {
@@ -211,14 +227,18 @@ export function SearchAskCard({ jobId }: { jobId: string }) {
 
         {mode === "search" && search && (
           <div className="flex flex-col gap-2">
-            <p className="text-xs" style={{ color: "var(--hl-muted)" }}>
-              {search.mode === "empty"
-                ? "No resumes to search yet."
-                : `${hits.length} match${hits.length === 1 ? "" : "es"} · ${search.mode}${
-                    search.embeddingModel ? ` · ${search.embeddingModel}` : ""
-                  }${search.indexed < search.total ? ` · ${search.total - search.indexed} not yet indexed` : ""}`}
+            <p role="status" className="text-xs" style={{ color: "var(--hl-muted)" }}>
+              {searching
+                ? "Searching…"
+                : search.mode === "empty"
+                  ? "No resumes to search yet."
+                  : `${hits.length} match${hits.length === 1 ? "" : "es"} · ${search.mode}${
+                      search.embeddingModel ? ` · ${search.embeddingModel}` : ""
+                    }${search.indexingEnabled && search.indexed < search.total ? ` · ${search.total - search.indexed} not yet indexed` : ""}`}
             </p>
-            {search.total > search.indexed && search.indexed === 0 && (
+            {/* Any unindexed resume, once the server can embed: a job with
+                some resumes indexed and some not still needs the button. */}
+            {search.indexingEnabled && search.indexed < search.total && (
               <Button
                 variant="outline"
                 size="sm"
@@ -228,6 +248,11 @@ export function SearchAskCard({ jobId }: { jobId: string }) {
               >
                 {busy ? "Indexing…" : "Index resumes for semantic search"}
               </Button>
+            )}
+            {search.mode !== "empty" && hits.length === 0 && (
+              <p className="text-sm" style={{ color: "var(--hl-mist)" }}>
+                No resume matches this search. Try other words, or switch to Ask AI.
+              </p>
             )}
             {hits.map((h) => (
               <a
