@@ -105,6 +105,11 @@ On `main` since v1.4.0; planned for v1.5.0.
   pipes or 3+ stacked rows of the same shape. Employment dates no longer
   read a company that starts like a month ("Marriott 2019") as a month,
   and long month-like text no longer slows parsing (#167).
+- `hirelens score <jobId> <directory>` skipped files with uppercase
+  extensions such as `resume.PDF`; a directory now takes them in any
+  letter case. CLI errors no longer print a second line reading
+  `unreachable`. `apps/api/.env.example` lists all seven model providers,
+  adding Mistral and Cerebras (#190).
 - The public parse API says the roles couldn't be read when the
   Experience heading is there, instead of "No experience section
   detected." Labelled lines under a role (`Stack: Python | Airflow`) are
