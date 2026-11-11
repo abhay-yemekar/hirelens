@@ -45,26 +45,79 @@ export function chunkText(text: string): TextChunk[] {
   return chunks;
 }
 
-/** Google embedding model matching the DB schema's vector(768) columns. */
-export const EMBEDDING_MODEL_ID = "google/text-embedding-004";
+/**
+ * Google embedding model for the chunks table's vector(768) column. It
+ * returns 3072 values unless asked for fewer; Google normalizes the
+ * shortened vector. Vectors from two models can't be compared, so a new
+ * model means re-indexing (POST /api/jobs/:id/index re-embeds every resume
+ * in a job). The model before, text-embedding-004, was shut down on
+ * 14 Jan 2026.
+ */
+const GOOGLE_EMBEDDING_MODEL = "gemini-embedding-2";
+export const EMBEDDING_MODEL_ID = `google/${GOOGLE_EMBEDDING_MODEL}`;
 export const EMBEDDING_DIMENSIONS = 768;
+
+const EMBEDDING_OPTIONS = {
+  google: { outputDimensionality: EMBEDDING_DIMENSIONS },
+};
 
 /** Build the embedding model from a provider API key (Google AI studio). */
 export function createEmbeddingModel(apiKey: string): EmbeddingModel {
   const google = createGoogleGenerativeAI({ apiKey });
-  return google.textEmbeddingModel("text-embedding-004");
+  return google.embeddingModel(GOOGLE_EMBEDDING_MODEL);
+}
+
+/**
+ * What a query embedding is for. gemini-embedding-2 takes no task type, so
+ * the task goes in front of the text in Google's documented format.
+ */
+export type EmbeddingQueryTask = "search result" | "question answering";
+
+/** A resume chunk as gemini-embedding-2 expects a document. */
+export function documentEmbeddingText(text: string): string {
+  return `title: none | text: ${text}`;
+}
+
+/** A search or Ask question as gemini-embedding-2 expects a query. */
+export function queryEmbeddingText(
+  text: string,
+  task: EmbeddingQueryTask = "search result",
+): string {
+  return `task: ${task} | query: ${text}`;
+}
+
+/** Refuse a vector the vector(768) column would reject or misread. */
+function checkDimensions(vector: number[]): number[] {
+  if (vector.length !== EMBEDDING_DIMENSIONS) {
+    throw new Error(
+      `${EMBEDDING_MODEL_ID} returned ${vector.length} values; search stores ${EMBEDDING_DIMENSIONS}.`,
+    );
+  }
+  return vector;
 }
 
 /** Embed a batch of chunk texts. */
 export async function embedChunkTexts(model: EmbeddingModel, texts: string[]): Promise<number[][]> {
-  const { embeddings } = await embedMany({ model, values: texts });
-  return embeddings;
+  const { embeddings } = await embedMany({
+    model,
+    values: texts.map(documentEmbeddingText),
+    providerOptions: EMBEDDING_OPTIONS,
+  });
+  return embeddings.map(checkDimensions);
 }
 
 /** Embed a search question. */
-export async function embedQuery(model: EmbeddingModel, question: string): Promise<number[]> {
-  const { embedding } = await embed({ model, value: question });
-  return embedding;
+export async function embedQuery(
+  model: EmbeddingModel,
+  question: string,
+  task: EmbeddingQueryTask = "search result",
+): Promise<number[]> {
+  const { embedding } = await embed({
+    model,
+    value: queryEmbeddingText(question, task),
+    providerOptions: EMBEDDING_OPTIONS,
+  });
+  return checkDimensions(embedding);
 }
 
 /** Sort key for ranking hits. */

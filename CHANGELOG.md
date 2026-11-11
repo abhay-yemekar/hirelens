@@ -92,6 +92,15 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Fixed
 
+- Search by meaning never worked: it called Google's `text-embedding-004`,
+  which Google shut down on 14 Jan 2026, so no resume was indexed and
+  search quietly answered from keywords. It now uses `gemini-embedding-2`
+  at 768 values, so the database needs no migration. A failed index call
+  is logged with the provider's reason and leaves a resume's stored chunks
+  in place. The "Index resumes for semantic search" button never showed
+  because the API sent the indexed count as text; it is a number now.
+  After upgrading, use that button once in each job to index the resumes
+  uploaded before (#203).
 - The live demo withheld most scores because Gemini quotes several resume
   lines as one ("Led X. Built Y."), which matched no single passage. A
   quote now matches when every sentence in it is verbatim resume text;

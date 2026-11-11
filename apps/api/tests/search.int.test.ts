@@ -4,11 +4,12 @@
  * unless DATABASE_URL is set.
  */
 
-import { createMockModel } from "@candidlens/core";
+import { createMockModel, type EmbeddingModel } from "@candidlens/core";
 import { auth, createDb, organization } from "@candidlens/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
+import { createIndexer } from "../src/indexing.js";
 import { deleteOrgCompletely } from "./helpers.js";
 
 const DATABASE_URL = process.env["DATABASE_URL"] ?? "";
@@ -17,6 +18,45 @@ const allowSkip = !process.env["CI"];
 
 let app: ReturnType<typeof createApp>;
 let appNoLlm: ReturnType<typeof createApp>;
+let appSemantic: ReturnType<typeof createApp>;
+
+/**
+ * A stand-in for gemini-embedding-2: one dimension per topic, so a query
+ * about container orchestration lands on the Kubernetes resume although
+ * it shares no word with it. Records every text it was asked to embed.
+ */
+const embeddedTexts: string[] = [];
+const TOPICS = [/kubernetes|orchestration|container/i, /pastry|bakery|dessert/i];
+const topicEmbedder = {
+  specificationVersion: "v4",
+  provider: "test",
+  modelId: "topic-embedder",
+  maxEmbeddingsPerCall: 100,
+  supportsParallelCalls: true,
+  doEmbed: async ({ values }: { values: string[] }) => {
+    embeddedTexts.push(...values);
+    return {
+      embeddings: values.map((text) => {
+        const v = Array.from({ length: 768 }, () => 0);
+        TOPICS.forEach((topic, i) => {
+          if (topic.test(text)) v[i] = 1;
+        });
+        v[767] = 0.1; // never a zero vector
+        return v;
+      }),
+      warnings: [],
+    };
+  },
+} as unknown as EmbeddingModel;
+
+const BAKER_RESUME = [
+  "SAM BAKER",
+  "Pastry Chef - sam.baker@example.com",
+  "",
+  "EXPERIENCE",
+  "Head Pastry Chef - Crumb & Co Bakery - 2019 - Present",
+  "- Designed seasonal dessert menus and trained junior bakers.",
+].join("\n");
 let authHeaders: Record<string, string>;
 let orgId = "";
 
@@ -47,6 +87,7 @@ beforeAll(async () => {
   });
   app = createApp({ db, llm: model as never });
   appNoLlm = createApp({ db, llm: null });
+  appSemantic = createApp({ db, llm: model as never, indexer: createIndexer(db, topicEmbedder) });
 
   const signUp = await auth.api.signUpEmail({
     body: {
@@ -107,6 +148,8 @@ describe.skipIf(!available && allowSkip)("search & ask", () => {
     };
     expect(body.ok).toBe(true);
     expect(body.mode).toBe("keyword");
+    // A number: the web app shows its Index button when `indexed === 0`.
+    expect(body.indexed).toBe(0);
     expect(body.total).toBe(1);
     expect(body.hits).toHaveLength(1);
     expect(body.hits[0]?.label).toBe("jordan");
@@ -193,5 +236,68 @@ describe.skipIf(!available && allowSkip)("search & ask", () => {
       headers: authHeaders,
     });
     expect(short.status).toBe(400);
+  });
+
+  it("searches by meaning once resumes are embedded", async () => {
+    const jobRes = await appSemantic.request("/api/jobs", {
+      method: "POST",
+      headers: { ...authHeaders, "content-type": "application/json" },
+      body: JSON.stringify({ title: "Semantic Job", description: "Semantic test." }),
+    });
+    const { job } = (await jobRes.json()) as { job: { id: string } };
+    for (const [name, text] of [
+      ["jordan.txt", RESUME],
+      ["baker.txt", BAKER_RESUME],
+    ] as const) {
+      const form = new FormData();
+      form.append("file", new File([text], name, { type: "text/plain" }));
+      const up = await appSemantic.request(`/api/jobs/${job.id}/candidates`, {
+        method: "POST",
+        headers: authHeaders,
+        body: form,
+      });
+      expect(up.status).toBe(201);
+    }
+    // Upload indexed each resume as an untitled document.
+    expect(embeddedTexts.filter((t) => t.startsWith("title: none | text: "))).toHaveLength(2);
+
+    // No word of the query is in either resume: only meaning can find Jordan.
+    const res = await appSemantic.request(
+      `/api/jobs/${job.id}/search?q=${encodeURIComponent("container orchestration")}`,
+      { headers: authHeaders },
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      mode: string;
+      embeddingModel: string | null;
+      indexed: number;
+      total: number;
+      hits: Array<{ label: string | null }>;
+    };
+    expect(body.mode).toBe("semantic+keyword");
+    expect(body.embeddingModel).toBe("google/gemini-embedding-2");
+    expect(body.indexed).toBe(2);
+    expect(body.total).toBe(2);
+    expect(body.hits.map((h) => h.label)).toEqual(["jordan"]);
+    expect(embeddedTexts).toContain("task: search result | query: container orchestration");
+
+    // Ask embeds its question as one.
+    const ask = await appSemantic.request(`/api/jobs/${job.id}/ask`, {
+      method: "POST",
+      headers: { ...authHeaders, "content-type": "application/json" },
+      body: JSON.stringify({ question: "Who runs container orchestration?" }),
+    });
+    expect(ask.status).toBe(200);
+    expect(embeddedTexts).toContain(
+      "task: question answering | query: Who runs container orchestration?",
+    );
+
+    // The Index button re-embeds every resume in the job.
+    const idx = await appSemantic.request(`/api/jobs/${job.id}/index`, {
+      method: "POST",
+      headers: authHeaders,
+    });
+    expect(idx.status).toBe(200);
+    expect(await idx.json()).toEqual({ ok: true, indexed: 2, total: 2 });
   });
 });
