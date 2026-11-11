@@ -108,6 +108,14 @@ On `main` since v1.4.0; planned for v1.5.0.
   went from 0.17 to 0.94 with the right resume still first. The Index
   button now shows whenever some resumes are unindexed and the server can
   embed them, and the results refresh once indexing finishes (#206).
+- Keyword search matched inside words and on words every resume has, so
+  "experience with payments" listed 10 of the 12 demo resumes. Terms now
+  skip stop words and resume headings, match only where a word starts
+  ("postgres" still finds PostgreSQL), and count for more the rarer they
+  are in the job; a resume must score at least a third of the best match.
+  On the demo resumes, search precision went from 0.34 to 0.66 (recall
+  0.90 to 0.88), and from 0.40 to 0.96 on held-out queries (recall 0.94
+  to 1.00). Ask's keyword fallback uses the same matching (#208).
 - The live demo withheld most scores because Gemini quotes several resume
   lines as one ("Led X. Built Y."), which matched no single passage. A
   quote now matches when every sentence in it is verbatim resume text;
