@@ -15,8 +15,8 @@
 import { randomBytes } from "node:crypto";
 import { buildInterviewKit, renderKitHtml } from "@candidlens/core";
 import { candidates, demographics, jobs, portalLinks, rubrics } from "@candidlens/db";
-import { appendAudit } from "@candidlens/orchestrator";
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { appendAudit, appendAuditIn } from "@candidlens/orchestrator";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { ROLE_MIN, requireAuth } from "../auth.js";
@@ -152,10 +152,22 @@ export function interviewKitRoutes(): Hono<AppEnv> {
   return routes;
 }
 
-const SelfReportSchema = z.object({
+const SelfReportAnswerSchema = z.object({
   dimension: z.string().trim().min(1).max(64),
   value: z.string().trim().min(1).max(64),
 });
+
+/**
+ * A portal submission carries every answer at once, because the first
+ * accepted request uses up the link. The older one-answer body
+ * `{ dimension, value }` is still accepted. Each dimension may appear once.
+ */
+const PortalSubmissionSchema = z
+  .union([
+    z.object({ answers: z.array(SelfReportAnswerSchema).min(1).max(10) }),
+    SelfReportAnswerSchema.transform((answer) => ({ answers: [answer] })),
+  ])
+  .refine((s) => new Set(s.answers.map((a) => a.dimension)).size === s.answers.length);
 
 /** Portal CRUD (recruiter+), mounted at /jobs/:jobId/portal. */
 export function portalRoutes(): Hono<AppEnv> {
@@ -290,7 +302,12 @@ export function publicPortalRoutes() {
     });
   });
 
-  /** Submit the self-report. One-shot: the link is consumed. */
+  /**
+   * Submit the self-report: every answer in one request. One-shot: the
+   * link is claimed in the same transaction that stores the answers, so a
+   * second submission, even one sent at the same moment, gets 409 and no
+   * answer is half-saved.
+   */
   routes.post("/portal/:token", async (c) => {
     const db = c.get("db");
     const token = c.req.param("token") ?? "";
@@ -299,8 +316,9 @@ export function publicPortalRoutes() {
     if (link.revokedAt) return c.json({ ok: false, error: "revoked" }, 410);
     if (link.submittedAt) return c.json({ ok: false, error: "already_submitted" }, 409);
 
-    const parsed = SelfReportSchema.safeParse(await readJson(c).catch(() => null));
+    const parsed = PortalSubmissionSchema.safeParse(await readJson(c).catch(() => null));
     if (!parsed.success) return c.json({ ok: false, error: "invalid_body" }, 400);
+    const { answers } = parsed.data;
 
     const [candidate] = await db
       .select({ id: candidates.id, jobId: candidates.jobId })
@@ -315,37 +333,51 @@ export function publicPortalRoutes() {
       .limit(1);
     if (!job) return c.json({ ok: false, error: "not_found" }, 404);
 
-    const [existing] = await db
-      .select()
-      .from(demographics)
-      .where(eq(demographics.candidateId, candidate.id))
-      .limit(1);
-    const merged: Record<string, unknown> = {
-      ...(existing?.selfReported ?? {}),
-      [parsed.data.dimension]: parsed.data.value,
-    };
-    await db
-      .insert(demographics)
-      .values({ candidateId: candidate.id, selfReported: merged })
-      .onConflictDoUpdate({
-        target: demographics.candidateId,
-        set: { selfReported: merged, reportedAt: new Date() },
+    const answered = Object.fromEntries(answers.map((a) => [a.dimension, a.value]));
+
+    const recorded = await db.transaction(async (tx) => {
+      // Claim the link first. Only one request can match an unused,
+      // unrevoked link; any other finds nothing and writes nothing.
+      const [claimed] = await tx
+        .update(portalLinks)
+        .set({ submittedAt: new Date() })
+        .where(
+          and(
+            eq(portalLinks.id, link.id),
+            isNull(portalLinks.submittedAt),
+            isNull(portalLinks.revokedAt),
+          ),
+        )
+        .returning({ id: portalLinks.id });
+      if (!claimed) return false;
+
+      // Merge per dimension in one statement: answers given before (on an
+      // earlier link, or by a recruiter) stay unless this submission
+      // replaces them.
+      await tx
+        .insert(demographics)
+        .values({ candidateId: candidate.id, selfReported: answered })
+        .onConflictDoUpdate({
+          target: demographics.candidateId,
+          set: {
+            selfReported: sql`${demographics.selfReported} || excluded.self_reported`,
+            reportedAt: new Date(),
+          },
+        });
+
+      await appendAuditIn(tx, {
+        orgId: job.orgId,
+        action: "portal.submitted",
+        // Dimension names only: the answers never enter the audit log.
+        payload: {
+          jobId: candidate.jobId,
+          candidateId: candidate.id,
+          dimensions: Object.keys(answered),
+        },
       });
-
-    await db
-      .update(portalLinks)
-      .set({ submittedAt: new Date() })
-      .where(eq(portalLinks.id, link.id));
-
-    await appendAudit(db, {
-      orgId: job.orgId,
-      action: "portal.submitted",
-      payload: {
-        jobId: candidate.jobId,
-        candidateId: candidate.id,
-        dimension: parsed.data.dimension,
-      },
+      return true;
     });
+    if (!recorded) return c.json({ ok: false, error: "already_submitted" }, 409);
 
     return c.json({ ok: true, message: "Thank you — your response was recorded." });
   });

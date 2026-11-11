@@ -5,6 +5,24 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+/** What a failed submission means for the candidate, by HTTP status (0 = no response). */
+function submitErrorMessage(status: number): string {
+  switch (status) {
+    case 409:
+      return "This link was already used, so these answers were not saved. If that wasn’t you, ask your recruiter for a new link.";
+    case 410:
+      return "This link was turned off, so your answers were not saved. Ask your recruiter for a new link if you want to answer.";
+    case 404:
+      return "This link no longer exists, so your answers were not saved. Ask your recruiter for a new link.";
+    case 400:
+      return "Your answers could not be read, so nothing was saved. Check them and try again.";
+    case 0:
+      return "Your answers were not saved: the server could not be reached. Check your connection and try again.";
+    default:
+      return "Your answers were not saved because of a problem on our side. Please try again in a moment.";
+  }
+}
+
 /**
  * Public candidate portal (Wave 4) — no account, token is the credential.
  * Opt-in only: every field is skippable, nothing is required, and the page
@@ -48,29 +66,24 @@ export default function PortalPage() {
   async function submit() {
     setBusy(true);
     setError(null);
+    // Send only the fields the candidate answered, all in one request: the
+    // link is used up by the first request the API accepts.
+    const answers: Array<{ dimension: string; value: string }> = [];
+    if (gender) answers.push({ dimension: "gender", value: gender });
+    if (ethnicity) answers.push({ dimension: "race_ethnicity", value: ethnicity });
     try {
-      // Submit only the fields the candidate actually answered.
-      const answers: Array<{ dimension: string; value: string }> = [];
-      if (gender) answers.push({ dimension: "gender", value: gender });
-      if (ethnicity) answers.push({ dimension: "race_ethnicity", value: ethnicity });
-      for (const a of answers) {
-        const res = await fetch(`/api/portal/${token}`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(a),
-        });
-        if (res.status === 409) {
-          setState("submitted");
-          return;
-        }
-        if (!res.ok) {
-          const body = (await res.json().catch(() => ({}))) as { error?: string };
-          throw new Error(body.error ?? "could_not_submit");
-        }
+      const res = await fetch(`/api/portal/${token}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ answers }),
+      });
+      if (res.ok) {
+        setState("submitted");
+        return;
       }
-      setState("submitted");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "could_not_submit");
+      setError(submitErrorMessage(res.status));
+    } catch {
+      setError(submitErrorMessage(0));
     } finally {
       setBusy(false);
     }
@@ -169,12 +182,6 @@ export default function PortalPage() {
 
       <Card style={{ background: "var(--hl-card)", borderColor: "var(--hl-border)" }}>
         <CardContent className="flex flex-col gap-5">
-          {error ? (
-            <p className="text-sm" style={{ color: "var(--color-danger)" }}>
-              Something went wrong ({error}). Your answers were not saved — please try again.
-            </p>
-          ) : null}
-
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-medium" style={{ color: "var(--hl-cream)" }}>
               Gender <span style={{ color: "var(--color-fg-muted)" }}>(optional)</span>
@@ -219,6 +226,12 @@ export default function PortalPage() {
               <option value="other">Other</option>
             </select>
           </label>
+
+          {error ? (
+            <p role="alert" className="text-sm" style={{ color: "var(--color-danger)" }}>
+              {error}
+            </p>
+          ) : null}
 
           <div className="flex items-center gap-2">
             <Button type="button" onClick={submit} disabled={busy || (!gender && !ethnicity)}>
