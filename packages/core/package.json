@@ -22,7 +22,7 @@
     "ai": "^7.0.159",
     "fflate": "^0.8.3",
     "mammoth": "^1.13.0",
-    "unpdf": "^1.8.1",
+    "unpdf": "^2.1.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
