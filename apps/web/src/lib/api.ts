@@ -189,6 +189,8 @@ export interface SearchResponse {
   embeddingModel: string | null;
   indexed: number;
   total: number;
+  /** The server can embed resumes, so indexing them can succeed. */
+  indexingEnabled: boolean;
   hits: SearchHitRow[];
 }
 

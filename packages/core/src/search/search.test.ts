@@ -7,6 +7,8 @@ import {
   EMBEDDING_MODEL_ID,
   embedChunkTexts,
   embedQuery,
+  MEANING_MATCH_MARGIN,
+  matchesByMeaning,
 } from "./index.js";
 
 describe("chunkText", () => {
@@ -97,5 +99,41 @@ describe("embeddings", () => {
       "google/gemini-embedding-2 returned 3072 values; search stores 768.",
     );
     await expect(embedQuery(fakeEmbedder(3072), "x")).rejects.toThrow("returned 3072 values");
+  });
+});
+
+describe("matchesByMeaning", () => {
+  const rows = (...distances: number[]) =>
+    distances.map((distance, i) => ({ id: `r${i}`, distance }));
+
+  it("keeps nothing from an empty job and keeps a lone resume", () => {
+    expect(matchesByMeaning([])).toEqual([]);
+    expect(matchesByMeaning(rows(0.44))).toEqual([{ id: "r0", distance: 0.44 }]);
+  });
+
+  // Distances recorded from gemini-embedding-2 on the 12 demo resumes, in
+  // DEMO_RESUMES order.
+  it("keeps the resumes that stand out from the rest, nearest first", () => {
+    // "analytics data warehousing and ETL": the data engineer, then noise.
+    const kept = matchesByMeaning(
+      rows(0.42, 0.418, 0.403, 0.406, 0.43, 0.313, 0.417, 0.427, 0.425, 0.408, 0.391, 0.423),
+    );
+    expect(kept.map((r) => r.distance)).toEqual([0.313]);
+  });
+
+  it("keeps nothing when no resume stands out, however close they all are", () => {
+    // "pastry chef": every resume sits about as close as the others.
+    const kept = matchesByMeaning(
+      rows(0.424, 0.416, 0.421, 0.402, 0.437, 0.413, 0.418, 0.439, 0.421, 0.408, 0.392, 0.435),
+    );
+    expect(kept).toEqual([]);
+  });
+
+  it("compares each resume with the others, so two resumes can still separate", () => {
+    // 0.04 apart: the nearer one is a match. 0.01 apart: neither is.
+    expect(matchesByMeaning(rows(0.4, 0.36)).map((r) => r.id)).toEqual(["r1"]);
+    expect(matchesByMeaning(rows(0.4, 0.39))).toEqual([]);
+    expect(MEANING_MATCH_MARGIN).toBeGreaterThan(0.01);
+    expect(MEANING_MATCH_MARGIN).toBeLessThan(0.04);
   });
 });

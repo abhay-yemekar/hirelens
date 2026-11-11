@@ -999,25 +999,31 @@ export const openApiDocument = {
       get: {
         tags: ["Search"],
         summary:
-          "Semantic search over the job's resumes — pgvector KNN when indexed, keyword matching otherwise.",
+          "Search the job's resumes — those that match by meaning when indexed, merged with keyword matches.",
         parameters: [
           { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
-          { name: "q", in: "query", required: true, schema: { type: "string", minLength: 1 } },
+          { name: "q", in: "query", required: true, schema: { type: "string", minLength: 2 } },
         ],
         responses: {
           200: ok({
             type: "object",
             properties: {
+              mode: { type: "string", enum: ["semantic+keyword", "keyword", "empty"] },
+              embeddingModel: { type: "string", nullable: true },
+              indexed: { type: "integer", description: "Resumes with embedded chunks" },
+              total: { type: "integer" },
+              indexingEnabled: {
+                type: "boolean",
+                description: "The server can embed resumes, so POST /index can succeed",
+              },
               hits: {
                 type: "array",
                 items: {
                   type: "object",
                   properties: {
                     candidateId: { type: "string", format: "uuid" },
-                    label: { type: "string" },
-                    snippet: { type: "string" },
+                    label: { type: "string", nullable: true },
                     score: { type: "number" },
-                    mode: { type: "string", enum: ["semantic", "keyword"] },
                   },
                 },
               },
@@ -1069,7 +1075,7 @@ export const openApiDocument = {
       post: {
         tags: ["Search"],
         summary:
-          "Backfill embeddings for every document in the job (best-effort per document; failures reported, never thrown).",
+          "Embed every resume in the job (best-effort per resume; failures are logged and counted, never thrown).",
         parameters: [
           { name: "jobId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
         ],
@@ -1077,8 +1083,8 @@ export const openApiDocument = {
           200: ok({
             type: "object",
             properties: {
-              indexed: { type: "number" },
-              failed: { type: "number" },
+              indexed: { type: "integer" },
+              total: { type: "integer" },
             },
           }),
           404: errorResponse,
