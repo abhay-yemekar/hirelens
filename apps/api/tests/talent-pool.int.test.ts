@@ -317,6 +317,27 @@ describe.skipIf(!available && allowSkip)("talent pool", () => {
     });
     const decisionsBody = (await decisionsRes.json()) as { total: number };
     expect(decisionsBody.total).toBe(1);
+
+    // The shortlist is in the hash-chained audit trail, recorded the same
+    // way as a decision from the review queue.
+    const rows = await createDb(DATABASE_URL)
+      .select({ actorId: auditLog.actorId, action: auditLog.action, payload: auditLog.payload })
+      .from(auditLog)
+      .where(eq(auditLog.orgId, orgId))
+      .orderBy(desc(auditLog.seq));
+    const recorded = rows.find(
+      (r) =>
+        r.action === "decision.recorded" &&
+        (r.payload as Record<string, unknown>)["candidateId"] === carla?.id,
+    );
+    expect(recorded).toBeDefined();
+    expect(recorded?.actorId).toBeTruthy();
+    expect(recorded?.payload ?? {}).toMatchObject({
+      jobId: expect.any(String),
+      stage: "shortlisted",
+      reason: "Great for the platform team",
+      source: "talent_pool",
+    });
   });
 
   it("masks identity in blind mode and ignores q", async () => {
