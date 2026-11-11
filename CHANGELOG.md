@@ -59,6 +59,13 @@ On `main` since v1.4.0; planned for v1.5.0.
   page with the product shot, features by audience, a how-it-works
   diagram, the real-model evaluation numbers and a complete settings
   reference (#173).
+- The docs live in one place, the site's `/docs` pages. The undeployed
+  Fumadocs copy in `apps/docs` is gone, and the README links the live
+  pages. Pages that disagreed with the code now match it: blind review
+  masks emails, phone numbers, links and the name line, not schools or
+  graduation years; the bias audit's reference group is the
+  highest-rate group with at least 4 candidates; API errors are
+  `{ ok: false, error, message? }` (#182).
 - Every password field has a show/hide button. Sign-up says passwords
   need 8 characters, and messages in Settings → Sign-in & security show
   next to the part of the card they belong to (#164).
@@ -132,6 +139,13 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Security
 
+- Search embeddings, which always call Google, used the model key whatever
+  the provider was. A self-hosted instance on Anthropic, Groq,
+  OpenRouter, Mistral or Cerebras sent that key and each uploaded
+  resume's text to Google. Embeddings now use only a Google key:
+  `CANDIDLENS_EMBEDDING_API_KEY`, the model key when the provider is
+  `google`, or `CANDIDLENS_LLM_GOOGLE_API_KEY`; without one, search
+  matches keywords (#184).
 - Google or GitHub no longer joins an existing account just because the
   email matches; connect them from Settings → Sign-in & security while
   signed in. Otherwise someone could register a stranger's email first

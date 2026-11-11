@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ProsePage } from "@/components/prose-page";
 
 export const metadata: Metadata = {
@@ -50,6 +51,11 @@ export default function QuickstartPage() {
             <td>recent</td>
             <td>—</td>
           </tr>
+          <tr>
+            <td>A model API key or Ollama</td>
+            <td>Optional: needed only for scoring, rubric drafting and Ask</td>
+            <td>—</td>
+          </tr>
         </tbody>
       </table>
       <p>
@@ -72,13 +78,20 @@ pnpm install`}</code>
 
       <h2>2. Start the database</h2>
       <pre>
-        <code>{`docker compose up -d
+        <code>{`cp .env.example .env
+docker compose up -d postgres
 docker compose ps`}</code>
       </pre>
       <p>
-        Starts <code>hirelens-postgres</code> — Postgres 16 with pgvector, on port{" "}
+        Starts only <code>hirelens-postgres</code> — Postgres 16 with pgvector, on port{" "}
         <strong>5433</strong> (deliberately offset from any local 5432). Status shows{" "}
         <code>Up (healthy)</code> after ~10 s.
+      </p>
+      <p>
+        Compose reads the root <code>.env</code> and refuses to start anything while{" "}
+        <code>BETTER_AUTH_SECRET</code> is empty, even when you start only Postgres. The example
+        value is enough for now. A bare <code>docker compose up -d</code> also starts the API and
+        web containers.
       </p>
 
       <h2>3. Configure the environment</h2>
@@ -91,7 +104,41 @@ docker compose ps`}</code>
         local experimentation. OAuth variables are optional; empty means disabled.
       </p>
 
-      <h2>4. Migrate</h2>
+      <h2>4. Configure a model (optional)</h2>
+      <pre>
+        <code>{`cp apps/api/.env.example apps/api/.env`}</code>
+      </pre>
+      <p>
+        The API dev server runs from <code>apps/api</code> and loads this file when it starts.
+        Uncomment and set:
+      </p>
+      <ul>
+        <li>
+          <code>CANDIDLENS_LLM_PROVIDER</code>: <code>google</code>, <code>anthropic</code>,{" "}
+          <code>groq</code>, <code>openrouter</code>, <code>mistral</code>, <code>cerebras</code> or{" "}
+          <code>ollama</code>.
+        </li>
+        <li>
+          <code>CANDIDLENS_LLM_MODEL</code>: a model id your provider serves, e.g.{" "}
+          <code>gemini-2.5-flash</code> for <code>google</code>.
+        </li>
+        <li>
+          <code>CANDIDLENS_LLM_API_KEY</code>: your provider&apos;s key. Every provider except
+          Ollama needs one.
+        </li>
+        <li>
+          <code>CANDIDLENS_LLM_BASE_URL</code>: required for Ollama, e.g.{" "}
+          <code>http://localhost:11434/v1</code>.
+        </li>
+      </ul>
+      <p>
+        The API checks these when it starts. It stops with an error if the provider and model
+        aren&apos;t set together, a hosted provider has no key, or Ollama has no base URL. For the
+        Docker stack in step 7, put the same lines in the root <code>.env</code>. Failover and the
+        retry budget are in <Link href="/docs/configuration#models">Configuration</Link>.
+      </p>
+
+      <h2>5. Migrate</h2>
       <pre>
         <code>{`pnpm --filter @candidlens/db db:migrate`}</code>
       </pre>
@@ -100,7 +147,7 @@ docker compose ps`}</code>
         jobs, rubrics, candidates, documents, scoring runs, scores, evidence, audit log.
       </p>
 
-      <h2>5. Verify your setup</h2>
+      <h2>6. Verify your setup</h2>
       <pre>
         <code>{`pnpm typecheck   # strict TypeScript across every package
 pnpm test        # full suite, including DB-backed integration tests`}</code>
@@ -111,28 +158,33 @@ pnpm test        # full suite, including DB-backed integration tests`}</code>
         model, and recompute the hash-chained audit log from stored rows.
       </p>
 
-      <h2>6. Run the apps</h2>
-      <p>The fastest path is the one-command stack:</p>
+      <h2>7. Run the apps</h2>
+      <p>
+        The fastest path is the one-command stack. First replace <code>BETTER_AUTH_SECRET</code> in
+        the root <code>.env</code> with a real secret: the API container runs in production mode and
+        refuses the example value.
+      </p>
       <pre>
-        <code>{`cp .env.example .env      # set BETTER_AUTH_SECRET
+        <code>{`openssl rand -base64 32   # paste the output into .env as BETTER_AUTH_SECRET
 docker compose up --build -d
 # web :3000 · api :4000 · postgres :5433`}</code>
       </pre>
       <p>Migrations apply automatically on API boot. For daily development instead:</p>
       <pre>
         <code>{`pnpm --filter @candidlens/api dev    # API on :4000
-pnpm --filter @candidlens/web dev    # product UI on :3000
-pnpm --filter @candidlens/docs dev   # docs site on :3002`}</code>
+pnpm --filter @candidlens/web dev    # product UI on :3000`}</code>
       </pre>
       <p>
         Then:{" "}
         <strong>
           sign in / sign up → create an organization → create a job → upload resumes → score →
           review with evidence.
-        </strong>{" "}
-        LLM scoring needs <code>CANDIDLENS_LLM_PROVIDER</code> + <code>CANDIDLENS_LLM_MODEL</code>{" "}
-        (+ key) in the API env; without them the server runs fine and scoring returns{" "}
-        <code>503 llm_not_configured</code>.
+        </strong>
+      </p>
+      <p>
+        Without a model, rubric drafting, scoring and Ask answer <code>503 llm_not_configured</code>
+        . Uploading resumes, review, decisions and audits still work. To run the same steps from a
+        terminal, use the <Link href="/docs/cli">CLI</Link>.
       </p>
 
       <h2>What &ldquo;everything works&rdquo; looks like</h2>
@@ -150,7 +202,7 @@ pnpm --filter @candidlens/docs dev   # docs site on :3002`}</code>
 
       <p>
         Stuck? Every error we hit during development — and its fix — is in{" "}
-        <a href="/troubleshooting">Troubleshooting</a>.
+        <Link href="/troubleshooting">Troubleshooting</Link>.
       </p>
     </ProsePage>
   );
