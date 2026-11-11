@@ -179,6 +179,17 @@ const MODELS: Setting[] = [
     purpose:
       "Overall retry and failover budget (default 120000 ms, at most 600000) so a request can't outlive a serverless limit",
   },
+  {
+    names: ["CANDIDLENS_EMBEDDING_API_KEY"],
+    purpose: (
+      <>
+        A Google AI key for search by meaning; resume text goes to Google&apos;s embedding API.
+        Without it, the model key is used when the provider is <code>google</code>, then{" "}
+        <code>CANDIDLENS_LLM_GOOGLE_API_KEY</code>. Another provider&apos;s key is never sent to
+        Google; with no Google key, search matches keywords
+      </>
+    ),
+  },
 ];
 
 const OBSERVABILITY: Setting[] = [

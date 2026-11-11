@@ -92,11 +92,23 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Fixed
 
+- The candidate portal lost the race/ethnicity answer when a candidate
+  answered both questions: it sent one request per answer, the first used
+  up the link, and the second got a 409 that the page showed as "Thank
+  you". The page now sends every answer in one request
+  (`{ answers: [...] }`), the API stores them and uses up the link in one
+  transaction (two requests at once can't both succeed), and a failed
+  submission shows an error instead of the thank-you screen (#186).
 - The live demo withheld most scores because Gemini quotes several resume
   lines as one ("Led X. Built Y."), which matched no single passage. A
   quote now matches when every sentence in it is verbatim resume text;
   each line is kept and highlighted as its own evidence span. A quote with
   any line that isn't in the resume is still withheld (#175).
+- Shortlisting from the talent pool wrote no audit-log entry, so those
+  decisions were missing from the hash-chained trail and its export. It
+  now records `decision.recorded`, like a decision from the review queue
+  (with `source: "talent_pool"`), in the same transaction as the decision
+  (#187).
 - A Docker Compose stack ignored the model failover chain, the retry
   deadline and the email settings in `.env`, and its web app never showed
   "Forgot password?" or the Google and GitHub buttons. The API container
@@ -140,6 +152,13 @@ On `main` since v1.4.0; planned for v1.5.0.
 
 ### Security
 
+- Search embeddings, which always call Google, used the model key whatever
+  the provider was. A self-hosted instance on Anthropic, Groq,
+  OpenRouter, Mistral or Cerebras sent that key and each uploaded
+  resume's text to Google. Embeddings now use only a Google key:
+  `CANDIDLENS_EMBEDDING_API_KEY`, the model key when the provider is
+  `google`, or `CANDIDLENS_LLM_GOOGLE_API_KEY`; without one, search
+  matches keywords (#184).
 - Google or GitHub no longer joins an existing account just because the
   email matches; connect them from Settings → Sign-in & security while
   signed in. Otherwise someone could register a stranger's email first
