@@ -132,6 +132,14 @@ export {
   synthesizeAnswer,
   type TextChunk,
 } from "./search/index.js";
+export {
+  countKeyword,
+  findKeyword,
+  KEYWORD_MATCH_SHARE,
+  type KeywordMatch,
+  keywordTerms,
+  rankByKeywords,
+} from "./search/keywords.js";
 export { LEGACY_SETTING_PREFIX, readSetting, SETTING_PREFIX } from "./settings.js";
 export {
   candidateFamilies,

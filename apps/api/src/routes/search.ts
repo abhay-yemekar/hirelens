@@ -17,7 +17,7 @@
  * queue, so Ask answers and search results can't leak identities.
  */
 
-import { matchesByMeaning, synthesizeAnswer } from "@candidlens/core";
+import { matchesByMeaning, rankByKeywords, synthesizeAnswer } from "@candidlens/core";
 import type { Database } from "@candidlens/db";
 import { candidates, chunks, documents } from "@candidlens/db";
 import { and, eq, inArray, sql } from "drizzle-orm";
@@ -116,29 +116,13 @@ export function searchRoutes(): Hono<AppEnv> {
     }
 
     // --- keyword path (fallback + coverage for unindexed docs) ---
-    const kwTerms = q
-      .toLowerCase()
-      .split(/[^a-z0-9+#.]+/)
-      .filter((t) => t.length >= 2)
-      .slice(0, 8);
-    const keyword: CandidateHit[] = [];
-    if (kwTerms.length > 0) {
-      const scored = corpus.map((doc) => {
-        const lower = doc.rawText.toLowerCase();
-        let score = 0;
-        for (const t of kwTerms) {
-          const matches = lower.split(t).length - 1;
-          if (matches > 0) score += 1 + Math.log2(matches);
-        }
-        return { candidateId: doc.candidateId, label: label(doc.sourceFileKey), score };
-      });
-      keyword.push(
-        ...scored
-          .filter((s) => s.score > 0)
-          .sort((a, b) => b.score - a.score)
-          .slice(0, MAX_HITS),
-      );
-    }
+    const keyword: CandidateHit[] = rankByKeywords(corpus, q, (doc) => doc.rawText)
+      .slice(0, MAX_HITS)
+      .map(({ doc, score }) => ({
+        candidateId: doc.candidateId,
+        label: label(doc.sourceFileKey),
+        score,
+      }));
 
     // --- merge: semantic ranking wins; keyword fills and boosts overlaps ---
     const merged = new Map<string, CandidateHit>();
@@ -252,31 +236,19 @@ export function searchRoutes(): Hono<AppEnv> {
       }
     }
     if (pool.length === 0) {
-      // Keyword windows: for each doc take the best-matching slice.
-      const terms = question
-        .toLowerCase()
-        .split(/[^a-z0-9+#.]+/)
-        .filter((t) => t.length >= 2)
-        .slice(0, 8);
-      for (const doc of corpus) {
-        if (pool.length >= 12) break;
-        const lower = doc.rawText.toLowerCase();
-        const best = { score: 0, pos: 0 };
-        for (const t of terms) {
-          const pos = lower.indexOf(t);
-          if (pos >= 0) best.score += 1;
-          if (pos >= 0 && best.pos === 0) best.pos = pos;
-        }
-        if (best.score > 0) {
-          const start = Math.max(0, best.pos - 400);
-          const window = doc.rawText.slice(start, start + 1200);
-          pool.push({
-            chunkId: `kw-${doc.documentId}-${start}`,
-            candidateId: doc.candidateId,
-            sourceFileKey: doc.sourceFileKey,
-            text: window,
-          });
-        }
+      // Keyword windows: the best keyword matches, each as the slice of
+      // its resume around the first matching term.
+      for (const { doc, firstIndex } of rankByKeywords(corpus, question, (d) => d.rawText).slice(
+        0,
+        12,
+      )) {
+        const start = Math.max(0, firstIndex - 400);
+        pool.push({
+          chunkId: `kw-${doc.documentId}-${start}`,
+          candidateId: doc.candidateId,
+          sourceFileKey: doc.sourceFileKey,
+          text: doc.rawText.slice(start, start + 1200),
+        });
       }
     }
     if (pool.length === 0) {

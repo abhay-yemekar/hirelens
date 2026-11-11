@@ -365,4 +365,51 @@ describe.skipIf(!available && allowSkip)("search & ask", () => {
     expect(await idx.json()).toEqual({ ok: true, indexed: 2, total: 2 });
     expect(await status(appSemantic)).toMatchObject({ indexed: 2, total: 2 });
   });
+
+  it("matches keywords as words, not inside other words or on stop words", async () => {
+    const jobRes = await app.request("/api/jobs", {
+      method: "POST",
+      headers: { ...authHeaders, "content-type": "application/json" },
+      body: JSON.stringify({ title: "Keyword job", description: "Keyword test." }),
+    });
+    const { job } = (await jobRes.json()) as { job: { id: string } };
+    for (const [name, text] of [
+      ["jordan.txt", RESUME],
+      ["baker.txt", BAKER_RESUME],
+    ] as const) {
+      const form = new FormData();
+      form.append("file", new File([text], name, { type: "text/plain" }));
+      await app.request(`/api/jobs/${job.id}/candidates`, {
+        method: "POST",
+        headers: authHeaders,
+        body: form,
+      });
+    }
+    const labels = async (q: string) => {
+      const res = await app.request(`/api/jobs/${job.id}/search?q=${encodeURIComponent(q)}`, {
+        headers: authHeaders,
+      });
+      const body = (await res.json()) as { hits: Array<{ label: string | null }> };
+      return body.hits.map((h) => h.label).sort();
+    };
+
+    // Both resumes have an EXPERIENCE heading, which used to match: nothing
+    // in this query is a search term now.
+    expect(await labels("experience with")).toEqual([]);
+    // "payment" starts "payments" in Jordan's resume.
+    expect(await labels("payment")).toEqual(["jordan"]);
+    // One rare term each: both match.
+    expect(await labels("pastry kubernetes")).toEqual(["baker", "jordan"]);
+
+    // Ask's keyword fallback sends only the resume that matches.
+    const ask = await app.request(`/api/jobs/${job.id}/ask`, {
+      method: "POST",
+      headers: { ...authHeaders, "content-type": "application/json" },
+      body: JSON.stringify({ question: "Who has experience with Kubernetes?" }),
+    });
+    expect(ask.status).toBe(200);
+    const askPrompt = llmCalls.at(-1)?.prompt ?? "";
+    expect(askPrompt).toContain("Kubernetes");
+    expect(askPrompt).not.toContain("Pastry");
+  });
 });
