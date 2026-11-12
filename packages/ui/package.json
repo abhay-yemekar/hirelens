@@ -19,8 +19,8 @@
     "@radix-ui/react-slot": "^1.5.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.66.0",
-    "motion": "^14.9.0",
+    "lucide-react": "^1.70.0",
+    "motion": "^14.10.1",
     "tailwind-merge": "^3.7.0"
   },
   "peerDependencies": {
@@ -30,10 +30,10 @@
   },
   "devDependencies": {
     "@candidlens/config": "workspace:*",
-    "@storybook/addon-a11y": "^10.6.5",
-    "@storybook/addon-docs": "^10.6.5",
-    "@storybook/react-vite": "^10.6.5",
-    "@tailwindcss/vite": "^4.3.3",
+    "@storybook/addon-a11y": "^10.6.6",
+    "@storybook/addon-docs": "^10.6.6",
+    "@storybook/react-vite": "^10.6.6",
+    "@tailwindcss/vite": "^4.3.5",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@types/node": "^26.6.6",
@@ -41,9 +41,9 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react-swc": "^4.3.3",
     "jsdom": "^30.1.3",
-    "storybook": "^10.6.5",
-    "tailwindcss": "^4.3.3",
+    "storybook": "^10.6.6",
+    "tailwindcss": "^4.3.5",
     "typescript": "~5.9.3",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.0"
   }
 }
